@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -19,7 +20,6 @@ import type { User } from '@/lib/definitions';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter.'),
-  email: z.string().email(),
 });
 
 type ProfileFormValues = z.infer<typeof formSchema>;
@@ -33,7 +33,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
         name: user.name,
-        email: user.email,
     },
   });
 
@@ -55,23 +54,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nama Lengkap</FormLabel>
+              <FormLabel>Perbarui Nama Lengkap</FormLabel>
               <FormControl>
                 <Input placeholder="Nama lengkap Anda" {...field} />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" {...field} readOnly disabled className="cursor-not-allowed bg-muted/50" />
-              </FormControl>
+              <FormDescription>
+                Hanya nama yang dapat diubah.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
