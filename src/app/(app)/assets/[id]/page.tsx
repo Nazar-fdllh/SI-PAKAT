@@ -7,20 +7,14 @@ import AssessmentForm from '@/components/assets/assessment-form';
 import AssessmentHistory from '@/components/assets/assessment-history';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getRole } from '@/lib/client-session';
-import { useEffect, useState } from 'react';
-import type { UserRole } from '@/lib/definitions';
 import { ArrowLeft } from 'lucide-react';
+import { useSession } from '@/hooks/use-session';
 
 export default function AssetDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const [role, setRole] = useState<UserRole | null>(null);
-
-  useEffect(() => {
-    getRole().then(setRole);
-  }, []);
+  const { user } = useSession();
 
   const asset = initialAssets.find((a) => a.id === id);
   const assessments = initialAssessments.filter((a) => a.assetId === id);
@@ -28,8 +22,12 @@ export default function AssetDetailPage() {
   if (!asset) {
     notFound();
   }
+  
+  if (!user) {
+    return <div className="flex justify-center items-center h-full"><p>Memuat data pengguna...</p></div>;
+  }
 
-  const canAssess = role === 'Administrator' || role === 'Manajer Aset';
+  const canAssess = user.role === 'Administrator' || user.role === 'Manajer Aset';
 
   return (
     <div className="space-y-6">
@@ -71,14 +69,10 @@ export default function AssetDetailPage() {
               <CardTitle className="font-headline">Penilaian Keamanan</CardTitle>
             </CardHeader>
             <CardContent>
-              {role ? (
-                canAssess ? (
-                  <AssessmentForm asset={asset} />
-                ) : (
-                  <p className="text-muted-foreground">Anda tidak memiliki hak akses untuk melakukan penilaian.</p>
-                )
+              {canAssess ? (
+                <AssessmentForm asset={asset} />
               ) : (
-                <p className="text-muted-foreground">Memuat...</p>
+                <p className="text-muted-foreground">Anda tidak memiliki hak akses untuk melakukan penilaian.</p>
               )}
             </CardContent>
           </Card>

@@ -21,16 +21,13 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
-import { type User } from '@/lib/definitions';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useSession } from '@/hooks/use-session';
 
-type SidebarNavProps = {
-  user: User;
-};
-
-export function SidebarNav({ user }: SidebarNavProps) {
+export function SidebarNav() {
   const pathname = usePathname();
   const { state, toggleSidebar } = useSidebar();
+  const { user } = useSession();
 
   const menuItems = [
     {
@@ -64,6 +61,10 @@ export function SidebarNav({ user }: SidebarNavProps) {
       roles: ['Administrator'],
     },
   ];
+
+  if (!user) {
+    return null; // Or a loading skeleton
+  }
 
   return (
     <>

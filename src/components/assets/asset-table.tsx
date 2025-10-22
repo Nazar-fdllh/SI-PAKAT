@@ -14,7 +14,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, FileDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
@@ -62,10 +62,9 @@ type AssetTableProps = {
   userRole: UserRole | null;
   onEdit: (asset: Asset) => void;
   onDelete: (assetId: string) => void;
-  isLoading: boolean;
 };
 
-export default function AssetTable({ assets, userRole, onEdit, onDelete, isLoading }: AssetTableProps) {
+export default function AssetTable({ assets, userRole, onEdit, onDelete }: AssetTableProps) {
   const [data, setData] = React.useState(assets);
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -177,7 +176,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete, isLoadi
       enableHiding: false,
       cell: ({ row }) => {
         const asset = row.original
-        if (isLoading || !canManage) return null;
+        if (!canManage) return null;
 
         return (
           <AlertDialog>
@@ -321,7 +320,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete, isLoadi
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  {isLoading ? "Memuat data..." : "Tidak ada hasil."}
+                  {"Tidak ada hasil."}
                 </TableCell>
               </TableRow>
             )}

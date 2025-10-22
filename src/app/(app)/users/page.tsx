@@ -2,32 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getRole } from '@/lib/client-session';
 import { initialUsers } from '@/lib/data';
 import UserTable from '@/components/users/user-table';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { UserDialog } from '@/components/users/user-dialog';
-import type { User, UserRole } from '@/lib/definitions';
+import type { User } from '@/lib/definitions';
+import { useSession } from '@/hooks/use-session';
 
 export default function UsersPage() {
   const router = useRouter();
+  const { user } = useSession();
   const [users, setUsers] = useState<User[]>(initialUsers);
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
-    getRole().then(userRole => {
-      if (userRole !== 'Administrator') {
-        router.push('/dashboard');
-      } else {
-        setRole(userRole);
-        setLoading(false);
-      }
-    });
-  }, [router]);
+    // Redirect if user data is loaded and the user is not an administrator
+    if (user && user.role !== 'Administrator') {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
+  // Show a loading state while user data is being fetched
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p>Memuat atau mengalihkan...</p>
+      </div>
+    );
+  }
+
+  // If the user is not an administrator, they will be redirected, so we can return null here.
+  if (user.role !== 'Administrator') {
+    return null;
+  }
 
   const handleAddUser = () => {
     setSelectedUser(null);
@@ -61,14 +70,6 @@ export default function UsersPage() {
     setDialogOpen(false);
     setSelectedUser(null);
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <p>Memuat atau mengalihkan...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

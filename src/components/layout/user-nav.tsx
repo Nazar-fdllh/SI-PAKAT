@@ -12,16 +12,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/lib/actions';
-import type { User } from '@/lib/definitions';
 import { LogOut, Monitor, Moon, Sun, User as UserIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useSession } from '@/hooks/use-session';
 
-type UserNavProps = {
-  user: User;
-};
-
-export function UserNav({ user }: UserNavProps) {
+export function UserNav() {
     const { setTheme } = useTheme();
+    const { user } = useSession();
+
+    if (!user) {
+      return null;
+    }
 
   return (
     <DropdownMenu>
