@@ -1,16 +1,27 @@
+'use client';
+
 import { assets, assessments as allAssessments } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import AssetDetails from '@/components/assets/asset-details';
 import AssessmentForm from '@/components/assets/assessment-form';
 import AssessmentHistory from '@/components/assets/assessment-history';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { getRole } from '@/lib/session';
+import { useEffect, useState } from 'react';
+import type { UserRole } from '@/lib/definitions';
+import { ArrowLeft } from 'lucide-react';
 
-export default async function AssetDetailPage({ params }: { params: { id: string } }) {
+export default function AssetDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const [role, setRole] = useState<UserRole | null>(null);
+
+  useEffect(() => {
+    getRole().then(setRole);
+  }, []);
+
   const asset = assets.find((a) => a.id === params.id);
   const assessments = allAssessments.filter((a) => a.assetId === params.id);
-  const role = await getRole();
 
   if (!asset) {
     notFound();
@@ -20,9 +31,15 @@ export default async function AssetDetailPage({ params }: { params: { id: string
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight font-headline">{asset.name}</h1>
-        <p className="text-muted-foreground">Detail dan riwayat penilaian untuk aset: {asset.assetCode}</p>
+      <div className="flex items-center justify-between">
+        <div>
+            <h1 className="text-3xl font-bold tracking-tight font-headline">{asset.name}</h1>
+            <p className="text-muted-foreground">Detail dan riwayat penilaian untuk aset: {asset.assetCode}</p>
+        </div>
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Kembali
+        </Button>
       </div>
       
       <div className="grid gap-6 lg:grid-cols-5">
@@ -52,10 +69,14 @@ export default async function AssetDetailPage({ params }: { params: { id: string
               <CardTitle className="font-headline">Penilaian Keamanan</CardTitle>
             </CardHeader>
             <CardContent>
-              {canAssess ? (
-                <AssessmentForm asset={asset} />
+              {role ? (
+                canAssess ? (
+                  <AssessmentForm asset={asset} />
+                ) : (
+                  <p className="text-muted-foreground">Anda tidak memiliki hak akses untuk melakukan penilaian.</p>
+                )
               ) : (
-                <p className="text-muted-foreground">Anda tidak memiliki hak akses untuk melakukan penilaian.</p>
+                <p className="text-muted-foreground">Memuat...</p>
               )}
             </CardContent>
           </Card>
