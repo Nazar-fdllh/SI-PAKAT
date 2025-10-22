@@ -23,26 +23,24 @@ const criteria = [
 ];
 
 const scoreOptions = [
-  { value: 1, label: '1 - Sangat Rendah' },
-  { value: 2, label: '2 - Rendah' },
-  { value: 3, label: '3 - Sedang' },
-  { value: 4, label: '4 - Tinggi' },
-  { value: 5, label: '5 - Sangat Tinggi' },
+  { value: 1, label: '1 - Rendah' },
+  { value: 2, label: '2 - Sedang' },
+  { value: 3, label: '3 - Tinggi' },
 ];
 
-// Thresholds can be fetched from a config endpoint in a real app
+// Thresholds based on the user-provided image
 const thresholds = {
-  high: 18,
-  medium: 12,
+  high: 11,
+  medium: 6,
 };
 
 export default function AssessmentForm({ asset }: { asset: Asset }) {
   const [scores, setScores] = useState({
-    confidentiality: 3,
-    integrity: 3,
-    availability: 3,
-    authenticity: 3,
-    nonRepudiation: 3,
+    confidentiality: 1,
+    integrity: 1,
+    availability: 1,
+    authenticity: 1,
+    nonRepudiation: 1,
   });
 
   const handleScoreChange = (criterionId: keyof typeof scores, value: string) => {

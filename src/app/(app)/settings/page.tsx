@@ -11,9 +11,9 @@ export default async function SettingsPage() {
 
   // In a real app, you would fetch these initial values from your database
   const currentSettings = {
-    highThreshold: 18,
-    mediumThreshold: 12,
-    lowThreshold: 11,
+    highThreshold: 11,
+    mediumThreshold: 6,
+    lowThreshold: 5,
     highDescription: "Aset kritikal yang dampaknya sangat besar jika terganggu.",
     mediumDescription: "Aset penting yang mendukung operasional bisnis utama.",
     lowDescription: "Aset pendukung dengan dampak operasional yang rendah.",

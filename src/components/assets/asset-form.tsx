@@ -40,16 +40,14 @@ const criteria = [
 ];
 
 const scoreOptions = [
-  { value: 1, label: '1 - Sangat Rendah' },
-  { value: 2, label: '2 - Rendah' },
-  { value: 3, label: '3 - Sedang' },
-  { value: 4, label: '4 - Tinggi' },
-  { value: 5, label: '5 - Sangat Tinggi' },
+  { value: 1, label: '1 - Rendah' },
+  { value: 2, label: '2 - Sedang' },
+  { value: 3, label: '3 - Tinggi' },
 ];
 
 const thresholds = {
-  high: 18,
-  medium: 12,
+  high: 11,
+  medium: 6,
 };
 
 const formSchema = z.object({
@@ -61,11 +59,11 @@ const formSchema = z.object({
   status: z.enum(assetStatuses, { required_error: 'Status harus dipilih.' }),
   purchaseDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Tanggal pembelian tidak valid.' }),
   expiryDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Tanggal kadaluarsa tidak valid.' }),
-  confidentiality: z.coerce.number().min(1).max(5),
-  integrity: z.coerce.number().min(1).max(5),
-  availability: z.coerce.number().min(1).max(5),
-  authenticity: z.coerce.number().min(1).max(5),
-  nonRepudiation: z.coerce.number().min(1).max(5),
+  confidentiality: z.coerce.number().min(1).max(3),
+  integrity: z.coerce.number().min(1).max(3),
+  availability: z.coerce.number().min(1).max(3),
+  authenticity: z.coerce.number().min(1).max(3),
+  nonRepudiation: z.coerce.number().min(1).max(3),
   classification: z.custom<AssetClassification>(),
 });
 
@@ -88,11 +86,11 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     ...asset,
     purchaseDate: format(new Date(asset.purchaseDate), 'yyyy-MM-dd'),
     expiryDate: format(new Date(asset.expiryDate), 'yyyy-MM-dd'),
-    confidentiality: 3,
-    integrity: 3,
-    availability: 3,
-    authenticity: 3,
-    nonRepudiation: 3,
+    confidentiality: 1,
+    integrity: 1,
+    availability: 1,
+    authenticity: 1,
+    nonRepudiation: 1,
   } : {
     name: '',
     category: 'Perangkat Keras' as AssetCategory,
@@ -101,13 +99,13 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     owner: '',
     status: 'Aktif' as AssetStatus,
     purchaseDate: format(new Date(), 'yyyy-MM-dd'),
-    expiryDate: format(new Date(new Date().setFullYear(new Date().getFullYear() + 5)), 'yyyy-MM-dd'),
-    confidentiality: 3,
-    integrity: 3,
-    availability: 3,
-    authenticity: 3,
-    nonRepudiation: 3,
-    classification: 'Sedang' as AssetClassification,
+    expiryDate: format(new Date(new Date().setFullYear(new Date().getFullYear() + 3)), 'yyyy-MM-dd'),
+    confidentiality: 1,
+    integrity: 1,
+    availability: 1,
+    authenticity: 1,
+    nonRepudiation: 1,
+    classification: 'Rendah' as AssetClassification,
   };
   
   const form = useForm<AssetFormValues>({
@@ -226,7 +224,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                 render={({ field }) => (
                 <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValuechange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                         <SelectTrigger>
                         <SelectValue placeholder="Pilih status aset" />
