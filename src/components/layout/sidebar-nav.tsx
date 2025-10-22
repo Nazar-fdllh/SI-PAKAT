@@ -26,7 +26,7 @@ import { useSession } from '@/hooks/use-session';
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { state, toggleSidebar } = useSidebar();
+  const { state } = useSidebar();
   const { user } = useSession();
 
   const menuItems = [
@@ -98,18 +98,6 @@ export function SidebarNav() {
             ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <Separator className="my-2 bg-sidebar-border" />
-        <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={toggleSidebar} icon={state === 'expanded' ? <ChevronsLeft /> : <ChevronsRight />}>
-                <span>
-                    {state === 'expanded' ? 'Collapse' : 'Expand'}
-                </span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </>
   );
 }
