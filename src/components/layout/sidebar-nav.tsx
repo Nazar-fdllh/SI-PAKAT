@@ -84,7 +84,7 @@ export function SidebarNav({ user }: SidebarNavProps) {
             .filter((item) => item.roles.includes(user.role))
             .map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href}>
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     icon={item.icon}
