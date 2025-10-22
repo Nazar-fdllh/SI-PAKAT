@@ -8,7 +8,7 @@ export type User = {
   avatarUrl: string;
 };
 
-export type AssetCategory = 'Perangkat Keras' | 'Aplikasi & Data' | 'SDM & Pihak Ketiga' | 'Sarana Pendukung';
+export type AssetCategory = 'Perangkat Keras' | 'Perangkat Lunak' | 'Sarana Pendukung' | 'Data & Informasi' | 'SDM & Pihak Ketiga';
 
 export type AssetStatus = 'Aktif' | 'Dalam Perbaikan' | 'Non-Aktif' | 'Akan Kadaluarsa';
 
@@ -33,11 +33,11 @@ export type Assessment = {
   assetId: string;
   assessedBy: string;
   assessmentDate: string; // YYYY-MM-DD
-  confidentiality: number; // 1-5
-  integrity: number; // 1-5
-  availability: number; // 1-5
-  authenticity: number; // 1-5
-  nonRepudiation: number; // 1-5
+  confidentiality: number; // 1-3
+  integrity: number; // 1-3
+  availability: number; // 1-3
+  authenticity: number; // 1-3
+  nonRepudiation: number; // 1-3
   totalScore: number;
   classification: AssetClassification;
 };

@@ -28,7 +28,7 @@ import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useEffect } from 'react';
 
-const assetCategories: AssetCategory[] = ['Perangkat Keras', 'Aplikasi & Data', 'SDM & Pihak Ketiga', 'Sarana Pendukung'];
+const assetCategories: AssetCategory[] = ['Perangkat Keras', 'Perangkat Lunak', 'Sarana Pendukung', 'Data & Informasi', 'SDM & Pihak Ketiga'];
 const assetStatuses: AssetStatus[] = ['Aktif', 'Dalam Perbaikan', 'Non-Aktif', 'Akan Kadaluarsa'];
 
 const criteria = [
@@ -48,6 +48,7 @@ const scoreOptions = [
 const thresholds = {
   high: 11,
   medium: 6,
+  low: 5,
 };
 
 const formSchema = z.object({
@@ -76,9 +77,9 @@ interface AssetFormProps {
 }
 
 const getClassification = (score: number): AssetClassification => {
-  if (score >= thresholds.high) return 'Tinggi';
-  if (score >= thresholds.medium) return 'Sedang';
-  return 'Rendah';
+    if (score >= thresholds.high) return 'Tinggi';
+    if (score >= thresholds.medium) return 'Sedang';
+    return 'Rendah';
 };
 
 export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
@@ -86,7 +87,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     ...asset,
     purchaseDate: format(new Date(asset.purchaseDate), 'yyyy-MM-dd'),
     expiryDate: format(new Date(asset.expiryDate), 'yyyy-MM-dd'),
-    confidentiality: 1,
+    confidentiality: 1, // Default scores for editing, can be adjusted
     integrity: 1,
     availability: 1,
     authenticity: 1,

@@ -237,7 +237,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
     },
   })
 
-  const categories: AssetCategory[] = ['Perangkat Keras', 'Aplikasi & Data', 'SDM & Pihak Ketiga', 'Sarana Pendukung'];
+  const categories: AssetCategory[] = ['Perangkat Keras', 'Perangkat Lunak', 'Sarana Pendukung', 'Data & Informasi', 'SDM & Pihak Ketiga'];
 
   return (
     <div className="w-full">
