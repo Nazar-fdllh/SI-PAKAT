@@ -11,9 +11,13 @@ import { BarChart, DollarSign, Database, ShieldAlert, Activity } from "lucide-re
 import AssetClassificationChart from "@/components/dashboard/asset-classification-chart";
 import AssetValueDistributionChart from "@/components/dashboard/asset-value-chart";
 import RecentAssetsTable from "@/components/dashboard/recent-assets-table";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
+  if(!user) {
+    redirect('/login');
+  }
   const totalAssets = assets.length;
   const highValueAssets = assets.filter(a => a.classification === 'Tinggi').length;
   const expiringSoonAssets = assets.filter(a => a.status === 'Akan Kadaluarsa').length;

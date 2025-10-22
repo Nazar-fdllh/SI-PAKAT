@@ -41,7 +41,7 @@ import Link from "next/link"
 
 type AssetTableProps = {
   initialAssets: Asset[];
-  userRole: UserRole;
+  userRole: UserRole | null;
 };
 
 export default function AssetTable({ initialAssets, userRole }: AssetTableProps) {

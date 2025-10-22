@@ -10,17 +10,19 @@ const session = {
   role: 'Administrator' as UserRole,
 };
 
-export const getCurrentUser = async (): Promise<User> => {
+export async function getCurrentUser(): Promise<User | undefined> {
   const cookieStore = cookies();
   const roleCookie = cookieStore.get('user_role');
-  
-  const currentRole = (roleCookie?.value as UserRole) || session.role;
+
+  const currentRole = (roleCookie?.value as UserRole);
+
+  if (!currentRole) return undefined;
   
   const user = users.find(u => u.role === currentRole);
-  return user || users[0]; // Fallback to the first user (Admin)
+  return user;
 };
 
-export const getRole = async (): Promise<UserRole> => {
+export async function getRole(): Promise<UserRole | null> {
     const user = await getCurrentUser();
-    return user.role;
+    return user?.role || null;
 }

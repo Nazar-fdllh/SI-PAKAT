@@ -7,7 +7,7 @@ import AssessmentForm from '@/components/assets/assessment-form';
 import AssessmentHistory from '@/components/assets/assessment-history';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getRole } from '@/lib/session';
+import { getRole } from '@/lib/client-session';
 import { useEffect, useState } from 'react';
 import type { UserRole } from '@/lib/definitions';
 import { ArrowLeft } from 'lucide-react';
