@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { getRole } from '@/lib/client-session';
 import { initialUsers } from '@/lib/data';
 import UserTable from '@/components/users/user-table';
@@ -11,19 +11,23 @@ import { UserDialog } from '@/components/users/user-dialog';
 import type { User, UserRole } from '@/lib/definitions';
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     getRole().then(userRole => {
       if (userRole !== 'Administrator') {
-        redirect('/dashboard');
+        router.push('/dashboard');
+      } else {
+        setRole(userRole);
+        setLoading(false);
       }
-      setRole(userRole);
     });
-  }, []);
+  }, [router]);
 
   const handleAddUser = () => {
     setSelectedUser(null);
@@ -58,7 +62,7 @@ export default function UsersPage() {
     setSelectedUser(null);
   };
 
-  if (role !== 'Administrator') {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
         <p>Memuat atau mengalihkan...</p>

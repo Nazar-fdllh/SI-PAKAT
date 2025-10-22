@@ -12,11 +12,15 @@ import { AssetDialog } from '@/components/assets/asset-dialog';
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>(staticAssets);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
   useEffect(() => {
-    getRole().then(setRole);
+    getRole().then(userRole => {
+      setRole(userRole);
+      setLoading(false);
+    });
   }, []);
 
   const canManage = role === 'Administrator' || role === 'Manajer Aset';
@@ -65,7 +69,7 @@ export default function AssetsPage() {
             Kelola dan pantau semua aset TIK di organisasi Anda.
           </p>
         </div>
-        {canManage && (
+        {!loading && canManage && (
           <Button onClick={handleAddAsset}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Tambah Aset
@@ -78,6 +82,7 @@ export default function AssetsPage() {
         userRole={role}
         onEdit={handleEditAsset}
         onDelete={handleDeleteAsset}
+        isLoading={loading}
       />
 
       <AssetDialog

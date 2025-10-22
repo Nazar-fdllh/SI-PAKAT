@@ -62,9 +62,10 @@ type AssetTableProps = {
   userRole: UserRole | null;
   onEdit: (asset: Asset) => void;
   onDelete: (assetId: string) => void;
+  isLoading: boolean;
 };
 
-export default function AssetTable({ assets, userRole, onEdit, onDelete }: AssetTableProps) {
+export default function AssetTable({ assets, userRole, onEdit, onDelete, isLoading }: AssetTableProps) {
   const [data, setData] = React.useState(assets);
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -111,7 +112,11 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+      cell: ({ row }) => (
+          <Link href={`/assets/${row.original.id}`} className="font-medium hover:underline">
+            {row.getValue("name")}
+          </Link>
+        ),
     },
     {
       accessorKey: "assetCode",
@@ -169,10 +174,10 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
     },
     {
       id: "actions",
-      enableHiding: canManage ? true : false,
+      enableHiding: false,
       cell: ({ row }) => {
         const asset = row.original
-        if (!canManage) return null;
+        if (isLoading || !canManage) return null;
 
         return (
           <AlertDialog>
@@ -191,7 +196,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onEdit(asset)}>Edit Aset</DropdownMenuItem>
                 <AlertDialogTrigger asChild>
-                  <DropdownMenuItem className="text-destructive">Hapus Aset</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-red-100 dark:focus:bg-red-900/80">Hapus Aset</DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -205,7 +210,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(asset.id)}>Hapus</AlertDialogAction>
+                  <AlertDialogAction onClick={() => onDelete(asset.id)} className={buttonVariants({ variant: "destructive" })}>Hapus</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
           </AlertDialog>
@@ -213,11 +218,6 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
       },
     },
   ];
-
-  if (!canManage) {
-    // Hide actions column if user cannot manage
-    columns.pop();
-  }
 
   const table = useReactTable({
     data,
@@ -252,12 +252,12 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
           className="max-w-sm"
         />
         <Select
-          value={(table.getColumn('category')?.getFilterValue() as string) ?? ''}
+          value={((table.getColumn('category')?.getFilterValue() ?? []) as string[])[0] ?? ''}
           onValueChange={(value) => {
             table.getColumn('category')?.setFilterValue(value === 'all' ? undefined : [value]);
           }}
         >
-          <SelectTrigger className="w-[180px] ml-auto">
+          <SelectTrigger className="w-[240px] ml-auto">
             <SelectValue placeholder="Filter Kategori" />
           </SelectTrigger>
           <SelectContent>
@@ -285,7 +285,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className={header.id === 'actions' ? 'text-right' : ''}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -306,7 +306,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className={cell.column.id === 'actions' ? 'text-right' : ''}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -321,7 +321,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {isLoading ? "Memuat data..." : "Tidak ada hasil."}
                 </TableCell>
               </TableRow>
             )}
@@ -330,8 +330,8 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} dari{" "}
+          {table.getFilteredRowModel().rows.length} baris dipilih.
         </div>
         <div className="space-x-2">
           <Button
@@ -340,7 +340,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            Sebelumnya
           </Button>
           <Button
             variant="outline"
@@ -348,7 +348,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            Berikutnya
           </Button>
         </div>
       </div>
