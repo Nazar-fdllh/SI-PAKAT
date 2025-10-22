@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -52,12 +53,6 @@ export function SidebarNav() {
       label: 'Manajemen Pengguna',
       icon: <Users />,
       roles: ['Administrator'],
-    },
-     {
-      href: '/profile',
-      label: 'Profil Saya',
-      icon: <UserIcon />,
-      roles: ['Administrator', 'Manajer Aset', 'Auditor/Pimpinan'],
     },
     {
       href: '/settings',
