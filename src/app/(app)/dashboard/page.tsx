@@ -5,9 +5,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { assets } from "@/lib/data";
+import { initialAssets } from "@/lib/data";
 import { getCurrentUser } from "@/lib/session";
-import { BarChart, DollarSign, Database, ShieldAlert, Activity } from "lucide-react";
+import { BarChart, Database, ShieldAlert, Activity } from "lucide-react";
 import AssetClassificationChart from "@/components/dashboard/asset-classification-chart";
 import AssetValueDistributionChart from "@/components/dashboard/asset-value-chart";
 import RecentAssetsTable from "@/components/dashboard/recent-assets-table";
@@ -18,16 +18,14 @@ export default async function DashboardPage() {
   if(!user) {
     redirect('/login');
   }
-  const totalAssets = assets.length;
-  const highValueAssets = assets.filter(a => a.classification === 'Tinggi').length;
-  const expiringSoonAssets = assets.filter(a => a.status === 'Akan Kadaluarsa').length;
-  const totalAssetValue = assets.reduce((sum, asset) => sum + asset.value, 0);
+  const totalAssets = initialAssets.length;
+  const highValueAssets = initialAssets.filter(a => a.classification === 'Tinggi').length;
+  const expiringSoonAssets = initialAssets.filter(a => a.status === 'Akan Kadaluarsa').length;
 
   const stats = [
     { title: "Total Aset", value: totalAssets, icon: <Database className="h-4 w-4 text-muted-foreground" /> },
-    { title: "Nilai Aset Tinggi", value: highValueAssets, icon: <ShieldAlert className="h-4 w-4 text-muted-foreground" /> },
+    { title: "Aset Klasifikasi Tinggi", value: highValueAssets, icon: <ShieldAlert className="h-4 w-4 text-muted-foreground" /> },
     { title: "Aset Akan Kadaluarsa", value: expiringSoonAssets, icon: <Activity className="h-4 w-4 text-muted-foreground" /> },
-    { title: "Total Nilai Aset", value: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalAssetValue), icon: <DollarSign className="h-4 w-4 text-muted-foreground" /> }
   ];
 
   return (
@@ -36,7 +34,7 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight font-headline">Dasbor</h1>
       </div>
       <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {stats.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -52,7 +50,7 @@ export default async function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="lg:col-span-4">
             <CardHeader>
-              <CardTitle className="font-headline">Distribusi Nilai Aset</CardTitle>
+              <CardTitle className="font-headline">Distribusi Aset per Kategori</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
               <AssetValueDistributionChart />

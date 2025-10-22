@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { assets } from '@/lib/data'
+import { initialAssets } from '@/lib/data'
 import { Button } from '@/components/ui/button'
 import { Printer, Shield, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
@@ -31,21 +31,16 @@ function ReportHeader({ title }: { title: string }) {
 
 function ReportStats({ data }: { data: Asset[] }) {
     const totalAssets = data.length;
-    const totalValue = data.reduce((sum, asset) => sum + asset.value, 0);
     const classifications = data.reduce((acc, asset) => {
         acc[asset.classification] = (acc[asset.classification] || 0) + 1;
         return acc;
     }, {} as Record<AssetClassification, number>);
 
   return (
-    <div className="grid grid-cols-4 gap-4 my-6 text-center">
+    <div className="grid grid-cols-3 gap-4 my-6 text-center">
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
         <p className="text-sm text-gray-600 dark:text-gray-400">Total Aset</p>
         <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{totalAssets}</p>
-      </div>
-      <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">Total Nilai</p>
-        <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalValue)}</p>
       </div>
        <div className="p-4 bg-red-100 dark:bg-red-900/50 rounded-lg">
         <p className="text-sm text-red-600 dark:text-red-300">Klas. Tinggi</p>
@@ -65,7 +60,7 @@ export default function ReportPage() {
   const classificationFilter = searchParams.get('classification') as AssetClassification | null
   const statusFilter = searchParams.get('status') as AssetStatus | null
 
-  const filteredAssets = assets.filter(asset => {
+  const filteredAssets = initialAssets.filter(asset => {
     if (classificationFilter && asset.classification !== classificationFilter) return false;
     if (statusFilter && asset.status !== statusFilter) return false;
     return true;

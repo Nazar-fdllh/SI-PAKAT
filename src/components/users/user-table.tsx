@@ -34,71 +34,103 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { type User } from "@/lib/definitions"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type UserTableProps = {
-  initialUsers: User[];
+  users: User[];
+  onEdit: (user: User) => void;
+  onDelete: (userId: string) => void;
 };
 
-export const columns: ColumnDef<User>[] = [
-  {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Nama
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-3">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={row.original.avatarUrl} alt={row.original.name} />
-          <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <span className="font-medium">{row.getValue("name")}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
-  {
-    accessorKey: "role",
-    header: "Peran",
-    cell: ({ row }) => <Badge variant="outline">{row.getValue("role")}</Badge>,
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const user = row.original
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-            <DropdownMenuItem>Edit Pengguna</DropdownMenuItem>
-            <DropdownMenuItem>Ubah Peran</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Hapus</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
-  },
-]
-
-export default function UserTable({ initialUsers }: UserTableProps) {
-  const [data] = React.useState(initialUsers)
+export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
+  const [data, setData] = React.useState(users);
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+
+  React.useEffect(() => {
+    setData(users);
+  }, [users]);
+  
+  const columns: ColumnDef<User>[] = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Nama
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={row.original.avatarUrl} alt={row.original.name} />
+            <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <span className="font-medium">{row.getValue("name")}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+    },
+    {
+      accessorKey: "role",
+      header: "Peran",
+      cell: ({ row }) => <Badge variant="outline">{row.getValue("role")}</Badge>,
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+            <AlertDialog>
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => onEdit(user)}>Edit Pengguna</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <AlertDialogTrigger asChild>
+                        <DropdownMenuItem className="text-destructive">Hapus</DropdownMenuItem>
+                    </AlertDialogTrigger>
+                </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Anda yakin ingin menghapus pengguna ini?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Aksi ini tidak dapat dibatalkan. Ini akan menghapus pengguna "{user.name}" secara permanen.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(user.id)}>Hapus</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+          </AlertDialog>
+        )
+      },
+    },
+  ]
 
   const table = useReactTable({
     data,

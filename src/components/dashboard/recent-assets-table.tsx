@@ -7,13 +7,13 @@ import {
     TableRow,
   } from "@/components/ui/table"
   import { Badge } from "@/components/ui/badge"
-  import { assets } from "@/lib/data"
+  import { initialAssets } from "@/lib/data"
   import { cn } from "@/lib/utils"
   import { format, parseISO } from "date-fns"
   import { id } from "date-fns/locale"
   
   export default function RecentAssetsTable() {
-    const recentAssets = [...assets]
+    const recentAssets = [...initialAssets]
       .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime())
       .slice(0, 5);
   
@@ -25,7 +25,7 @@ import {
             <TableHead>Kategori</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Tanggal Pembelian</TableHead>
-            <TableHead className="text-right">Nilai</TableHead>
+            <TableHead className="text-right">Klasifikasi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -48,9 +48,7 @@ import {
                 </Badge>
               </TableCell>
               <TableCell>{format(parseISO(asset.purchaseDate), 'dd MMM yyyy', { locale: id })}</TableCell>
-              <TableCell className="text-right">
-                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(asset.value)}
-              </TableCell>
+              <TableCell className="text-right font-medium">{asset.classification}</TableCell>
             </TableRow>
           ))}
         </TableBody>

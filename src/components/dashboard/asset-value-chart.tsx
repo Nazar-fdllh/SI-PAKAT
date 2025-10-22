@@ -1,7 +1,7 @@
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { assets } from '@/lib/data';
+import { initialAssets } from '@/lib/data';
 import type { AssetCategory } from '@/lib/definitions';
 import {
   ChartConfig,
@@ -9,7 +9,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-const chartData = assets.reduce((acc, asset) => {
+const chartData = initialAssets.reduce((acc, asset) => {
   const category = asset.category;
   const existing = acc.find((item) => item.category === category);
   if (existing) {
@@ -41,7 +41,7 @@ export default function AssetValueDistributionChart() {
             tickLine={false}
             tickMargin={10}
             axisLine={false}
-            tickFormatter={(value) => value.slice(0, 3)}
+            tickFormatter={(value) => value.slice(0, 10)}
           />
           <YAxis allowDecimals={false} />
            <Tooltip

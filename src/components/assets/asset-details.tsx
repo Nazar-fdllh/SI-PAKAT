@@ -67,10 +67,6 @@ export default function AssetDetails({ asset }: { asset: Asset }) {
         label="Tgl. Kadaluarsa"
         value={format(parseISO(asset.expiryDate), 'dd MMM yyyy', { locale: id })}
       />
-      <DetailItem
-        label="Nilai Aset"
-        value={new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(asset.value)}
-      />
     </div>
   );
 }

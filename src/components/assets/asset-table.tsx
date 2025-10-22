@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, FileDown, PlusCircle } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, FileDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -38,18 +38,42 @@ import { Badge } from "@/components/ui/badge"
 import { type Asset, type AssetCategory, type UserRole } from "@/lib/definitions"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type AssetTableProps = {
-  initialAssets: Asset[];
+  assets: Asset[];
   userRole: UserRole | null;
+  onEdit: (asset: Asset) => void;
+  onDelete: (assetId: string) => void;
 };
 
-export default function AssetTable({ initialAssets, userRole }: AssetTableProps) {
-  const [data, setData] = React.useState(initialAssets);
+export default function AssetTable({ assets, userRole, onEdit, onDelete }: AssetTableProps) {
+  const [data, setData] = React.useState(assets);
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+
+  React.useEffect(() => {
+    setData(assets);
+  }, [assets]);
 
   const canManage = userRole === 'Administrator' || userRole === 'Manajer Aset';
 
@@ -95,12 +119,12 @@ export default function AssetTable({ initialAssets, userRole }: AssetTableProps)
       cell: ({ row }) => <div>{row.getValue("assetCode")}</div>,
     },
     {
-      accessorKey: "category",
-      header: "Kategori",
-      cell: ({ row }) => <div>{row.getValue("category")}</div>,
-      filterFn: (row, id, value) => {
-        return value.includes(row.getValue(id))
-      },
+        accessorKey: "category",
+        header: "Kategori",
+        cell: ({ row }) => <div>{row.getValue("category")}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
     },
     {
       accessorKey: "status",
@@ -145,35 +169,55 @@ export default function AssetTable({ initialAssets, userRole }: AssetTableProps)
     },
     {
       id: "actions",
-      enableHiding: false,
+      enableHiding: canManage ? true : false,
       cell: ({ row }) => {
         const asset = row.original
+        if (!canManage) return null;
+
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-              <Link href={`/assets/${asset.id}`} passHref>
-                <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
-              </Link>
-              {canManage && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Edit Aset</DropdownMenuItem>
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                <Link href={`/assets/${asset.id}`} passHref>
+                  <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onEdit(asset)}>Edit Aset</DropdownMenuItem>
+                <AlertDialogTrigger asChild>
                   <DropdownMenuItem className="text-destructive">Hapus Aset</DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Anda yakin ingin menghapus aset ini?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Aksi ini tidak dapat dibatalkan. Ini akan menghapus aset
+                    "{asset.name}" secara permanen.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(asset.id)}>Hapus</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+          </AlertDialog>
         )
       },
     },
   ];
+
+  if (!canManage) {
+    // Hide actions column if user cannot manage
+    columns.pop();
+  }
 
   const table = useReactTable({
     data,
@@ -194,7 +238,7 @@ export default function AssetTable({ initialAssets, userRole }: AssetTableProps)
     },
   })
 
-  const categories: AssetCategory[] = ['Perangkat Keras', 'Perangkat Lunak', 'Sarana Pendukung', 'Data & Informasi'];
+  const categories: AssetCategory[] = ['Perangkat Keras', 'Aplikasi & Data', 'SDM & Pihak Ketiga', 'Sarana Pendukung'];
 
   return (
     <div className="w-full">
@@ -207,33 +251,25 @@ export default function AssetTable({ initialAssets, userRole }: AssetTableProps)
           }
           className="max-w-sm"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Kategori <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+        <Select
+          value={(table.getColumn('category')?.getFilterValue() as string) ?? ''}
+          onValueChange={(value) => {
+            table.getColumn('category')?.setFilterValue(value === 'all' ? undefined : [value]);
+          }}
+        >
+          <SelectTrigger className="w-[180px] ml-auto">
+            <SelectValue placeholder="Filter Kategori" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Kategori</SelectItem>
             {categories.map((category) => (
-                <DropdownMenuCheckboxItem
-                    key={category}
-                    className="capitalize"
-                    checked={(table.getColumn("category")?.getFilterValue() as string[])?.includes(category) ?? false}
-                    onCheckedChange={(checked) => {
-                        const currentFilter = (table.getColumn("category")?.getFilterValue() as string[]) || [];
-                        const newFilter = checked
-                        ? [...currentFilter, category]
-                        : currentFilter.filter((c) => c !== category);
-                        table.getColumn("category")?.setFilterValue(newFilter.length ? newFilter : undefined);
-                    }}
-                >
-                    {category}
-                </DropdownMenuCheckboxItem>
-             ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
          {userRole === 'Auditor/Pimpinan' && (
           <Link href="/print/report" passHref>
              <Button>

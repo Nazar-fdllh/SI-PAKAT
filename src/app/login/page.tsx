@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { Shield } from 'lucide-react';
+import { Shield, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoginForm } from '@/components/auth/login-form';
+import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
   return (
@@ -20,9 +21,14 @@ export default function LoginPage() {
             <LoginForm />
           </CardContent>
         </Card>
-        <p className="px-8 text-center text-sm text-muted-foreground mt-4">
-          Pendaftaran pengguna baru hanya dapat dilakukan oleh Administrator.
-        </p>
+        <div className="mt-4 text-center">
+            <Link href="/" passHref>
+                <Button variant="link">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Kembali ke Halaman Utama
+                </Button>
+            </Link>
+        </div>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export type User = {
   avatarUrl: string;
 };
 
-export type AssetCategory = 'Perangkat Keras' | 'Perangkat Lunak' | 'Sarana Pendukung' | 'Data & Informasi';
+export type AssetCategory = 'Perangkat Keras' | 'Aplikasi & Data' | 'SDM & Pihak Ketiga' | 'Sarana Pendukung';
 
 export type AssetStatus = 'Aktif' | 'Dalam Perbaikan' | 'Non-Aktif' | 'Akan Kadaluarsa';
 
@@ -25,7 +25,6 @@ export type Asset = {
   status: AssetStatus;
   purchaseDate: string; // YYYY-MM-DD
   expiryDate: string; // YYYY-MM-DD
-  value: number;
   classification: AssetClassification;
 };
 

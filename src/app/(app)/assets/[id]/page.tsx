@@ -1,6 +1,6 @@
 'use client';
 
-import { assets, assessments as allAssessments } from '@/lib/data';
+import { initialAssets, initialAssessments } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import AssetDetails from '@/components/assets/asset-details';
 import AssessmentForm from '@/components/assets/assessment-form';
@@ -22,8 +22,8 @@ export default function AssetDetailPage() {
     getRole().then(setRole);
   }, []);
 
-  const asset = assets.find((a) => a.id === id);
-  const assessments = allAssessments.filter((a) => a.assetId === id);
+  const asset = initialAssets.find((a) => a.id === id);
+  const assessments = initialAssessments.filter((a) => a.assetId === id);
 
   if (!asset) {
     notFound();
