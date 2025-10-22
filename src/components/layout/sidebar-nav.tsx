@@ -18,8 +18,7 @@ import {
   Settings,
   FileText,
   Shield,
-  ChevronsLeft,
-  ChevronsRight,
+  User as UserIcon
 } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useSession } from '@/hooks/use-session';
@@ -53,6 +52,12 @@ export function SidebarNav() {
       label: 'Manajemen Pengguna',
       icon: <Users />,
       roles: ['Administrator'],
+    },
+     {
+      href: '/profile',
+      label: 'Profil Saya',
+      icon: <UserIcon />,
+      roles: ['Administrator', 'Manajer Aset', 'Auditor/Pimpinan'],
     },
     {
       href: '/settings',
