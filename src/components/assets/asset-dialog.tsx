@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AssetForm } from './asset-form';
 import type { Asset } from '@/lib/definitions';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface AssetDialogProps {
   isOpen: boolean;
@@ -22,20 +23,22 @@ interface AssetDialogProps {
 export function AssetDialog({ isOpen, onOpenChange, onSave, asset }: AssetDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[625px]">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-headline">
             {asset ? 'Edit Aset' : 'Tambah Aset Baru'}
           </DialogTitle>
           <DialogDescription>
-            {asset ? 'Perbarui detail aset di bawah ini.' : 'Isi formulir di bawah ini untuk menambahkan aset baru.'}
+            {asset ? 'Perbarui detail aset dan penilaiannya di bawah ini.' : 'Isi formulir di bawah ini untuk menambahkan aset baru dan melakukan penilaian awal.'}
           </DialogDescription>
         </DialogHeader>
-        <AssetForm
-          asset={asset}
-          onSave={onSave}
-          onCancel={() => onOpenChange(false)}
-        />
+        <ScrollArea className="max-h-[70vh] p-4">
+            <AssetForm
+              asset={asset}
+              onSave={onSave}
+              onCancel={() => onOpenChange(false)}
+            />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
