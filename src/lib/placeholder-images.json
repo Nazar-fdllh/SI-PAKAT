@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-background",
+      "description": "Abstract background of a secure digital network.",
+      "imageUrl": "https://images.unsplash.com/photo-1618767451283-c9705dff0874?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzZWN1cml0eSUyMG5ldHdvcmt8ZW58MHx8fHwxNzYxMDQ1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "security network"
+    },
+    {
+      "id": "feature-inventory",
+      "description": "Image representing asset inventory management.",
+      "imageUrl": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhc3NldCUyMG1hbmFnZW1lbnR8ZW58MHx8fHwxNzYxMDA0NzA4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "asset management"
+    },
+    {
+      "id": "feature-assessment",
+      "description": "Image representing security assessment.",
+      "imageUrl": "https://images.unsplash.com/photo-1653038417367-8a090dd47717?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzZWN1cml0eSUyMGFzc2Vzc21lbnR8ZW58MHx8fHwxNzYxMTAyNTAxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "security assessment"
+    },
+    {
+      "id": "feature-reporting",
+      "description": "Image representing dashboard and reporting.",
+      "imageUrl": "https://images.unsplash.com/photo-1748609278627-4b0e483b9b70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkYXNoYm9hcmQlMjByZXBvcnR8ZW58MHx8fHwxNzYxMTAyNTAxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dashboard report"
+    }
+  ]
 }
