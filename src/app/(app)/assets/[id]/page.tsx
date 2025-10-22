@@ -1,7 +1,7 @@
 'use client';
 
 import { assets, assessments as allAssessments } from '@/lib/data';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useParams } from 'next/navigation';
 import AssetDetails from '@/components/assets/asset-details';
 import AssessmentForm from '@/components/assets/assessment-form';
 import AssessmentHistory from '@/components/assets/assessment-history';
@@ -12,16 +12,18 @@ import { useEffect, useState } from 'react';
 import type { UserRole } from '@/lib/definitions';
 import { ArrowLeft } from 'lucide-react';
 
-export default function AssetDetailPage({ params }: { params: { id: string } }) {
+export default function AssetDetailPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
   const [role, setRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     getRole().then(setRole);
   }, []);
 
-  const asset = assets.find((a) => a.id === params.id);
-  const assessments = allAssessments.filter((a) => a.assetId === params.id);
+  const asset = assets.find((a) => a.id === id);
+  const assessments = allAssessments.filter((a) => a.assetId === id);
 
   if (!asset) {
     notFound();
