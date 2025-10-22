@@ -195,7 +195,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onEdit(asset)}>Edit Aset</DropdownMenuItem>
                 <AlertDialogTrigger asChild>
-                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-red-100 dark:focus:bg-red-900/80">Hapus Aset</DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/40 dark:focus:text-red-400">Hapus Aset</DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -203,13 +203,12 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                 <AlertDialogHeader>
                   <AlertDialogTitle>Anda yakin ingin menghapus aset ini?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Aksi ini tidak dapat dibatalkan. Ini akan menghapus aset
-                    "{asset.name}" secara permanen.
+                    Tindakan ini tidak dapat dibatalkan. Ini akan menghapus aset <span className="font-semibold text-foreground">{asset.name}</span> ({asset.assetCode}) secara permanen dari sistem.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(asset.id)} className={buttonVariants({ variant: "destructive" })}>Hapus</AlertDialogAction>
+                  <AlertDialogAction onClick={() => onDelete(asset.id)} className={buttonVariants({ variant: "destructive" })}>Ya, Hapus Aset</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
           </AlertDialog>

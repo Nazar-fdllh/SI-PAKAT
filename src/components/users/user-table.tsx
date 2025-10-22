@@ -13,7 +13,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -110,7 +110,7 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                     <DropdownMenuItem onClick={() => onEdit(user)}>Edit Pengguna</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <AlertDialogTrigger asChild>
-                        <DropdownMenuItem className="text-destructive">Hapus</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/40 dark:focus:text-red-400">Hapus Pengguna</DropdownMenuItem>
                     </AlertDialogTrigger>
                 </DropdownMenuContent>
                 </DropdownMenu>
@@ -118,12 +118,12 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Anda yakin ingin menghapus pengguna ini?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Aksi ini tidak dapat dibatalkan. Ini akan menghapus pengguna "{user.name}" secara permanen.
+                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus pengguna <span className="font-semibold text-foreground">{user.name}</span> ({user.email}) secara permanen dari sistem.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(user.id)}>Hapus</AlertDialogAction>
+                    <AlertDialogAction onClick={() => onDelete(user.id)} className={buttonVariants({ variant: "destructive" })}>Ya, Hapus Pengguna</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
           </AlertDialog>
