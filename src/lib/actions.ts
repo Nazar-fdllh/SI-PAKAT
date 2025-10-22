@@ -36,8 +36,8 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   // In a real app, you would verify the password here.
-  // For this demo, we'll just set the role in a cookie.
-  cookies().set('user_role', user.role, {
+  // For this demo, we'll set the user's email in a cookie.
+  cookies().set('user_email', user.email, {
     httpOnly: true,
     path: '/',
     maxAge: 60 * 60 * 24 * 7, // 1 week
@@ -47,7 +47,7 @@ export async function login(prevState: any, formData: FormData) {
 }
 
 export async function logout() {
-  cookies().delete('user_role');
+  cookies().delete('user_email');
   redirect('/login');
 }
 

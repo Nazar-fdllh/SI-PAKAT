@@ -1,24 +1,19 @@
-// In a real app, this would be handled by your auth provider.
-// For this demo, we'll use a simple object to simulate the session.
-// You can change the role here to test different user views.
+'use server';
+
 import type { User, UserRole } from './definitions';
 import { users } from './data';
 import { cookies } from 'next/headers';
 
-const session = {
-  // Options: 'Administrator', 'Manajer Aset', 'Auditor/Pimpinan'
-  role: 'Administrator' as UserRole,
-};
 
 export async function getCurrentUser(): Promise<User | undefined> {
   const cookieStore = cookies();
-  const roleCookie = cookieStore.get('user_role');
+  const emailCookie = cookieStore.get('user_email');
 
-  const currentRole = (roleCookie?.value as UserRole);
+  const currentUserEmail = emailCookie?.value;
 
-  if (!currentRole) return undefined;
+  if (!currentUserEmail) return undefined;
   
-  const user = users.find(u => u.role === currentRole);
+  const user = users.find(u => u.email === currentUserEmail);
   return user;
 };
 
