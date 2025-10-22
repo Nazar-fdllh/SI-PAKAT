@@ -1,7 +1,7 @@
 'use client';
 
 import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from 'recharts';
-import { assets } from '@/lib/data';
+import { initialAssets as assets } from '@/lib/data';
 import type { AssetClassification } from '@/lib/definitions';
 import { useTheme } from 'next-themes';
 import {

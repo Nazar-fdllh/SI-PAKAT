@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Printer, FileText } from "lucide-react";
 import Link from "next/link";
-import { assets } from "@/lib/data";
+import { initialAssets as assets } from "@/lib/data";
 
 export default async function ReportsPage() {
   const role = await getRole();

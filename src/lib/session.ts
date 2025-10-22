@@ -1,7 +1,7 @@
 'use server';
 
 import type { User, UserRole } from './definitions';
-import { users } from './data';
+import { initialUsers } from './data';
 import { cookies } from 'next/headers';
 
 
@@ -13,7 +13,7 @@ export async function getCurrentUser(): Promise<User | undefined> {
 
   if (!currentUserEmail) return undefined;
   
-  const user = users.find(u => u.email === currentUserEmail);
+  const user = initialUsers.find(u => u.email === currentUserEmail);
   return user;
 };
 

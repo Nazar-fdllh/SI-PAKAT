@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { users } from './data';
+import { initialUsers } from './data';
 import {
   configureSecurityThresholds,
   type ConfigureSecurityThresholdsInput,
@@ -27,7 +27,7 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   const { email } = validatedFields.data;
-  const user = users.find((u) => u.email === email);
+  const user = initialUsers.find((u) => u.email === email);
 
   if (!user) {
     return {

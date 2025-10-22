@@ -2,7 +2,7 @@
 
 import Cookies from 'js-cookie'
 import type { UserRole } from './definitions'
-import { users } from './data';
+import { initialUsers } from './data';
 
 // This is a simplified client-side session retrieval.
 // In a real app, you might want to fetch user data from an API endpoint
@@ -15,6 +15,6 @@ async function getEmail(): Promise<string | null> {
 export async function getRole(): Promise<UserRole | null> {
     const email = await getEmail();
     if (!email) return null;
-    const user = users.find(u => u.email === email);
+    const user = initialUsers.find(u => u.email === email);
     return user?.role || null;
 }
