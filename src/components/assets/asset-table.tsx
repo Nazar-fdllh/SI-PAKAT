@@ -255,7 +255,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
             table.getColumn('category')?.setFilterValue(value === 'all' ? undefined : [value]);
           }}
         >
-          <SelectTrigger className="w-[240px] ml-auto">
+          <SelectTrigger className="w-[240px]">
             <SelectValue placeholder="Filter Kategori" />
           </SelectTrigger>
           <SelectContent>
@@ -267,6 +267,37 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
             ))}
           </SelectContent>
         </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="ml-auto">
+              Kolom <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id === 'assetCode' ? 'Kode Aset' :
+                     column.id === 'name' ? 'Nama Aset' :
+                     column.id === 'category' ? 'Kategori' :
+                     column.id === 'status' ? 'Status' :
+                     column.id === 'classification' ? 'Klasifikasi' :
+                     column.id}
+                  </DropdownMenuCheckboxItem>
+                )
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
          {userRole === 'Auditor/Pimpinan' && (
           <Link href="/print/report" passHref>
