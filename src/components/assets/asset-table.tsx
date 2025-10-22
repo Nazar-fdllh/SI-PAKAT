@@ -56,6 +56,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { format, parseISO } from "date-fns"
+import { id } from "date-fns/locale"
 
 type AssetTableProps = {
   assets: Asset[];
@@ -68,7 +70,13 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
   const [data, setData] = React.useState(assets);
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    specifications: false,
+    location: false,
+    owner: false,
+    purchaseDate: false,
+    expiryDate: false,
+  })
   const [rowSelection, setRowSelection] = React.useState({})
 
   React.useEffect(() => {
@@ -131,6 +139,21 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
         },
     },
     {
+      accessorKey: "specifications",
+      header: "Spesifikasi",
+      cell: ({ row }) => <div className="max-w-[200px] truncate">{row.getValue("specifications")}</div>,
+    },
+    {
+      accessorKey: "location",
+      header: "Lokasi",
+      cell: ({ row }) => <div>{row.getValue("location")}</div>,
+    },
+    {
+      accessorKey: "owner",
+      header: "Pemilik",
+      cell: ({ row }) => <div>{row.getValue("owner")}</div>,
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
@@ -170,6 +193,16 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
           </Badge>
         );
       },
+    },
+    {
+        accessorKey: "purchaseDate",
+        header: "Tgl. Pembelian",
+        cell: ({ row }) => format(parseISO(row.getValue("purchaseDate")), 'dd MMM yyyy', { locale: id }),
+    },
+    {
+        accessorKey: "expiryDate",
+        header: "Tgl. Kadaluarsa",
+        cell: ({ row }) => format(parseISO(row.getValue("expiryDate")), 'dd MMM yyyy', { locale: id }),
     },
     {
       id: "actions",
@@ -238,6 +271,19 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
 
   const categories: AssetCategory[] = ['Perangkat Keras', 'Perangkat Lunak', 'Sarana Pendukung', 'Data & Informasi', 'SDM & Pihak Ketiga'];
 
+  const columnLabels: Record<string, string> = {
+    name: 'Nama Aset',
+    assetCode: 'Kode Aset',
+    category: 'Kategori',
+    specifications: 'Spesifikasi',
+    location: 'Lokasi',
+    owner: 'Pemilik',
+    status: 'Status',
+    classification: 'Klasifikasi',
+    purchaseDate: 'Tgl. Pembelian',
+    expiryDate: 'Tgl. Kadaluarsa',
+  };
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4 gap-2">
@@ -287,12 +333,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id === 'assetCode' ? 'Kode Aset' :
-                     column.id === 'name' ? 'Nama Aset' :
-                     column.id === 'category' ? 'Kategori' :
-                     column.id === 'status' ? 'Status' :
-                     column.id === 'classification' ? 'Klasifikasi' :
-                     column.id}
+                    {columnLabels[column.id] || column.id}
                   </DropdownMenuCheckboxItem>
                 )
               })}
