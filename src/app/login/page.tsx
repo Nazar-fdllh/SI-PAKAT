@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Shield, ArrowLeft } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { LoginForm } from '@/components/auth/login-form';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +20,11 @@ export default function LoginPage() {
           <CardContent>
             <LoginForm />
           </CardContent>
+          <CardFooter>
+            <p className="text-xs text-muted-foreground text-center w-full">
+              Penambahan akun hanya bisa dilakukan oleh Administrator.
+            </p>
+          </CardFooter>
         </Card>
         <div className="mt-4 text-center">
             <Link href="/" passHref>
