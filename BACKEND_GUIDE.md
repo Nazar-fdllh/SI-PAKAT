@@ -22,7 +22,6 @@ Untuk menjaga kode tetap modular dan mudah dikelola, gunakan struktur folder ber
 /si-pakat-backend
 |-- /config
 |   |-- db.js               # Konfigurasi koneksi database
-|   `-- jwtConfig.js        # Konfigurasi kunci rahasia JWT
 |-- /controllers
 |   |-- authController.js     # Logika untuk login
 |   |-- userController.js     # Logika CRUD untuk pengguna
@@ -203,7 +202,7 @@ module.exports = { isAdmin, isAssetManager, isAuditor, checkRole };
 
 ### `/controllers/authController.js`
 
-Logika untuk menangani login pengguna.
+Logika untuk menangani login pengguna. Password di-hash menggunakan `bcryptjs`.
 
 ```javascript
 // /controllers/authController.js
@@ -220,7 +219,7 @@ exports.login = async (req, res) => {
 
     try {
         const [rows] = await db.execute(
-            'SELECT u.id, u.name, u.email, u.password, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
+            'SELECT u.id, u.username as name, u.email, u.password, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
             [email]
         );
 
@@ -230,10 +229,7 @@ exports.login = async (req, res) => {
 
         const user = rows[0];
 
-        // Di dunia nyata, password akan di-hash. Untuk demo, kita asumsikan password plain-text.
-        // Ganti dengan bcrypt.compareSync jika password sudah di-hash.
-        // const passwordIsValid = bcrypt.compareSync(password, user.password);
-        const passwordIsValid = (password === user.password); // HANYA UNTUK DEMO!
+        const passwordIsValid = bcrypt.compareSync(password, user.password);
 
         if (!passwordIsValid) {
             return res.status(401).json({ message: "Password salah." });
@@ -276,15 +272,126 @@ module.exports = router;
 
 ---
 
+### `/controllers/userController.js`
+
+Logika CRUD lengkap untuk entitas Pengguna. Semua operasi tulis dilindungi hanya untuk Admin.
+
+```javascript
+// /controllers/userController.js
+const db = require('../config/db');
+const bcrypt = require('bcryptjs');
+
+// Dapatkan semua pengguna
+exports.getAllUsers = async (req, res) => {
+    try {
+        const [users] = await db.query(
+            "SELECT u.id, u.username as name, u.email, r.name as role FROM users u JOIN roles r ON u.role_id = r.id"
+        );
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data pengguna', error: error.message });
+    }
+};
+
+// Dapatkan pengguna berdasarkan ID
+exports.getUserById = async (req, res) => {
+    try {
+        const [user] = await db.query("SELECT id, username as name, email, role_id FROM users WHERE id = ?", [req.params.id]);
+        if (user.length === 0) {
+            return res.status(404).json({ message: "Pengguna tidak ditemukan" });
+        }
+        res.json(user[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data pengguna', error: error.message });
+    }
+};
+
+// Buat pengguna baru
+exports.createUser = async (req, res) => {
+    const { username, email, password, role_id } = req.body;
+    try {
+        const hashedPassword = bcrypt.hashSync(password, 8);
+        const [result] = await db.execute(
+            'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
+            [username, email, hashedPassword, role_id]
+        );
+        res.status(201).json({ id: result.insertId, username, email, role_id });
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal menambah pengguna', error: error.message });
+    }
+};
+
+// Update pengguna
+exports.updateUser = async (req, res) => {
+    const { username, email, password, role_id } = req.body;
+    let query = 'UPDATE users SET username = ?, email = ?, role_id = ?';
+    const params = [username, email, role_id];
+
+    if (password) {
+        const hashedPassword = bcrypt.hashSync(password, 8);
+        query += ', password = ?';
+        params.push(hashedPassword);
+    }
+
+    query += ' WHERE id = ?';
+    params.push(req.params.id);
+
+    try {
+        await db.execute(query, params);
+        res.json({ message: 'Pengguna berhasil diperbarui' });
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal memperbarui pengguna', error: error.message });
+    }
+};
+
+// Hapus pengguna
+exports.deleteUser = async (req, res) => {
+    try {
+        await db.execute('DELETE FROM users WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal menghapus pengguna', error: error.message });
+    }
+};
+```
+
+---
+
+### `/routes/userRoutes.js`
+
+Semua endpoint di sini memerlukan verifikasi token dan peran Administrator.
+
+```javascript
+// /routes/userRoutes.js
+const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/userController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+const { isAdmin } = require('../middlewares/roleMiddleware');
+
+// Terapkan middleware untuk semua rute di file ini
+router.use(verifyToken, isAdmin);
+
+router.get('/', userController.getAllUsers);
+router.post('/', userController.createUser);
+router.get('/:id', userController.getUserById);
+router.put('/:id', userController.updateUser);
+router.delete('/:id', userController.deleteUser);
+
+module.exports = router;
+```
+
+---
+
 ### `/controllers/assetController.js`
 
-Contoh logika CRUD untuk Aset.
+Logika CRUD lengkap untuk Aset.
 
 ```javascript
 // /controllers/assetController.js
 const db = require('../config/db');
 
-// Mendapatkan semua aset dengan join untuk nama kategori
+// Mendapatkan semua aset dengan join untuk nama kategori dan nilai terbaru
 exports.getAllAssets = async (req, res) => {
     try {
         const [assets] = await db.query(`
@@ -296,6 +403,24 @@ exports.getAllAssets = async (req, res) => {
             LEFT JOIN classifications c ON a.classification_id = c.id
         `);
         res.json(assets);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
+    }
+};
+
+// Mendapatkan satu aset berdasarkan ID
+exports.getAssetById = async (req, res) => {
+    try {
+        const [asset] = await db.query(`
+            SELECT a.*, c.name as category_name 
+            FROM assets a
+            LEFT JOIN classifications c ON a.classification_id = c.id
+            WHERE a.id = ?
+        `, [req.params.id]);
+        if (asset.length === 0) {
+            return res.status(404).json({ message: 'Aset tidak ditemukan' });
+        }
+        res.json(asset[0]);
     } catch (error) {
         res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
     }
@@ -315,14 +440,36 @@ exports.createAsset = async (req, res) => {
     }
 };
 
-// (Fungsi lain seperti getAssetById, updateAsset, deleteAsset bisa ditambahkan dengan pola serupa)
+// Memperbarui aset
+exports.updateAsset = async (req, res) => {
+    const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner } = req.body;
+    try {
+        await db.execute(
+            'UPDATE assets SET asset_code = ?, asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
+            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, req.params.id]
+        );
+        res.json({ message: 'Aset berhasil diperbarui' });
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal memperbarui aset', error: error.message });
+    }
+};
+
+// Menghapus aset
+exports.deleteAsset = async (req, res) => {
+    try {
+        await db.execute('DELETE FROM assets WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal menghapus aset', error: error.message });
+    }
+};
 ```
 
 ---
 
 ### `/routes/assetRoutes.js`
 
-Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tulis (POST, PUT, DELETE).
+Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tulis (POST, PUT, DELETE). Semua pengguna terautentikasi bisa membaca data.
 
 ```javascript
 // /routes/assetRoutes.js
@@ -332,15 +479,14 @@ const assetController = require('../controllers/assetController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAssetManager } = require('../middlewares/roleMiddleware');
 
-// Semua role bisa melihat aset
+// Semua role terautentikasi bisa melihat aset
 router.get('/', [verifyToken], assetController.getAllAssets);
+router.get('/:id', [verifyToken], assetController.getAssetById);
 
-// Hanya Manajer Aset & Admin yang bisa menambah
+// Hanya Manajer Aset & Admin yang bisa melakukan operasi tulis
 router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
-
-// Tambahkan rute untuk update dan delete dengan proteksi serupa
-// router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
-// router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
+router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
+router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
 
 module.exports = router;
 ```
@@ -430,5 +576,9 @@ module.exports = router;
 4.  Server backend Anda akan berjalan di `http://localhost:3001`.
 
 Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
+
+**Catatan Penting:**
+*   **Password Hashing**: Contoh di atas sudah menggunakan `bcryptjs` untuk meng-hash password saat membuat user dan membandingkannya saat login. Ini adalah praktik keamanan yang sangat penting.
+*   **Username vs Name**: Di `authController`, `username` dari database di-alias sebagai `name` untuk konsistensi dengan token JWT dan frontend.
 
 ---
