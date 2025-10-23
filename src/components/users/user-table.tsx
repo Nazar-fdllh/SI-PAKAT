@@ -70,7 +70,7 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Nama
+          Nama Lengkap
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),

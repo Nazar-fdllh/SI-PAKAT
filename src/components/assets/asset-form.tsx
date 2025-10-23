@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import type { Asset, AssetClassificationValue } from '@/lib/definitions';
 import { initialClassifications, initialSubClassifications } from '@/lib/data';
 import { Separator } from '../ui/separator';
@@ -80,6 +79,12 @@ const getClassificationValue = (score: number): AssetClassificationValue => {
 export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   const defaultValues = asset ? {
     ...asset,
+    // Ensure scores are set if editing an existing asset without assessment data
+    confidentiality: 1,
+    integrity: 1,
+    availability: 1,
+    authenticity: 1,
+    nonRepudiation: 1,
   } : {
     asset_name: '',
     classification_id: 1,
@@ -177,10 +182,10 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sub Kategori</FormLabel>
-                <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={field.value ? String(field.value) : undefined} disabled={subClassifications.length === 0}>
+                <Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} defaultValue={field.value ? String(field.value) : undefined} disabled={subClassifications.length === 0}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Pilih sub-kategori aset" />
+                      <SelectValue placeholder="Pilih sub-kategori aset (opsional)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -249,7 +254,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                         render={({ field }) => (
                             <FormItem className="grid grid-cols-3 items-center gap-4">
                                 <FormLabel className="col-span-2">{criterion.label}</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                                <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={String(field.value)}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih nilai" />

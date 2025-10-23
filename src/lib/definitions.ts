@@ -1,16 +1,17 @@
 export type Role = {
   id: number;
-  name: 'Administrator' | 'Manajer Aset' | 'Auditor/Pimpinan';
+  name: 'Administrator' | 'Manajer Aset' | 'Auditor';
   description: string;
 };
 
 export type User = {
   id: number;
-  username: string;
+  username: string; // This field exists in the DB, but is now used for the full name.
+  name: string;
   email: string;
+  password?: string; // Added for the form, will be required.
   roleId: number;
-  name: string; // From the previous structure, let's keep it for display.
-  avatarUrl: string; // From the previous structure.
+  avatarUrl: string; 
 };
 
 export type Classification = {
@@ -37,7 +38,6 @@ export type Asset = {
   identification_of_existence: string;
   location: string;
   owner: string;
-  // These fields are from the old structure but useful for display logic until full backend integration
   category_name?: string; 
   asset_value?: AssetClassificationValue; 
 };
@@ -55,9 +55,7 @@ export type Assessment = {
   asset_value: AssetClassificationValue;
   assessment_date: string; // YYYY-MM-DD
   notes?: string;
-  // For display purposes, to show user name
   assessed_by_name?: string;
 };
 
-// Merging old UserRole for component compatibility
 export type UserRole = Role['name'];

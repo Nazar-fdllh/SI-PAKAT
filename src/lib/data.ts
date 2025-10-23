@@ -3,14 +3,14 @@ import type { User, Asset, Assessment, Classification, SubClassification, Role }
 export const initialRoles: Role[] = [
   { id: 1, name: 'Administrator', description: 'Memiliki hak akses penuh terhadap sistem dan manajemen pengguna.' },
   { id: 2, name: 'Manajer Aset', description: 'Bertanggung jawab atas pengelolaan data aset dan penilaian keamanan.' },
-  { id: 3, name: 'Auditor/Pimpinan', description: 'Dapat melihat data aset dan laporan, namun tidak dapat mengubah data.' }
+  { id: 3, name: 'Auditor', description: 'Dapat melihat data aset dan laporan, namun tidak dapat mengubah data.' }
 ];
 
 export const initialUsers: User[] = [
-  { id: 1, username: 'admin.utama', email: 'admin@sipakat.com', roleId: 1, name: 'Admin Utama', avatarUrl: 'https://i.pravatar.cc/150?u=admin@sipakat.com' },
-  { id: 2, username: 'budi.manajer', email: 'budi.manajer@sipakat.com', roleId: 2, name: 'Budi Manajer', avatarUrl: 'https://i.pravatar.cc/150?u=budi.manajer@sipakat.com' },
-  { id: 3, username: 'citra.auditor', email: 'citra.auditor@sipakat.com', roleId: 3, name: 'Citra Auditor', avatarUrl: 'https://i.pravatar.cc/150?u=citra.auditor@sipakat.com' },
-  { id: 4, username: 'doni.staf', email: 'doni.staf@sipakat.com', roleId: 2, name: 'Doni Staf', avatarUrl: 'https://i.pravatar.cc/150?u=doni.staf@sipakat.com' },
+  { id: 1, name: 'Admin Utama', username: 'admin.utama', email: 'admin@sipakat.com', roleId: 1, avatarUrl: 'https://i.pravatar.cc/150?u=admin@sipakat.com' },
+  { id: 2, name: 'Budi Manajer', username: 'budi.manajer', email: 'budi.manajer@sipakat.com', roleId: 2, avatarUrl: 'https://i.pravatar.cc/150?u=budi.manajer@sipakat.com' },
+  { id: 3, name: 'Citra Auditor', username: 'citra.auditor', email: 'citra.auditor@sipakat.com', roleId: 3, avatarUrl: 'https://i.pravatar.cc/150?u=citra.auditor@sipakat.com' },
+  { id: 4, name: 'Doni Staf', username: 'doni.staf', email: 'doni.staf@sipakat.com', roleId: 2, avatarUrl: 'https://i.pravatar.cc/150?u=doni.staf@sipakat.com' },
 ];
 
 export const initialClassifications: Classification[] = [
@@ -110,5 +110,3 @@ export const getEnrichedAssets = (): Asset[] => {
         };
     });
 };
-
-    
