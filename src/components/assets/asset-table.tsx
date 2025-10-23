@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, FileDown } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -55,7 +55,6 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 type AssetTableProps = {
@@ -296,14 +295,6 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-
-         {userRole === 'Auditor' && (
-          <Link href="/print/report" passHref>
-             <Button>
-              <FileDown className="mr-2 h-4 w-4" /> Cetak Laporan
-            </Button>
-          </Link>
-        )}
       </div>
       <div className="rounded-md border">
         <Table>

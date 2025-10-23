@@ -60,23 +60,33 @@ export default function ReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const assetValueFilter = searchParams.get('asset_value') as AssetClassificationValue | null;
-  const categoryIdFilter = searchParams.get('category_id');
+  const categoryIdFilter = searchParams.get('categoryId');
 
   const allAssets = getEnrichedAssets();
 
   const filteredAssets = allAssets.filter(asset => {
+    const categoryId = categoryIdFilter && categoryIdFilter !== 'all' ? parseInt(categoryIdFilter) : null;
     if (assetValueFilter && asset.asset_value !== assetValueFilter) return false;
-    if (categoryIdFilter && asset.classification_id !== parseInt(categoryIdFilter)) return false;
+    if (categoryId && asset.classification_id !== categoryId) return false;
     return true;
   });
 
   const getReportTitle = () => {
-    if (assetValueFilter) return `Laporan Aset Bernilai ${assetValueFilter}`;
-    if (categoryIdFilter) {
-        const category = initialClassifications.find(c => c.id === parseInt(categoryIdFilter));
-        return `Laporan Aset Kategori ${category?.name || 'Tidak Diketahui'}`;
+    let title = "Laporan Aset";
+    const categoryId = categoryIdFilter && categoryIdFilter !== 'all' ? parseInt(categoryIdFilter) : null;
+    const category = categoryId ? initialClassifications.find(c => c.id === categoryId) : null;
+
+    if (assetValueFilter) {
+      title += ` Bernilai ${assetValueFilter}`;
+    } else {
+      title = "Laporan Inventaris Aset Lengkap";
     }
-    return "Laporan Inventaris Aset Lengkap";
+
+    if (category) {
+      title += ` Kategori ${category.name}`;
+    }
+    
+    return title;
   }
   
   const reportTitle = getReportTitle();
