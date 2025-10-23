@@ -28,19 +28,19 @@ export function SidebarNav() {
       href: '/dashboard',
       label: 'Dasbor',
       icon: <LayoutDashboard />,
-      roles: ['Administrator', 'Manajer Aset', 'Auditor/Pimpinan'],
+      roles: ['Administrator', 'Manajer Aset', 'Auditor'],
     },
     {
       href: '/assets',
       label: 'Inventaris Aset',
       icon: <Database />,
-      roles: ['Administrator', 'Manajer Aset', 'Auditor/Pimpinan'],
+      roles: ['Administrator', 'Manajer Aset', 'Auditor'],
     },
     {
       href: '/reports',
       label: 'Pelaporan',
       icon: <FileText />,
-      roles: ['Administrator', 'Auditor/Pimpinan'],
+      roles: ['Administrator', 'Auditor'],
     },
     {
       href: '/users',

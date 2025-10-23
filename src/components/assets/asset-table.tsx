@@ -297,7 +297,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
           </DropdownMenuContent>
         </DropdownMenu>
 
-         {userRole === 'Auditor/Pimpinan' && (
+         {userRole === 'Auditor' && (
           <Link href="/print/report" passHref>
              <Button>
               <FileDown className="mr-2 h-4 w-4" /> Cetak Laporan

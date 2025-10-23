@@ -8,7 +8,7 @@ import { initialAssets as assets } from "@/lib/data";
 
 export default async function ReportsPage() {
   const role = await getCurrentRole();
-  if (!role || (role.name !== 'Administrator' && role.name !== 'Auditor/Pimpinan')) {
+  if (!role || (role.name !== 'Administrator' && role.name !== 'Auditor')) {
     redirect('/dashboard');
   }
 
