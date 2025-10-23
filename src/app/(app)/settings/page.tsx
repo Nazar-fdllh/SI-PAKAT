@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
-import { getRole } from '@/lib/session';
+import { getCurrentRole } from '@/lib/session';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThresholdForm } from '@/components/settings/threshold-form';
 
 export default async function SettingsPage() {
-  const role = await getRole();
-  if (role !== 'Administrator') {
+  const role = await getCurrentRole();
+  if (role?.name !== 'Administrator') {
     redirect('/dashboard');
   }
 
