@@ -4,23 +4,22 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import AssetTable from '@/components/assets/asset-table';
-import { initialAssets as staticAssets } from '@/lib/data';
+import { getEnrichedAssets } from '@/lib/data';
 import type { Asset } from '@/lib/definitions';
 import { AssetDialog } from '@/components/assets/asset-dialog';
 import { useSession } from '@/hooks/use-session';
 
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>(staticAssets);
+  const [assets, setAssets] = useState<Asset[]>(getEnrichedAssets());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const { user } = useSession();
+  const { user, role } = useSession();
   
-  // Return null or a loading spinner if the user session is not yet available
-  if (!user) {
+  if (!user || !role) {
     return <div className="flex justify-center items-center h-full"><p>Memuat data pengguna...</p></div>;
   }
 
-  const canManage = user.role === 'Administrator' || user.role === 'Manajer Aset';
+  const canManage = role.name === 'Administrator' || role.name === 'Manajer Aset';
 
   const handleAddAsset = () => {
     setSelectedAsset(null);
@@ -32,7 +31,7 @@ export default function AssetsPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteAsset = (assetId: string) => {
+  const handleDeleteAsset = (assetId: number) => {
     setAssets(prevAssets => prevAssets.filter(asset => asset.id !== assetId));
   };
 
@@ -48,8 +47,8 @@ export default function AssetsPage() {
       // Add new asset
       const newAsset: Asset = {
         ...assetData,
-        id: `ast_${Date.now()}`,
-        assetCode: `HW-NEW-${Math.floor(Math.random() * 1000)}`,
+        id: Date.now(), // simple id generation
+        asset_code: `NEW-${Math.floor(Math.random() * 1000)}`,
       };
       setAssets(prevAssets => [newAsset, ...prevAssets]);
     }
@@ -76,7 +75,7 @@ export default function AssetsPage() {
 
       <AssetTable
         assets={assets}
-        userRole={user.role}
+        userRole={role.name}
         onEdit={handleEditAsset}
         onDelete={handleDeleteAsset}
       />

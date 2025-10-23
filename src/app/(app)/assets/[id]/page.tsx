@@ -1,6 +1,6 @@
 'use client';
 
-import { initialAssets, initialAssessments } from '@/lib/data';
+import { getEnrichedAssets, initialAssessments, initialUsers } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import AssetDetails from '@/components/assets/asset-details';
 import AssessmentForm from '@/components/assets/assessment-form';
@@ -9,32 +9,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useSession } from '@/hooks/use-session';
+import { useMemo } from 'react';
 
 export default function AssetDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { user } = useSession();
+  const { user, role } = useSession();
 
-  const asset = initialAssets.find((a) => a.id === id);
-  const assessments = initialAssessments.filter((a) => a.assetId === id);
-
+  const asset = useMemo(() => getEnrichedAssets().find((a) => a.id === parseInt(id)), [id]);
+  const assessments = useMemo(() => initialAssessments.filter((a) => a.asset_id === parseInt(id)), [id]);
+  
   if (!asset) {
     notFound();
   }
   
-  if (!user) {
+  if (!user || !role) {
     return <div className="flex justify-center items-center h-full"><p>Memuat data pengguna...</p></div>;
   }
 
-  const canAssess = user.role === 'Administrator' || user.role === 'Manajer Aset';
+  const canAssess = role.name === 'Administrator' || role.name === 'Manajer Aset';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-            <h1 className="text-3xl font-bold tracking-tight font-headline">{asset.name}</h1>
-            <p className="text-muted-foreground">Detail dan riwayat penilaian untuk aset: {asset.assetCode}</p>
+            <h1 className="text-3xl font-bold tracking-tight font-headline">{asset.asset_name}</h1>
+            <p className="text-muted-foreground">Detail dan riwayat penilaian untuk aset: {asset.asset_code}</p>
         </div>
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />

@@ -1,13 +1,13 @@
 'use client'
 
 import React from 'react'
-import { initialAssets } from '@/lib/data'
+import { getEnrichedAssets, initialClassifications } from '@/lib/data'
 import { Button } from '@/components/ui/button'
 import { Printer, Shield, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { useSearchParams, useRouter } from 'next/navigation'
-import type { Asset, AssetClassification, AssetStatus } from '@/lib/definitions'
+import type { Asset, AssetClassificationValue } from '@/lib/definitions'
 
 function ReportHeader({ title }: { title: string }) {
   return (
@@ -32,9 +32,11 @@ function ReportHeader({ title }: { title: string }) {
 function ReportStats({ data }: { data: Asset[] }) {
     const totalAssets = data.length;
     const classifications = data.reduce((acc, asset) => {
-        acc[asset.classification] = (acc[asset.classification] || 0) + 1;
+        if (asset.asset_value) {
+            acc[asset.asset_value] = (acc[asset.asset_value] || 0) + 1;
+        }
         return acc;
-    }, {} as Record<AssetClassification, number>);
+    }, {} as Record<AssetClassificationValue, number>);
 
   return (
     <div className="grid grid-cols-3 gap-4 my-6 text-center">
@@ -43,11 +45,11 @@ function ReportStats({ data }: { data: Asset[] }) {
         <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{totalAssets}</p>
       </div>
        <div className="p-4 bg-red-100 dark:bg-red-900/50 rounded-lg">
-        <p className="text-sm text-red-600 dark:text-red-300">Klas. Tinggi</p>
+        <p className="text-sm text-red-600 dark:text-red-300">Nilai Tinggi</p>
         <p className="text-2xl font-bold text-red-800 dark:text-red-200">{classifications['Tinggi'] || 0}</p>
       </div>
        <div className="p-4 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
-        <p className="text-sm text-yellow-600 dark:text-yellow-300">Klas. Sedang</p>
+        <p className="text-sm text-yellow-600 dark:text-yellow-300">Nilai Sedang</p>
         <p className="text-2xl font-bold text-yellow-800 dark:text-yellow-200">{classifications['Sedang'] || 0}</p>
       </div>
     </div>
@@ -56,19 +58,24 @@ function ReportStats({ data }: { data: Asset[] }) {
 
 export default function ReportPage() {
   const router = useRouter();
-  const searchParams = useSearchParams()
-  const classificationFilter = searchParams.get('classification') as AssetClassification | null
-  const statusFilter = searchParams.get('status') as AssetStatus | null
+  const searchParams = useSearchParams();
+  const assetValueFilter = searchParams.get('asset_value') as AssetClassificationValue | null;
+  const categoryIdFilter = searchParams.get('category_id');
 
-  const filteredAssets = initialAssets.filter(asset => {
-    if (classificationFilter && asset.classification !== classificationFilter) return false;
-    if (statusFilter && asset.status !== statusFilter) return false;
+  const allAssets = getEnrichedAssets();
+
+  const filteredAssets = allAssets.filter(asset => {
+    if (assetValueFilter && asset.asset_value !== assetValueFilter) return false;
+    if (categoryIdFilter && asset.classification_id !== parseInt(categoryIdFilter)) return false;
     return true;
   });
 
   const getReportTitle = () => {
-    if (classificationFilter) return `Laporan Aset Klasifikasi ${classificationFilter}`;
-    if (statusFilter) return `Laporan Aset Status ${statusFilter}`;
+    if (assetValueFilter) return `Laporan Aset Bernilai ${assetValueFilter}`;
+    if (categoryIdFilter) {
+        const category = initialClassifications.find(c => c.id === parseInt(categoryIdFilter));
+        return `Laporan Aset Kategori ${category?.name || 'Tidak Diketahui'}`;
+    }
     return "Laporan Inventaris Aset Lengkap";
   }
   
@@ -99,25 +106,23 @@ export default function ReportPage() {
                 <th scope="col" className="px-4 py-3">Nama Aset</th>
                 <th scope="col" className="px-4 py-3">Kategori</th>
                 <th scope="col" className="px-4 py-3">Pemilik</th>
-                <th scope="col" className="px-4 py-3">Status</th>
-                <th scope="col" className="px-4 py-3 text-right">Klasifikasi</th>
+                <th scope="col" className="px-4 py-3 text-right">Nilai Aset</th>
               </tr>
             </thead>
             <tbody>
               {filteredAssets.map((asset, index) => (
                 <tr key={asset.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                   <td className="px-4 py-3">{index + 1}</td>
-                  <td className="px-4 py-3 font-mono">{asset.assetCode}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{asset.name}</td>
-                  <td className="px-4 py-3">{asset.category}</td>
+                  <td className="px-4 py-3 font-mono">{asset.asset_code}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{asset.asset_name}</td>
+                  <td className="px-4 py-3">{asset.category_name}</td>
                   <td className="px-4 py-3">{asset.owner}</td>
-                  <td className="px-4 py-3">{asset.status}</td>
-                  <td className="px-4 py-3 text-right font-semibold">{asset.classification}</td>
+                  <td className="px-4 py-3 text-right font-semibold">{asset.asset_value}</td>
                 </tr>
               ))}
               {filteredAssets.length === 0 && (
                  <tr>
-                    <td colSpan={7} className="text-center py-8">Tidak ada data untuk ditampilkan.</td>
+                    <td colSpan={6} className="text-center py-8">Tidak ada data untuk ditampilkan.</td>
                  </tr>
               )}
             </tbody>

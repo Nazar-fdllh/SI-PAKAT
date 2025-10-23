@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useSession } from '@/hooks/use-session';
@@ -8,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 export default function ProfilePage() {
-  const { user } = useSession();
+  const { user, role } = useSession();
 
-  if (!user) {
+  if (!user || !role) {
     return <div className="flex justify-center items-center h-full"><p>Memuat data pengguna...</p></div>;
   }
 
@@ -39,7 +38,7 @@ export default function ProfilePage() {
             </div>
              <div className="flex justify-between items-center text-sm">
                 <p className="text-muted-foreground">Peran</p>
-                <Badge variant="outline">{user.role}</Badge>
+                <Badge variant="outline">{role.name}</Badge>
             </div>
           </div>
           <Separator className="my-6" />

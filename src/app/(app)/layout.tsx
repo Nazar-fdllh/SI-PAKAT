@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/layout/header';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
-import { getCurrentUser } from '@/lib/session';
+import { getCurrentUser, getCurrentRole } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { SessionProvider } from '@/app/providers/session-provider';
 
@@ -17,8 +17,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect('/login');
   }
 
+  const role = await getCurrentRole();
+
   return (
-    <SessionProvider user={user}>
+    <SessionProvider user={user} role={role}>
       <SidebarProvider>
         <Sidebar>
           <SidebarNav />

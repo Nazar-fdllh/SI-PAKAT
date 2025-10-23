@@ -22,14 +22,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { Asset, AssetCategory, AssetStatus, AssetClassification } from '@/lib/definitions';
-import { format } from 'date-fns';
+import type { Asset, AssetClassificationValue } from '@/lib/definitions';
+import { initialClassifications, initialSubClassifications } from '@/lib/data';
 import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { useEffect } from 'react';
-
-const assetCategories: AssetCategory[] = ['Perangkat Keras', 'Perangkat Lunak', 'Sarana Pendukung', 'Data & Informasi', 'SDM & Pihak Ketiga'];
-const assetStatuses: AssetStatus[] = ['Aktif', 'Dalam Perbaikan', 'Non-Aktif', 'Akan Kadaluarsa'];
+import { useEffect, useMemo } from 'react';
 
 const criteria = [
   { id: 'confidentiality', label: 'Kerahasiaan (Confidentiality)' },
@@ -52,20 +49,18 @@ const thresholds = {
 };
 
 const formSchema = z.object({
-  name: z.string().min(3, 'Nama aset minimal 3 karakter.'),
-  category: z.enum(assetCategories, { required_error: 'Kategori harus dipilih.' }),
-  specifications: z.string().min(10, 'Spesifikasi minimal 10 karakter.'),
+  asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.'),
+  classification_id: z.coerce.number({required_error: 'Klasifikasi harus dipilih.'}),
+  sub_classification_id: z.coerce.number().optional().nullable(),
+  identification_of_existence: z.string().min(3, 'Identifikasi keberadaan minimal 3 karakter.'),
   location: z.string().min(3, 'Lokasi minimal 3 karakter.'),
   owner: z.string().min(3, 'Pemilik minimal 3 karakter.'),
-  status: z.enum(assetStatuses, { required_error: 'Status harus dipilih.' }),
-  purchaseDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Tanggal pembelian tidak valid.' }),
-  expiryDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Tanggal kadaluarsa tidak valid.' }),
   confidentiality: z.coerce.number().min(1).max(3),
   integrity: z.coerce.number().min(1).max(3),
   availability: z.coerce.number().min(1).max(3),
   authenticity: z.coerce.number().min(1).max(3),
   nonRepudiation: z.coerce.number().min(1).max(3),
-  classification: z.custom<AssetClassification>(),
+  asset_value: z.custom<AssetClassificationValue>(),
 });
 
 type AssetFormValues = z.infer<typeof formSchema>;
@@ -76,7 +71,7 @@ interface AssetFormProps {
   onCancel: () => void;
 }
 
-const getClassification = (score: number): AssetClassification => {
+const getClassificationValue = (score: number): AssetClassificationValue => {
     if (score >= thresholds.high) return 'Tinggi';
     if (score >= thresholds.medium) return 'Sedang';
     return 'Rendah';
@@ -85,28 +80,19 @@ const getClassification = (score: number): AssetClassification => {
 export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   const defaultValues = asset ? {
     ...asset,
-    purchaseDate: format(new Date(asset.purchaseDate), 'yyyy-MM-dd'),
-    expiryDate: format(new Date(asset.expiryDate), 'yyyy-MM-dd'),
-    confidentiality: 1, // Default scores for editing, can be adjusted
-    integrity: 1,
-    availability: 1,
-    authenticity: 1,
-    nonRepudiation: 1,
   } : {
-    name: '',
-    category: 'Perangkat Keras' as AssetCategory,
-    specifications: '',
+    asset_name: '',
+    classification_id: 1,
+    sub_classification_id: null,
+    identification_of_existence: '',
     location: '',
     owner: '',
-    status: 'Aktif' as AssetStatus,
-    purchaseDate: format(new Date(), 'yyyy-MM-dd'),
-    expiryDate: format(new Date(new Date().setFullYear(new Date().getFullYear() + 3)), 'yyyy-MM-dd'),
     confidentiality: 1,
     integrity: 1,
     availability: 1,
     authenticity: 1,
     nonRepudiation: 1,
-    classification: 'Rendah' as AssetClassification,
+    asset_value: 'Rendah' as AssetClassificationValue,
   };
   
   const form = useForm<AssetFormValues>({
@@ -118,21 +104,31 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     control: form.control,
     name: ["confidentiality", "integrity", "availability", "authenticity", "nonRepudiation"],
   });
+  
+  const watchedClassificationId = useWatch({
+    control: form.control,
+    name: "classification_id",
+  });
+
+  const subClassifications = useMemo(() => {
+    return initialSubClassifications.filter(sc => sc.classification_id === watchedClassificationId);
+  }, [watchedClassificationId]);
+
 
   const totalScore = watchedScores.reduce((sum, score) => sum + (Number(score) || 0), 0);
-  const classification = getClassification(totalScore);
+  const assetValue = getClassificationValue(totalScore);
 
   useEffect(() => {
-    form.setValue('classification', classification);
-  }, [classification, form]);
+    form.setValue('asset_value', assetValue);
+  }, [assetValue, form]);
 
 
   function onSubmit(data: AssetFormValues) {
     onSave({
         ...data,
-        id: asset?.id || '', // ID will be generated by parent if new
-        assetCode: asset?.assetCode || '', // Asset code will be generated by parent if new
-        classification: getClassification(totalScore)
+        id: asset?.id || 0, // ID will be generated by parent if new
+        asset_code: asset?.asset_code || '', // Asset code will be generated by parent if new
+        asset_value: getClassificationValue(totalScore)
     });
   }
 
@@ -142,7 +138,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="name"
+            name="asset_name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nama Aset</FormLabel>
@@ -155,18 +151,18 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
           />
           <FormField
             control={form.control}
-            name="category"
+            name="classification_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Kategori</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={String(field.value)}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori aset" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {assetCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    {initialClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -174,15 +170,37 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
             )}
           />
         </div>
+        
+        <FormField
+            control={form.control}
+            name="sub_classification_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sub Kategori</FormLabel>
+                <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={field.value ? String(field.value) : undefined} disabled={subClassifications.length === 0}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih sub-kategori aset" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {subClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Pilih kategori terlebih dahulu.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
         <FormField
           control={form.control}
-          name="specifications"
+          name="identification_of_existence"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Spesifikasi</FormLabel>
+              <FormLabel>Identifikasi Keberadaan</FormLabel>
               <FormControl>
-                <Textarea placeholder="cth. Dell PowerEdge R740, 256GB RAM..." {...field} />
+                <Input placeholder="cth. Fisik, Virtual, Personil" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -218,55 +236,6 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
             />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                        <SelectTrigger>
-                        <SelectValue placeholder="Pilih status aset" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {assetStatuses.map(stat => <SelectItem key={stat} value={stat}>{stat}</SelectItem>)}
-                    </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="purchaseDate"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Tanggal Pembelian</FormLabel>
-                    <FormControl>
-                    <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-        </div>
-        <FormField
-                control={form.control}
-                name="expiryDate"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Tanggal Kadaluarsa</FormLabel>
-                    <FormControl>
-                    <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-
         <Separator className="my-6" />
 
         <div>
@@ -312,8 +281,8 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                     <p className="text-4xl font-bold">{totalScore}</p>
                 </div>
                 <div>
-                    <p className="text-sm text-muted-foreground">Klasifikasi Aset</p>
-                    <p className="text-2xl font-bold font-headline text-primary">{classification}</p>
+                    <p className="text-sm text-muted-foreground">Nilai Aset</p>
+                    <p className="text-2xl font-bold font-headline text-primary">{assetValue}</p>
                 </div>
             </CardContent>
         </Card>

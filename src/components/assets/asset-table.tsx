@@ -35,7 +35,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { type Asset, type AssetCategory, type UserRole } from "@/lib/definitions"
+import { type Asset, type UserRole, type AssetClassificationValue } from "@/lib/definitions"
+import { initialClassifications } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import {
@@ -56,14 +57,12 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { format, parseISO } from "date-fns"
-import { id } from "date-fns/locale"
 
 type AssetTableProps = {
   assets: Asset[];
   userRole: UserRole | null;
   onEdit: (asset: Asset) => void;
-  onDelete: (assetId: string) => void;
+  onDelete: (assetId: number) => void;
 };
 
 export default function AssetTable({ assets, userRole, onEdit, onDelete }: AssetTableProps) {
@@ -71,11 +70,10 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
-    specifications: false,
-    location: false,
+    identification_of_existence: false,
+    sub_classification_id: false,
     owner: false,
-    purchaseDate: false,
-    expiryDate: false,
+    location: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
 
@@ -109,7 +107,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
       enableHiding: false,
     },
     {
-      accessorKey: "name",
+      accessorKey: "asset_name",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -121,64 +119,38 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
       ),
       cell: ({ row }) => (
           <Link href={`/assets/${row.original.id}`} className="font-medium hover:underline">
-            {row.getValue("name")}
+            {row.getValue("asset_name")}
           </Link>
         ),
     },
     {
-      accessorKey: "assetCode",
+      accessorKey: "asset_code",
       header: "Kode Aset",
-      cell: ({ row }) => <div>{row.getValue("assetCode")}</div>,
     },
     {
-        accessorKey: "category",
+        accessorKey: "category_name",
         header: "Kategori",
-        cell: ({ row }) => <div>{row.getValue("category")}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
         },
     },
     {
-      accessorKey: "specifications",
-      header: "Spesifikasi",
-      cell: ({ row }) => <div className="max-w-[200px] truncate">{row.getValue("specifications")}</div>,
+        accessorKey: 'identification_of_existence',
+        header: 'Identifikasi Keberadaan'
     },
     {
-      accessorKey: "location",
-      header: "Lokasi",
-      cell: ({ row }) => <div>{row.getValue("location")}</div>,
+        accessorKey: 'location',
+        header: 'Lokasi'
     },
     {
-      accessorKey: "owner",
-      header: "Pemilik",
-      cell: ({ row }) => <div>{row.getValue("owner")}</div>,
+        accessorKey: 'owner',
+        header: 'Pemilik'
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: "asset_value",
+      header: "Nilai Aset",
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        return (
-          <Badge 
-            variant={status === 'Aktif' ? 'default' : status === 'Non-Aktif' ? 'destructive' : 'secondary'}
-            className={cn(
-                status === 'Aktif' && 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30',
-                status === 'Dalam Perbaikan' && 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 hover:bg-yellow-500/30',
-                status === 'Akan Kadaluarsa' && 'bg-orange-500/20 text-orange-700 border-orange-500/30 hover:bg-orange-500/30',
-                status === 'Non-Aktif' && 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30',
-                'rounded-md'
-            )}
-          >
-            {status}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: "classification",
-      header: "Klasifikasi",
-      cell: ({ row }) => {
-        const classification = row.getValue("classification") as string;
+        const classification = row.getValue("asset_value") as AssetClassificationValue;
         return (
           <Badge 
             variant="outline"
@@ -193,16 +165,6 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
           </Badge>
         );
       },
-    },
-    {
-        accessorKey: "purchaseDate",
-        header: "Tgl. Pembelian",
-        cell: ({ row }) => format(parseISO(row.getValue("purchaseDate")), 'dd MMM yyyy', { locale: id }),
-    },
-    {
-        accessorKey: "expiryDate",
-        header: "Tgl. Kadaluarsa",
-        cell: ({ row }) => format(parseISO(row.getValue("expiryDate")), 'dd MMM yyyy', { locale: id }),
     },
     {
       id: "actions",
@@ -236,7 +198,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
                 <AlertDialogHeader>
                   <AlertDialogTitle>Anda yakin ingin menghapus aset ini?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tindakan ini tidak dapat dibatalkan. Ini akan menghapus aset <span className="font-semibold text-foreground">{asset.name}</span> ({asset.assetCode}) secara permanen dari sistem.
+                    Tindakan ini tidak dapat dibatalkan. Ini akan menghapus aset <span className="font-semibold text-foreground">{asset.asset_name}</span> ({asset.asset_code}) secara permanen dari sistem.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -268,20 +230,15 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
       rowSelection,
     },
   })
-
-  const categories: AssetCategory[] = ['Perangkat Keras', 'Perangkat Lunak', 'Sarana Pendukung', 'Data & Informasi', 'SDM & Pihak Ketiga'];
-
+  
   const columnLabels: Record<string, string> = {
-    name: 'Nama Aset',
-    assetCode: 'Kode Aset',
-    category: 'Kategori',
-    specifications: 'Spesifikasi',
+    asset_name: 'Nama Aset',
+    asset_code: 'Kode Aset',
+    category_name: 'Kategori',
+    identification_of_existence: 'Identifikasi Keberadaan',
     location: 'Lokasi',
     owner: 'Pemilik',
-    status: 'Status',
-    classification: 'Klasifikasi',
-    purchaseDate: 'Tgl. Pembelian',
-    expiryDate: 'Tgl. Kadaluarsa',
+    asset_value: 'Nilai Aset',
   };
 
   return (
@@ -289,16 +246,16 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
       <div className="flex items-center py-4 gap-2">
         <Input
           placeholder="Cari nama aset..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          value={(table.getColumn("asset_name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
+            table.getColumn("asset_name")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
         <Select
-          value={((table.getColumn('category')?.getFilterValue() ?? []) as string[])[0] ?? ''}
+          value={((table.getColumn('category_name')?.getFilterValue() ?? []) as string[])[0] ?? ''}
           onValueChange={(value) => {
-            table.getColumn('category')?.setFilterValue(value === 'all' ? undefined : [value]);
+            table.getColumn('category_name')?.setFilterValue(value === 'all' ? undefined : [value]);
           }}
         >
           <SelectTrigger className="w-[240px]">
@@ -306,9 +263,9 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Kategori</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
+            {initialClassifications.map((category) => (
+              <SelectItem key={category.id} value={category.name}>
+                {category.name}
               </SelectItem>
             ))}
           </SelectContent>

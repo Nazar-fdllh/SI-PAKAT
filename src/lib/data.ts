@@ -1,56 +1,112 @@
-import type { User, Asset, Assessment } from './definitions';
+import type { User, Asset, Assessment, Classification, SubClassification, Role } from './definitions';
+
+export const initialRoles: Role[] = [
+  { id: 1, name: 'Administrator', description: 'Memiliki hak akses penuh terhadap sistem dan manajemen pengguna.' },
+  { id: 2, name: 'Manajer Aset', description: 'Bertanggung jawab atas pengelolaan data aset dan penilaian keamanan.' },
+  { id: 3, name: 'Auditor/Pimpinan', description: 'Dapat melihat data aset dan laporan, namun tidak dapat mengubah data.' }
+];
 
 export const initialUsers: User[] = [
-  { id: 'usr_001', name: 'Admin Utama', email: 'admin@sipakat.com', role: 'Administrator', avatarUrl: 'https://i.pravatar.cc/150?u=admin@sipakat.com' },
-  { id: 'usr_002', name: 'Budi Manajer', email: 'budi.manajer@sipakat.com', role: 'Manajer Aset', avatarUrl: 'https://i.pravatar.cc/150?u=budi.manajer@sipakat.com' },
-  { id: 'usr_003', name: 'Citra Auditor', email: 'citra.auditor@sipakat.com', role: 'Auditor/Pimpinan', avatarUrl: 'https://i.pravatar.cc/150?u=citra.auditor@sipakat.com' },
-  { id: 'usr_004', name: 'Doni Staf', email: 'doni.staf@sipakat.com', role: 'Manajer Aset', avatarUrl: 'https://i.pravatar.cc/150?u=doni.staf@sipakat.com' },
+  { id: 1, username: 'admin.utama', email: 'admin@sipakat.com', roleId: 1, name: 'Admin Utama', avatarUrl: 'https://i.pravatar.cc/150?u=admin@sipakat.com' },
+  { id: 2, username: 'budi.manajer', email: 'budi.manajer@sipakat.com', roleId: 2, name: 'Budi Manajer', avatarUrl: 'https://i.pravatar.cc/150?u=budi.manajer@sipakat.com' },
+  { id: 3, username: 'citra.auditor', email: 'citra.auditor@sipakat.com', roleId: 3, name: 'Citra Auditor', avatarUrl: 'https://i.pravatar.cc/150?u=citra.auditor@sipakat.com' },
+  { id: 4, username: 'doni.staf', email: 'doni.staf@sipakat.com', roleId: 2, name: 'Doni Staf', avatarUrl: 'https://i.pravatar.cc/150?u=doni.staf@sipakat.com' },
+];
+
+export const initialClassifications: Classification[] = [
+    { id: 1, name: 'SDM & Pihak Ketiga', description: 'Aset TIK berupa Sumber Daya Manusia dan Pihak Ketiga yang memiliki akses atau terlibat dalam TIK.' },
+    { id: 2, name: 'Sarana Pendukung', description: 'Aset TIK berupa fasilitas pendukung seperti UPS, Genset, Ruang Server.' },
+    { id: 3, name: 'Perangkat Keras', description: 'Aset TIK berupa fisik (hardware) seperti server, komputer, jaringan.' },
+    { id: 4, name: 'Perangkat Lunak', description: 'Aset TIK berupa aplikasi, sistem operasi, dan perangkat lunak lainnya.' },
+    { id: 5, name: 'Data & Informasi', description: 'Aset TIK berupa data, database, dan informasi digital.' },
+];
+
+export const initialSubClassifications: SubClassification[] = [
+    { id: 1, classification_id: 1, name: 'Management' },
+    { id: 2, classification_id: 1, name: 'Technical' },
+    { id: 3, classification_id: 2, name: 'Genset' },
+    { id: 4, classification_id: 2, name: 'CCTV' },
+    { id: 5, classification_id: 2, name: 'APAR' },
+    { id: 6, classification_id: 3, name: 'Server' },
+    { id: 7, classification_id: 4, name: 'System Utility' },
+    { id: 8, classification_id: 4, name: 'Aplikasi Website' },
+    { id: 9, classification_id: 5, name: 'Data Log' },
+    { id: 10, classification_id: 5, name: 'Prosedur' },
+    { id: 11, classification_id: 5, name: 'Dokumen' },
+    { id: 12, classification_id: 5, name: 'Formulir' },
 ];
 
 export const initialAssets: Asset[] = [
-  // Perangkat Keras
-  { id: 'ast_001', assetCode: 'HW-SRV-001', name: 'Server Database Utama', category: 'Perangkat Keras', specifications: 'Dell PowerEdge R740, 2x Intel Xeon Gold, 256GB RAM, 10TB SSD RAID', location: 'Ruang Server Lt. 1', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2022-01-15', expiryDate: '2027-01-14', classification: 'Tinggi' },
-  { id: 'ast_003', assetCode: 'HW-NB-005', name: 'Laptop Direktur', category: 'Perangkat Keras', specifications: 'Apple MacBook Pro 16" M2 Max, 64GB RAM, 2TB SSD', location: 'Ruang Direktur', owner: 'Direktur Utama', status: 'Aktif', purchaseDate: '2023-03-20', expiryDate: '2028-03-19', classification: 'Sedang' },
-  { id: 'ast_007', assetCode: 'HW-PC-015', name: 'PC Desain Grafis', category: 'Perangkat Keras', specifications: 'Custom Build, Ryzen 9, 64GB RAM, RTX 4080', location: 'Ruang Kreatif', owner: 'Divisi Marketing', status: 'Dalam Perbaikan', purchaseDate: '2022-08-10', expiryDate: '2027-08-09', classification: 'Rendah' },
-  { id: 'ast_008', assetCode: 'HW-PRN-003', name: 'Printer Jaringan A3', category: 'Perangkat Keras', specifications: 'HP LaserJet Enterprise M712n', location: 'Pantry Lt. 2', owner: 'Umum', status: 'Non-Aktif', purchaseDate: '2019-07-22', expiryDate: '2024-07-21', classification: 'Rendah' },
-  { id: 'ast_011', assetCode: 'HW-SWT-004', name: 'Switch Core Jaringan', category: 'Perangkat Keras', specifications: 'Cisco Catalyst 9300 48-port', location: 'Ruang Server Lt. 1', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2022-02-20', expiryDate: '2027-02-19', classification: 'Tinggi' },
-  { id: 'ast_015', assetCode: 'HW-FWL-001', name: 'Firewall Palo Alto', category: 'Perangkat Keras', specifications: 'Palo Alto PA-3220', location: 'Ruang Server Lt. 1', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2023-05-11', expiryDate: '2028-05-10', classification: 'Tinggi' },
-  { id: 'ast_016', assetCode: 'HW-RTR-002', name: 'Router Cisco', category: 'Perangkat Keras', specifications: 'Cisco ISR 4331', location: 'Ruang Server Lt. 1', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2022-11-30', expiryDate: '2027-11-29', classification: 'Sedang' },
-
-  // Perangkat Lunak
-  { id: 'ast_002', assetCode: 'SW-OS-001', name: 'Lisensi Windows Server 2022', category: 'Perangkat Lunak', specifications: 'Datacenter Edition, 16-core license pack', location: 'N/A', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2022-01-10', expiryDate: '2025-01-09', classification: 'Tinggi' },
-  { id: 'ast_006', assetCode: 'SW-AV-001', name: 'Lisensi Antivirus Enterprise', category: 'Perangkat Lunak', specifications: 'Endpoint Security, 100 User License', location: 'N/A', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2023-06-01', expiryDate: '2024-05-31', classification: 'Sedang' },
-  { id: 'ast_012', assetCode: 'SW-DB-002', name: 'Lisensi Oracle Database', category: 'Perangkat Lunak', specifications: 'Enterprise Edition, per-processor license', location: 'N/A', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2021-05-15', expiryDate: '2026-05-14', classification: 'Belum Dinilai' },
-  { id: 'ast_017', assetCode: 'SW-ERP-001', name: 'Sistem ERP (SAP)', category: 'Perangkat Lunak', specifications: 'SAP S/4HANA Finance and Logistics Module', location: 'Cloud/On-premise', owner: 'Divisi Keuangan & Operasional', status: 'Aktif', purchaseDate: '2020-01-20', expiryDate: '2030-01-19', classification: 'Tinggi' },
-  { id: 'ast_018', assetCode: 'SW-CRM-001', name: 'Lisensi Salesforce', category: 'Perangkat Lunak', specifications: 'Sales Cloud, Enterprise Edition, 50-user pack', location: 'Cloud', owner: 'Divisi Marketing', status: 'Aktif', purchaseDate: '2023-09-01', expiryDate: '2024-08-31', classification: 'Sedang' },
-  
-  // Sarana Pendukung
-  { id: 'ast_005', assetCode: 'SP-UPS-002', name: 'UPS Ruang Server', category: 'Sarana Pendukung', specifications: 'APC Smart-UPS 3000VA', location: 'Ruang Server Lt. 1', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2021-11-05', expiryDate: '2024-11-04', classification: 'Sedang' },
-  { id: 'ast_010', assetCode: 'SP-AC-010', name: 'AC Ruang Server', category: 'Sarana Pendukung', specifications: 'Daikin 2 PK Precision Air Conditioner', location: 'Ruang Server Lt. 1', owner: 'Divisi TI', status: 'Akan Kadaluarsa', purchaseDate: '2020-09-01', expiryDate: '2025-08-31', classification: 'Sedang' },
-  { id: 'ast_019', assetCode: 'SP-GEN-001', name: 'Genset Ruang Server', category: 'Sarana Pendukung', specifications: 'Perkins 20 kVA Silent Type', location: 'Gedung Belakang', owner: 'Divisi Umum', status: 'Aktif', purchaseDate: '2019-05-20', expiryDate: '2029-05-19', classification: 'Tinggi' },
-  { id: 'ast_020', assetCode: 'SP-FPS-005', name: 'Fingerprint Scanner Pintu Masuk', category: 'Sarana Pendukung', specifications: 'Solution X105, Kapasitas 10.000 Sidik Jari', location: 'Lobi Utama', owner: 'Divisi HR & Umum', status: 'Aktif', purchaseDate: '2023-02-15', expiryDate: '2028-02-14', classification: 'Rendah' },
-  { id: 'ast_021', assetCode: 'SP-CCTV-015', name: 'CCTV Area Kantor', category: 'Sarana Pendukung', specifications: 'Hikvision IP Camera 5MP, 16 channel NVR', location: 'Seluruh Area Kantor', owner: 'Divisi Umum', status: 'Aktif', purchaseDate: '2022-12-01', expiryDate: '2027-11-30', classification: 'Rendah' },
-
-  // Data & Informasi
-  { id: 'ast_004', assetCode: 'DT-FIN-001', name: 'Data Laporan Keuangan Tahunan', category: 'Data & Informasi', specifications: 'File-file laporan keuangan dalam format .xlsx dan .pdf', location: 'Server File Internal', owner: 'Divisi Keuangan', status: 'Aktif', purchaseDate: '2024-01-01', expiryDate: '2034-12-31', classification: 'Tinggi' },
-  { id: 'ast_009', assetCode: 'DT-HR-002', name: 'Database Karyawan', category: 'Data & Informasi', specifications: 'Informasi personal dan rekam jejak karyawan', location: 'Server HR', owner: 'Divisi HR', status: 'Aktif', purchaseDate: '2020-02-01', expiryDate: '2030-01-31', classification: 'Tinggi' },
-  { id: 'ast_022', assetCode: 'DT-CUS-001', name: 'Database Pelanggan', category: 'Data & Informasi', specifications: 'Informasi kontak dan riwayat transaksi pelanggan', location: 'Server CRM', owner: 'Divisi Marketing', status: 'Aktif', purchaseDate: '2018-01-01', expiryDate: '2038-12-31', classification: 'Tinggi' },
-  { id: 'ast_023', assetCode: 'DT-RND-003', name: 'Blueprint Produk "Project X"', category: 'Data & Informasi', specifications: 'Dokumen desain, skematik, dan kode sumber purwarupa', location: 'Git Server (Internal)', owner: 'Divisi R&D', status: 'Aktif', purchaseDate: '2023-10-10', expiryDate: '2028-10-09', classification: 'Tinggi' },
-  { id: 'ast_024', assetCode: 'DT-LGL-001', name: 'Arsip Kontrak Legal', category: 'Data & Informasi', specifications: 'Salinan digital semua kontrak dengan klien dan vendor', location: 'Server File Legal', owner: 'Divisi Legal', status: 'Aktif', purchaseDate: '2017-01-01', expiryDate: '2037-12-31', classification: 'Sedang' },
-  
-  // SDM & Pihak Ketiga
-  { id: 'ast_013', assetCode: 'HR-CONS-01', name: 'Konsultan Keamanan Eksternal', category: 'SDM & Pihak Ketiga', specifications: 'Jasa konsultasi keamanan siber dari PT. Aman Selalu', location: 'Eksternal', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2024-01-01', expiryDate: '2024-12-31', classification: 'Sedang' },
-  { id: 'ast_014', assetCode: 'HR-DBA-01', name: 'Administrator Database', category: 'SDM & Pihak Ketiga', specifications: 'Karyawan tetap, bertanggung jawab atas semua database', location: 'Internal', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2021-06-01', expiryDate: '2099-12-31', classification: 'Tinggi' },
-  { id: 'ast_025', assetCode: 'HR-DEVT-01', name: 'Tim Pengembang Internal', category: 'SDM & Pihak Ketiga', specifications: '5 orang pengembang aplikasi in-house', location: 'Internal', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2022-03-01', expiryDate: '2099-12-31', classification: 'Sedang' },
-  { id: 'ast_026', assetCode: 'HR-VNDR-01', name: 'Vendor ISP (Internet)', category: 'SDM & Pihak Ketiga', specifications: 'Penyedia layanan internet utama, Biznet 1 Gbps', location: 'Eksternal', owner: 'Divisi TI', status: 'Aktif', purchaseDate: '2022-01-01', expiryDate: '2025-12-31', classification: 'Tinggi' },
-  { id: 'ast_027', assetCode: 'HR-CLNG-01', name: 'Jasa Kebersihan', category: 'SDM & Pihak Ketiga', specifications: 'Vendor penyedia jasa kebersihan gedung', location: 'Eksternal', owner: 'Divisi Umum', status: 'Aktif', purchaseDate: '2024-02-01', expiryDate: '2025-01-31', classification: 'Rendah' }
+    { id: 1, asset_code: 'PS-001', asset_name: 'Sucilanda Akbar, S.IK.,MM.', classification_id: 1, sub_classification_id: 1, identification_of_existence: 'Personil', location: 'Kantor Pusat', owner: 'Pencanrban dan Keamanan Keamanan Informasi' },
+    { id: 2, asset_code: 'PS-002', asset_name: 'Muhammad Bayu Aji Konding Wibowo, S.E', classification_id: 1, sub_classification_id: 1, identification_of_existence: 'Personil', location: 'Kantor Pusat', owner: 'Pencanrban dan Keamanan Keamanan Informasi' },
+    { id: 3, asset_code: 'PS-003', asset_name: 'Muhammad Noor Mubarakah, S.H', classification_id: 1, sub_classification_id: 1, identification_of_existence: 'Personil', location: 'Kantor Pusat', owner: 'Pencanrban dan Keamanan Keamanan Informasi' },
+    { id: 4, asset_code: 'PS-004', asset_name: 'Abdul Gofur, S.IP', classification_id: 1, sub_classification_id: 1, identification_of_existence: 'Personil', location: 'Kantor Pusat', owner: 'Pencanrban dan Keamanan Keamanan Informasi' },
+    { id: 5, asset_code: 'PS-005', asset_name: 'Dian Arifia, S.Kom', classification_id: 1, sub_classification_id: 2, identification_of_existence: 'Personil', location: 'Kantor Pusat', owner: 'Pencanrban dan Keamanan Keamanan Informasi' },
+    { id: 6, asset_code: 'PS-006', asset_name: 'Abdul Hafizih, S.Kom', classification_id: 1, sub_classification_id: 2, identification_of_existence: 'Personil', location: 'Kantor Pusat', owner: 'Pencanrban dan Keamanan Keamanan Informasi' },
+    { id: 7, asset_code: 'PS-007', asset_name: 'Indah Ratu Ramdhany, S.Kom', classification_id: 1, sub_classification_id: 2, identification_of_existence: 'Personil', location: 'Kantor Pusat', owner: 'Pencanrban dan Keamanan Keamanan Informasi' },
+    { id: 8, asset_code: 'SP-003', asset_name: 'Genset', classification_id: 2, sub_classification_id: 3, identification_of_existence: 'Fisik', location: 'Kantor Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 9, asset_code: 'SP-004', asset_name: 'CCTV', classification_id: 2, sub_classification_id: 4, identification_of_existence: 'Fisik', location: 'Kantor Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 10, asset_code: 'SP-005', asset_name: 'APAR', classification_id: 2, sub_classification_id: 5, identification_of_existence: 'Fisik', location: 'Pusat Data Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 15, asset_code: 'PL-001', asset_name: 'Sistem Penyimpanan Cloud Diskominfo', classification_id: 4, sub_classification_id: 7, identification_of_existence: 'Virtual', location: 'Data Center Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 16, asset_code: 'PL-002', asset_name: 'Sistem Informasi Pengelolaan Data Hewan Ternak', classification_id: 4, sub_classification_id: 8, identification_of_existence: 'Virtual', location: 'Data Center Diskominfo Kalsel', owner: 'Disbunnak' },
+    { id: 17, asset_code: 'PL-003', asset_name: 'Website Covid 19', classification_id: 4, sub_classification_id: 8, identification_of_existence: 'Virtual', location: 'Data Center Diskominfo Kalsel', owner: 'Dinkes' },
+    { id: 18, asset_code: 'PL-004', asset_name: 'Sistem Whistleblower', classification_id: 4, sub_classification_id: 8, identification_of_existence: 'Virtual', location: 'Data Center Diskominfo Kalsel', owner: 'Inspektorat' },
+    { id: 19, asset_code: 'PL-005', asset_name: 'Sistem Penilaian Kinerja', classification_id: 4, sub_classification_id: 8, identification_of_existence: 'Virtual', location: 'Data Center Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 20, asset_code: 'DI-001', asset_name: 'Data Kepegawaian', classification_id: 5, sub_classification_id: 9, identification_of_existence: 'Digital', location: 'Data Center Diskominfo', owner: 'Badan Kepegawaian' },
+    { id: 21, asset_code: 'DI-002', asset_name: 'SOP Pengelolaan Aset', classification_id: 5, sub_classification_id: 10, identification_of_existence: 'Digital', location: 'Sekretariat Diskominfo', owner: 'Diskominfo' },
+    { id: 22, asset_code: 'DI-003', asset_name: 'Laporan Penanganan Insiden', classification_id: 5, sub_classification_id: 11, identification_of_existence: 'Digital', location: 'Sekretariat Diskominfo', owner: 'Diskominfo' },
+    { id: 23, asset_code: 'DI-004', asset_name: 'Formulir Permintaan Akses', classification_id: 5, sub_classification_id: 12, identification_of_existence: 'Digital', location: 'Data Center Diskominfo', owner: 'Diskominfo' },
+    { id: 24, asset_code: 'PK-001', asset_name: 'Server Enttron', classification_id: 3, sub_classification_id: 6, identification_of_existence: 'Fisik', location: 'Data Center Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 25, asset_code: 'PK-002', asset_name: 'Server IBM', classification_id: 3, sub_classification_id: 6, identification_of_existence: 'Fisik', location: 'Data Center Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 26, asset_code: 'PK-003', asset_name: 'Server Lenovo 1 (2019)', classification_id: 3, sub_classification_id: 6, identification_of_existence: 'Fisik', location: 'Data Center Diskominfo Kalsel', owner: 'Diskominfo' },
+    { id: 27, asset_code: 'PK-004', asset_name: 'Server Lenovo 2 (2019)', classification_id: 3, sub_classification_id: 6, identification_of_existence: 'Fisik', location: 'Data Center Diskominfo Kalsel', owner: 'Diskominfo' },
 ];
 
 export const initialAssessments: Assessment[] = [
-    { id: 'asm_001', assetId: 'ast_001', assessedBy: 'Budi Manajer', assessmentDate: '2023-11-10', confidentiality: 3, integrity: 3, availability: 3, authenticity: 3, nonRepudiation: 3, totalScore: 15, classification: 'Tinggi' },
-    { id: 'asm_002', assetId: 'ast_002', assessedBy: 'Budi Manajer', assessmentDate: '2023-11-12', confidentiality: 3, integrity: 3, availability: 2, authenticity: 3, nonRepudiation: 2, totalScore: 13, classification: 'Tinggi' },
-    { id: 'asm_003', assetId: 'ast_003', assessedBy: 'Doni Staf', assessmentDate: '2023-10-05', confidentiality: 2, integrity: 2, availability: 3, authenticity: 2, nonRepudiation: 1, totalScore: 10, classification: 'Sedang' },
-    { id: 'asm_004', assetId: 'ast_004', assessedBy: 'Budi Manajer', assessmentDate: '2024-01-20', confidentiality: 3, integrity: 3, availability: 2, authenticity: 3, nonRepudiation: 3, totalScore: 14, classification: 'Tinggi' },
-    { id: 'asm_005', assetId: 'ast_005', assessedBy: 'Doni Staf', assessmentDate: '2023-09-15', confidentiality: 1, integrity: 2, availability: 3, authenticity: 1, nonRepudiation: 1, totalScore: 8, classification: 'Sedang' },
-    { id: 'asm_006', assetId: 'ast_009', assessedBy: 'Budi Manajer', assessmentDate: '2023-11-20', confidentiality: 3, integrity: 3, availability: 3, authenticity: 2, nonRepudiation: 2, totalScore: 13, classification: 'Tinggi' },
-];
+    { id: 1, asset_id: 1, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 3, authenticity_score: 2, non_repudiation_score: 3, total_score: 14, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PS-001' },
+    { id: 2, asset_id: 2, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 3, authenticity_score: 2, non_repudiation_score: 3, total_score: 14, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PS-002' },
+    { id: 3, asset_id: 3, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 3, authenticity_score: 2, non_repudiation_score: 3, total_score: 14, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PS-003' },
+    { id: 4, asset_id: 4, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 3, authenticity_score: 2, non_repudiation_score: 3, total_score: 14, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PS-004' },
+    { id: 5, asset_id: 5, assessed_by: 2, confidentiality_score: 2, integrity_score: 3, availability_score: 2, authenticity_score: 2, non_repudiation_score: 3, total_score: 12, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PS-005' },
+    { id: 6, asset_id: 6, assessed_by: 2, confidentiality_score: 2, integrity_score: 3, availability_score: 2, authenticity_score: 2, non_repudiation_score: 3, total_score: 12, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PS-006' },
+    { id: 7, asset_id: 7, assessed_by: 2, confidentiality_score: 2, integrity_score: 3, availability_score: 2, authenticity_score: 2, non_repudiation_score: 3, total_score: 12, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PS-007' },
+    { id: 8, asset_id: 8, assessed_by: 2, confidentiality_score: 2, integrity_score: 1, availability_score: 3, authenticity_score: 1, non_repudiation_score: 3, total_score: 10, asset_value: 'Sedang', assessment_date: '2025-09-18', notes: 'Penilaian SP-003' },
+    { id: 9, asset_id: 9, assessed_by: 2, confidentiality_score: 3, integrity_score: 2, availability_score: 3, authenticity_score: 3, non_repudiation_score: 3, total_score: 14, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian SP-004' },
+    { id: 10, asset_id: 10, assessed_by: 2, confidentiality_score: 1, integrity_score: 2, availability_score: 3, authenticity_score: 1, non_repudiation_score: 1, total_score: 8, asset_value: 'Sedang', assessment_date: '2025-09-18', notes: 'Penilaian SP-005' },
+    { id: 15, asset_id: 15, assessed_by: 2, confidentiality_score: 1, integrity_score: 1, availability_score: 3, authenticity_score: 1, non_repudiation_score: 1, total_score: 7, asset_value: 'Sedang', assessment_date: '2025-09-18', notes: 'Penilaian PL-001' },
+    { id: 16, asset_id: 16, assessed_by: 2, confidentiality_score: 2, integrity_score: 3, availability_score: 3, authenticity_score: 2, non_repudiation_score: 1, total_score: 11, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PL-002' },
+    { id: 17, asset_id: 17, assessed_by: 2, confidentiality_score: 1, integrity_score: 3, availability_score: 2, authenticity_score: 2, non_repudiation_score: 3, total_score: 11, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PL-003' },
+    { id: 18, asset_id: 18, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 2, authenticity_score: 2, non_repudiation_score: 2, total_score: 12, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PL-004' },
+    { id: 19, asset_id: 19, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 2, authenticity_score: 3, non_repudiation_score: 3, total_score: 14, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PL-005' },
+    { id: 20, asset_id: 20, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 3, authenticity_score: 3, non_repudiation_score: 3, total_score: 15, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian DI-001' },
+    { id: 21, asset_id: 21, assessed_by: 2, confidentiality_score: 1, integrity_score: 1, availability_score: 1, authenticity_score: 1, non_repudiation_score: 1, total_score: 5, asset_value: 'Rendah', assessment_date: '2025-09-18', notes: 'Penilaian DI-002' },
+    { id: 22, asset_id: 22, assessed_by: 2, confidentiality_score: 3, integrity_score: 3, availability_score: 3, authenticity_score: 3, non_repudiation_score: 3, total_score: 15, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian DI-003' },
+    { id: 23, asset_id: 23, assessed_by: 2, confidentiality_score: 2, integrity_score: 2, availability_score: 2, authenticity_score: 2, non_repudiation_score: 2, total_score: 10, asset_value: 'Sedang', assessment_date: '2025-09-18', notes: 'Penilaian DI-004' },
+    { id: 24, asset_id: 24, assessed_by: 2, confidentiality_score: 3, integrity_score: 2, availability_score: 1, authenticity_score: 3, non_repudiation_score: 2, total_score: 11, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PK-001' },
+    { id: 25, asset_id: 25, assessed_by: 2, confidentiality_score: 2, integrity_score: 2, availability_score: 2, authenticity_score: 2, non_repudiation_score: 1, total_score: 9, asset_value: 'Sedang', assessment_date: '2025-09-18', notes: 'Penilaian PK-002' },
+    { id: 26, asset_id: 26, assessed_by: 2, confidentiality_score: 2, integrity_score: 3, availability_score: 3, authenticity_score: 2, non_repudiation_score: 1, total_score: 11, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PK-003' },
+    { id: 27, asset_id: 27, assessed_by: 2, confidentiality_score: 2, integrity_score: 3, availability_score: 3, authenticity_score: 2, non_repudiation_score: 1, total_score: 11, asset_value: 'Tinggi', assessment_date: '2025-09-18', notes: 'Penilaian PK-004' },
+].map(assessment => {
+    const user = initialUsers.find(u => u.id === assessment.assessed_by);
+    return {
+        ...assessment,
+        assessed_by_name: user ? user.name : 'Unknown User'
+    };
+});
+
+
+// Helper to enrich asset data with category name and value
+export const getEnrichedAssets = (): Asset[] => {
+    return initialAssets.map(asset => {
+        const classification = initialClassifications.find(c => c.id === asset.classification_id);
+        const latestAssessment = initialAssessments
+            .filter(a => a.asset_id === asset.id)
+            .sort((a, b) => new Date(b.assessment_date).getTime() - new Date(a.assessment_date).getTime())[0];
+        
+        return {
+            ...asset,
+            category_name: classification ? classification.name : 'Tidak Diketahui',
+            asset_value: latestAssessment ? latestAssessment.asset_value : 'Belum Dinilai'
+        };
+    });
+};

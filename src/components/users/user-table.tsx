@@ -34,6 +34,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { type User } from "@/lib/definitions"
+import { initialRoles } from "@/lib/data"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -49,7 +50,7 @@ import {
 type UserTableProps = {
   users: User[];
   onEdit: (user: User) => void;
-  onDelete: (userId: string) => void;
+  onDelete: (userId: number) => void;
 };
 
 export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
@@ -88,9 +89,12 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
       header: "Email",
     },
     {
-      accessorKey: "role",
+      accessorKey: "roleId",
       header: "Peran",
-      cell: ({ row }) => <Badge variant="outline">{row.getValue("role")}</Badge>,
+      cell: ({ row }) => {
+        const role = initialRoles.find(r => r.id === row.getValue("roleId"))
+        return <Badge variant="outline">{role ? role.name : 'Tidak Diketahui'}</Badge>
+      },
     },
     {
       id: "actions",

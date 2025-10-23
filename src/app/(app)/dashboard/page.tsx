@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { initialAssets } from "@/lib/data";
+import { getEnrichedAssets } from "@/lib/data";
 import { getCurrentUser } from "@/lib/session";
 import { BarChart, Database, ShieldAlert, Activity } from "lucide-react";
 import AssetClassificationChart from "@/components/dashboard/asset-classification-chart";
@@ -18,14 +18,19 @@ export default async function DashboardPage() {
   if(!user) {
     redirect('/login');
   }
-  const totalAssets = initialAssets.length;
-  const highValueAssets = initialAssets.filter(a => a.classification === 'Tinggi').length;
-  const expiringSoonAssets = initialAssets.filter(a => a.status === 'Akan Kadaluarsa').length;
+
+  const assets = getEnrichedAssets();
+  const totalAssets = assets.length;
+  const highValueAssets = assets.filter(a => a.asset_value === 'Tinggi').length;
+  
+  // Note: The 'Akan Kadaluarsa' status is gone from the new data structure.
+  // This stat will now be 0 or needs to be re-evaluated based on new logic.
+  const expiringSoonAssets = 0;
 
   const stats = [
     { title: "Total Aset", value: totalAssets, icon: <Database className="h-4 w-4 text-muted-foreground" /> },
-    { title: "Aset Klasifikasi Tinggi", value: highValueAssets, icon: <ShieldAlert className="h-4 w-4 text-muted-foreground" /> },
-    { title: "Aset Akan Kadaluarsa", value: expiringSoonAssets, icon: <Activity className="h-4 w-4 text-muted-foreground" /> },
+    { title: "Aset Bernilai Tinggi", value: highValueAssets, icon: <ShieldAlert className="h-4 w-4 text-muted-foreground" /> },
+    { title: "Aset Perlu Perhatian", value: expiringSoonAssets, icon: <Activity className="h-4 w-4 text-muted-foreground" /> },
   ];
 
   return (
@@ -58,8 +63,8 @@ export default async function DashboardPage() {
           </Card>
           <Card className="lg:col-span-3">
             <CardHeader>
-              <CardTitle className="font-headline">Klasifikasi Aset</CardTitle>
-              <CardDescription>Jumlah aset berdasarkan klasifikasi keamanan.</CardDescription>
+              <CardTitle className="font-headline">Nilai Aset</CardTitle>
+              <CardDescription>Jumlah aset berdasarkan nilai hasil penilaian.</CardDescription>
             </CardHeader>
             <CardContent>
               <AssetClassificationChart />

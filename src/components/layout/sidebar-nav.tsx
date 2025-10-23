@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -7,9 +6,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarContent,
-  SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -19,15 +16,12 @@ import {
   Settings,
   FileText,
   Shield,
-  User as UserIcon
 } from 'lucide-react';
-import { useSidebar } from '@/components/ui/sidebar';
 import { useSession } from '@/hooks/use-session';
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { state } = useSidebar();
-  const { user } = useSession();
+  const { role } = useSession();
 
   const menuItems = [
     {
@@ -62,7 +56,7 @@ export function SidebarNav() {
     },
   ];
 
-  if (!user) {
+  if (!role) {
     return null; // Or a loading skeleton
   }
 
@@ -82,7 +76,7 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {menuItems
-            .filter((item) => item.roles.includes(user.role))
+            .filter((item) => item.roles.includes(role.name))
             .map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>

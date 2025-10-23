@@ -1,43 +1,63 @@
-export type UserRole = 'Administrator' | 'Manajer Aset' | 'Auditor/Pimpinan';
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  avatarUrl: string;
+export type Role = {
+  id: number;
+  name: 'Administrator' | 'Manajer Aset' | 'Auditor/Pimpinan';
+  description: string;
 };
 
-export type AssetCategory = 'Perangkat Keras' | 'Perangkat Lunak' | 'Sarana Pendukung' | 'Data & Informasi' | 'SDM & Pihak Ketiga';
+export type User = {
+  id: number;
+  username: string;
+  email: string;
+  roleId: number;
+  name: string; // From the previous structure, let's keep it for display.
+  avatarUrl: string; // From the previous structure.
+};
 
-export type AssetStatus = 'Aktif' | 'Dalam Perbaikan' | 'Non-Aktif' | 'Akan Kadaluarsa';
+export type Classification = {
+  id: number;
+  name: string;
+  description?: string;
+};
 
-export type AssetClassification = 'Tinggi' | 'Sedang' | 'Rendah' | 'Belum Dinilai';
+export type SubClassification = {
+  id: number;
+  classification_id: number;
+  name: string;
+  description?: string;
+};
+
+export type AssetClassificationValue = 'Tinggi' | 'Sedang' | 'Rendah' | 'Belum Dinilai';
 
 export type Asset = {
-  id: string;
-  assetCode: string;
-  name: string;
-  category: AssetCategory;
-  specifications: string;
+  id: number;
+  asset_code: string;
+  asset_name: string;
+  classification_id: number;
+  sub_classification_id?: number | null;
+  identification_of_existence: string;
   location: string;
   owner: string;
-  status: AssetStatus;
-  purchaseDate: string; // YYYY-MM-DD
-  expiryDate: string; // YYYY-MM-DD
-  classification: AssetClassification;
+  // These fields are from the old structure but useful for display logic until full backend integration
+  category_name?: string; 
+  asset_value?: AssetClassificationValue; 
 };
 
 export type Assessment = {
-  id: string;
-  assetId: string;
-  assessedBy: string;
-  assessmentDate: string; // YYYY-MM-DD
-  confidentiality: number; // 1-3
-  integrity: number; // 1-3
-  availability: number; // 1-3
-  authenticity: number; // 1-3
-  nonRepudiation: number; // 1-3
-  totalScore: number;
-  classification: AssetClassification;
+  id: number;
+  asset_id: number;
+  assessed_by: number; // user id
+  confidentiality_score: number;
+  integrity_score: number;
+  availability_score: number;
+  authenticity_score: number;
+  non_repudiation_score: number;
+  total_score: number;
+  asset_value: AssetClassificationValue;
+  assessment_date: string; // YYYY-MM-DD
+  notes?: string;
+  // For display purposes, to show user name
+  assessed_by_name?: string;
 };
+
+// Merging old UserRole for component compatibility
+export type UserRole = Role['name'];

@@ -12,20 +12,20 @@ import { useSession } from '@/hooks/use-session';
 
 export default function UsersPage() {
   const router = useRouter();
-  const { user } = useSession();
+  const { role } = useSession();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Redirect if user data is loaded and the user is not an administrator
-    if (user && user.role !== 'Administrator') {
+    if (role && role.name !== 'Administrator') {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [role, router]);
 
   // Show a loading state while user data is being fetched
-  if (!user) {
+  if (!role) {
     return (
       <div className="flex justify-center items-center h-full">
         <p>Memuat atau mengalihkan...</p>
@@ -34,7 +34,7 @@ export default function UsersPage() {
   }
 
   // If the user is not an administrator, they will be redirected, so we can return null here.
-  if (user.role !== 'Administrator') {
+  if (role.name !== 'Administrator') {
     return null;
   }
 
@@ -48,7 +48,7 @@ export default function UsersPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = (userId: number) => {
     setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
   };
 
@@ -62,7 +62,7 @@ export default function UsersPage() {
       // Add new user
       const newUser: User = {
         ...userData,
-        id: `usr_${Date.now()}`,
+        id: Date.now(),
         avatarUrl: `https://i.pravatar.cc/150?u=${userData.email}`,
       };
       setUsers(prevUsers => [newUser, ...prevUsers]);
