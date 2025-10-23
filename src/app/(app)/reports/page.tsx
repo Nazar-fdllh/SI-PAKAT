@@ -1,4 +1,4 @@
-import { getRole } from "@/lib/session";
+import { getCurrentRole } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,8 @@ import Link from "next/link";
 import { initialAssets as assets } from "@/lib/data";
 
 export default async function ReportsPage() {
-  const role = await getRole();
-  if (role !== 'Administrator' && role !== 'Auditor/Pimpinan') {
+  const role = await getCurrentRole();
+  if (!role || (role.name !== 'Administrator' && role.name !== 'Auditor/Pimpinan')) {
     redirect('/dashboard');
   }
 
@@ -65,3 +65,5 @@ export default async function ReportsPage() {
     </div>
   );
 }
+
+    
