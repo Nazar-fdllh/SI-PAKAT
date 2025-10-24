@@ -122,8 +122,9 @@ app.listen(PORT, () => {
 ```
 
 ---
+### `/config` Folder
 
-### `/config/db.js`
+#### `/config/db.js`
 
 Konfigurasi koneksi ke database MySQL menggunakan `mysql2/promise`.
 
@@ -152,10 +153,7 @@ pool.getConnection()
 
 module.exports = pool;
 ```
-
----
-
-### `/config/swaggerDef.js`
+#### `/config/swaggerDef.js`
 
 File ini mendefinisikan OpenAPI Spec untuk Swagger dan menunjuk ke file-file rute yang akan didokumentasikan.
 
@@ -196,7 +194,9 @@ module.exports = options;
 
 ---
 
-### `/controllers/authController.js`
+### `/controllers` Folder
+
+#### `/controllers/authController.js`
 
 Logika untuk menangani login pengguna. Password di-hash menggunakan `bcryptjs`.
 
@@ -250,10 +250,7 @@ exports.login = async (req, res) => {
     }
 };
 ```
-
----
-
-### `/controllers/userController.js`
+#### `/controllers/userController.js`
 
 Logika CRUD lengkap untuk entitas Pengguna.
 
@@ -335,10 +332,7 @@ exports.deleteUser = async (req, res) => {
     }
 };
 ```
-
----
-
-### `/controllers/assetController.js`
+#### `/controllers/assetController.js`
 
 Logika CRUD lengkap untuk Aset.
 
@@ -419,10 +413,7 @@ exports.deleteAsset = async (req, res) => {
     }
 };
 ```
-
----
-
-### `/controllers/reportController.js`
+#### `/controllers/reportController.js`
 
 Logika untuk menghasilkan data laporan dengan filter dinamis.
 
@@ -478,7 +469,9 @@ exports.generateReport = async (req, res) => {
 
 ---
 
-### `/middlewares/authMiddleware.js`
+### `/middlewares` Folder
+
+#### `/middlewares/authMiddleware.js`
 
 Middleware untuk memverifikasi token JWT dari header `Authorization`.
 
@@ -506,10 +499,7 @@ const verifyToken = (req, res, next) => {
 
 module.exports = verifyToken;
 ```
-
----
-
-### `/middlewares/roleMiddleware.js`
+#### `/middlewares/roleMiddleware.js`
 
 Middleware untuk membatasi akses endpoint berdasarkan peran pengguna.
 
@@ -529,7 +519,9 @@ module.exports = checkRole;
 
 ---
 
-### `/routes/authRoutes.js`
+### `/routes` Folder
+
+#### `/routes/authRoutes.js`
 
 Tambahkan komentar JSDoc untuk dokumentasi Swagger.
 
@@ -604,10 +596,7 @@ router.post('/login', authController.login);
 
 module.exports = router;
 ```
-
----
-
-### `/routes/userRoutes.js`
+#### `/routes/userRoutes.js`
 
 Rute untuk pengguna dengan dokumentasi Swagger. Semua endpoint di sini memerlukan verifikasi token dan peran Administrator.
 
@@ -779,10 +768,7 @@ router.delete('/:id', [verifyToken, isAdmin], userController.deleteUser);
 
 module.exports = router;
 ```
-
----
-
-### `/routes/assetRoutes.js`
+#### `/routes/assetRoutes.js`
 
 Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tulis (POST, PUT, DELETE). Semua pengguna terautentikasi bisa membaca data.
 
@@ -1001,10 +987,7 @@ router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset
 
 module.exports = router;
 ```
-
----
-
-### `/routes/reportRoutes.js`
+#### `/routes/reportRoutes.js`
 
 Rute ini diproteksi, hanya Auditor dan Admin yang bisa mengakses.
 
