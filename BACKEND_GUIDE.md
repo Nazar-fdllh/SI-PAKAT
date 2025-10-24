@@ -222,7 +222,7 @@ const verifyToken = (req, res, next) => {
     });
 };
 
-module.exports = { verifyToken };
+module.exports = verifyToken;
 ```
 
 ---
@@ -242,7 +242,7 @@ const checkRole = (roles) => {
     };
 };
 
-module.exports = { checkRole };
+module.exports = checkRole;
 ```
 
 ---
@@ -525,7 +525,6 @@ exports.generateReport = async (req, res) => {
         res.status(500).json({ message: 'Gagal menghasilkan laporan', error: error.message });
     }
 };
-
 ```
 
 ---
@@ -617,8 +616,8 @@ Rute untuk pengguna dengan dokumentasi Swagger. Semua endpoint di sini memerluka
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const { checkRole } = require('../middlewares/roleMiddleware');
+const verifyToken = require('../middlewares/authMiddleware');
+const checkRole = require('../middlewares/roleMiddleware');
 
 const isAdmin = checkRole(['Administrator']);
 
@@ -795,8 +794,8 @@ Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tu
 const express = require('express');
 const router = express.Router();
 const assetController = require('../controllers/assetController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const { checkRole } = require('../middlewares/roleMiddleware');
+const verifyToken = require('../middlewares/authMiddleware');
+const checkRole = require('../middlewares/roleMiddleware');
 
 const isAssetManager = checkRole(['Administrator', 'Manajer Aset']);
 
@@ -879,7 +878,7 @@ const isAssetManager = checkRole(['Administrator', 'Manajer Aset']);
  *       401:
  *         description: Tidak diotorisasi
  */
-router.get('/', [verifyToken], assetController.getAllAssets);
+router.get('/', verifyToken, assetController.getAllAssets);
 
 /**
  * @swagger
@@ -905,7 +904,7 @@ router.get('/', [verifyToken], assetController.getAllAssets);
  *       404:
  *         description: Aset tidak ditemukan
  */
-router.get('/:id', [verifyToken], assetController.getAssetById);
+router.get('/:id', verifyToken, assetController.getAssetById);
 
 /**
  * @swagger
@@ -1005,6 +1004,7 @@ router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset
 
 module.exports = router;
 ```
+
 ---
 
 ### `/routes/reportRoutes.js`
@@ -1016,8 +1016,8 @@ Rute ini diproteksi, hanya Auditor dan Admin yang bisa mengakses.
 const express = require('express');
 const router = express.Router();
 const reportController = require('../controllers/reportController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const { checkRole } = require('../middlewares/roleMiddleware');
+const verifyToken = require('../middlewares/authMiddleware');
+const checkRole = require('../middlewares/roleMiddleware');
 
 /**
  * @swagger
@@ -1067,5 +1067,3 @@ module.exports = router;
 6.  Buka browser dan akses `http://localhost:3001/api-docs` untuk melihat dan menguji dokumentasi API interaktif Anda.
 
 Anda sekarang memiliki backend yang lengkap dengan dokumentasi API otomatis yang siap diintegrasikan dengan frontend Next.js Anda.
-
-    
