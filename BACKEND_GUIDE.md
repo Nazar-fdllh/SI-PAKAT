@@ -1,7 +1,7 @@
 
 # Panduan Lengkap Backend Express.js untuk SI-PAKAT
 
-Dokumen ini berisi panduan lengkap untuk membuat backend RESTful API menggunakan Express.js dan MySQL untuk aplikasi SI-PAKAT.
+Dokumen ini berisi panduan lengkap untuk membuat backend RESTful API menggunakan Express.js dan MySQL untuk aplikasi SI-PAKAT, termasuk integrasi dokumentasi API otomatis menggunakan Swagger.
 
 ## 1. Teknologi yang Digunakan
 
@@ -13,6 +13,7 @@ Dokumen ini berisi panduan lengkap untuk membuat backend RESTful API menggunakan
 - **bcryptjs**: Untuk hashing (enkripsi) password.
 - **cors**: Middleware untuk mengaktifkan Cross-Origin Resource Sharing.
 - **dotenv**: Untuk mengelola variabel lingkungan dari file `.env`.
+- **swagger-jsdoc & swagger-ui-express**: Untuk membuat dokumentasi API interaktif secara otomatis.
 
 ## 2. Struktur Folder Proyek
 
@@ -22,6 +23,7 @@ Untuk menjaga kode tetap modular dan mudah dikelola, gunakan struktur folder ber
 /si-pakat-backend
 |-- /config
 |   |-- db.js               # Konfigurasi koneksi database
+|   `-- swaggerDef.js       # Konfigurasi Swagger JSDoc
 |-- /controllers
 |   |-- authController.js     # Logika untuk login
 |   |-- userController.js     # Logika CRUD untuk pengguna
@@ -48,7 +50,7 @@ Buat folder proyek baru, inisialisasi `npm`, dan instal dependensi yang diperluk
 mkdir si-pakat-backend
 cd si-pakat-backend
 npm init -y
-npm install express mysql2 jsonwebtoken bcryptjs cors dotenv
+npm install express mysql2 jsonwebtoken bcryptjs cors dotenv swagger-jsdoc swagger-ui-express
 ```
 
 ## 4. Implementasi Kode
@@ -74,13 +76,16 @@ JWT_SECRET=kunci-rahasia-yang-sangat-aman
 
 ### `server.js` (File Utama)
 
-File ini menginisialisasi server Express, menerapkan middleware, dan menghubungkan semua rute.
+File ini menginisialisasi server Express, menerapkan middleware, menghubungkan semua rute, dan menyajikan dokumentasi Swagger.
 
 ```javascript
 // server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerDefinition = require('./config/swaggerDef');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -90,6 +95,10 @@ const reportRoutes = require('./routes/reportRoutes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Setup Swagger
+const specs = swaggerJsdoc(swaggerDefinition);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -97,7 +106,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.get('/', (req, res) => {
-    res.send('API SI-PAKAT Berjalan...');
+    res.send('API SI-PAKAT Berjalan... Buka /api-docs untuk melihat dokumentasi.');
 });
 
 app.use('/api/auth', authRoutes);
@@ -108,6 +117,7 @@ app.use('/api/reports', reportRoutes);
 // Jalankan Server
 app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
+    console.log(`Dokumentasi API tersedia di http://localhost:${PORT}/api-docs`);
 });
 ```
 
@@ -141,6 +151,47 @@ pool.getConnection()
     });
 
 module.exports = pool;
+```
+
+---
+
+### `/config/swaggerDef.js`
+
+File ini mendefinisikan OpenAPI Spec untuk Swagger dan menunjuk ke file-file rute yang akan didokumentasikan.
+
+```javascript
+// /config/swaggerDef.js
+const options = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'API SI-PAKAT',
+            version: '1.0.0',
+            description: 'Dokumentasi API untuk Sistem Informasi Pengelolaan Keamanan Aset TIK (SI-PAKAT)',
+        },
+        servers: [
+            {
+                url: 'http://localhost:3001',
+                description: 'Server Development'
+            }
+        ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                }
+            }
+        },
+        security: [{
+            bearerAuth: []
+        }]
+    },
+    apis: ['./routes/*.js'], // Path ke file API yang ingin didokumentasikan
+};
+
+module.exports = options;
 ```
 
 ---
@@ -259,12 +310,75 @@ exports.login = async (req, res) => {
 
 ### `/routes/authRoutes.js`
 
+Tambahkan komentar JSDoc untuk dokumentasi Swagger.
+
 ```javascript
 // /routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Authentication
+ *   description: API untuk autentikasi pengguna
+ */
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login pengguna ke sistem
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email pengguna
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Password pengguna
+ *             example:
+ *               email: admin@sipakat.com
+ *               password: "password123"
+ *     responses:
+ *       200:
+ *         description: Login berhasil, mengembalikan token JWT.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 name:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 accessToken:
+ *                   type: string
+ *       400:
+ *         description: Email atau password tidak diisi
+ *       401:
+ *         description: Password salah
+ *       404:
+ *         description: Email tidak ditemukan
+ *       500:
+ *         description: Error server internal
+ */
 router.post('/login', authController.login);
 
 module.exports = router;
@@ -274,7 +388,7 @@ module.exports = router;
 
 ### `/controllers/userController.js`
 
-Logika CRUD lengkap untuk entitas Pengguna. Semua operasi tulis dilindungi hanya untuk Admin.
+Logika CRUD lengkap untuk entitas Pengguna.
 
 ```javascript
 // /controllers/userController.js
@@ -359,7 +473,7 @@ exports.deleteUser = async (req, res) => {
 
 ### `/routes/userRoutes.js`
 
-Semua endpoint di sini memerlukan verifikasi token dan peran Administrator.
+Rute untuk pengguna dengan dokumentasi Swagger. Semua endpoint di sini memerlukan verifikasi token dan peran Administrator.
 
 ```javascript
 // /routes/userRoutes.js
@@ -369,13 +483,163 @@ const userController = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: API untuk manajemen pengguna (Hanya Administrator)
+ */
+
 // Terapkan middleware untuk semua rute di file ini
 router.use(verifyToken, isAdmin);
 
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Mengambil semua data pengguna
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Daftar semua pengguna
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   role:
+ *                     type: string
+ *       401:
+ *         description: Tidak diotorisasi
+ *       403:
+ *         description: Akses ditolak
+ */
 router.get('/', userController.getAllUsers);
+
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Membuat pengguna baru
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               role_id:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Pengguna berhasil dibuat
+ *       500:
+ *         description: Gagal membuat pengguna
+ */
 router.post('/', userController.createUser);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Mengambil detail pengguna berdasarkan ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID Pengguna
+ *     responses:
+ *       200:
+ *         description: Detail pengguna
+ *       404:
+ *         description: Pengguna tidak ditemukan
+ */
 router.get('/:id', userController.getUserById);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   put:
+ *     summary: Memperbarui data pengguna
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID Pengguna
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 description: "Opsional, isi jika ingin mengganti password"
+ *               role_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Pengguna berhasil diperbarui
+ *       500:
+ *         description: Gagal memperbarui pengguna
+ */
 router.put('/:id', userController.updateUser);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   delete:
+ *     summary: Menghapus pengguna
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID Pengguna
+ *     responses:
+ *       204:
+ *         description: Pengguna berhasil dihapus
+ *       500:
+ *         description: Gagal menghapus pengguna
+ */
 router.delete('/:id', userController.deleteUser);
 
 module.exports = router;
@@ -479,15 +743,154 @@ const assetController = require('../controllers/assetController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAssetManager } = require('../middlewares/roleMiddleware');
 
-// Semua role terautentikasi bisa melihat aset
+/**
+ * @swagger
+ * tags:
+ *   name: Assets
+ *   description: API untuk manajemen aset
+ */
+
+/**
+ * @swagger
+ * /api/assets:
+ *   get:
+ *     summary: Mengambil semua data aset
+ *     tags: [Assets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Daftar semua aset
+ *       401:
+ *         description: Tidak diotorisasi
+ */
 router.get('/', [verifyToken], assetController.getAllAssets);
+
+/**
+ * @swagger
+ * /api/assets/{id}:
+ *   get:
+ *     summary: Mengambil detail aset berdasarkan ID
+ *     tags: [Assets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Detail aset
+ *       404:
+ *         description: Aset tidak ditemukan
+ */
 router.get('/:id', [verifyToken], assetController.getAssetById);
 
-// Hanya Manajer Aset & Admin yang bisa melakukan operasi tulis
+/**
+ * @swagger
+ * /api/assets:
+ *   post:
+ *     summary: Menambah aset baru (Hanya Admin/Manajer Aset)
+ *     tags: [Assets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               asset_code:
+ *                 type: string
+ *               asset_name:
+ *                 type: string
+ *               classification_id:
+ *                 type: integer
+ *               sub_classification_id:
+ *                 type: integer
+ *               identification_of_existence:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               owner:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Aset berhasil dibuat
+ */
 router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
+
+/**
+ * @swagger
+ * /api/assets/{id}:
+ *   put:
+ *     summary: Memperbarui aset (Hanya Admin/Manajer Aset)
+ *     tags: [Assets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Asset'
+ *     responses:
+ *       200:
+ *         description: Aset berhasil diperbarui
+ */
 router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
+
+/**
+ * @swagger
+ * /api/assets/{id}:
+ *   delete:
+ *     summary: Menghapus aset (Hanya Admin/Manajer Aset)
+ *     tags: [Assets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Aset berhasil dihapus
+ */
 router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Asset:
+ *       type: object
+ *       properties:
+ *         asset_code:
+ *           type: string
+ *         asset_name:
+ *           type: string
+ *         classification_id:
+ *           type: integer
+ *         sub_classification_id:
+ *           type: integer
+ *         identification_of_existence:
+ *           type: string
+ *         location:
+ *           type: string
+ *         owner:
+ *           type: string
+ */
 module.exports = router;
 ```
 ---
@@ -563,6 +966,39 @@ const { checkRole } = require('../middlewares/roleMiddleware');
 
 const canAccessReports = checkRole(['Administrator', 'Auditor']);
 
+/**
+ * @swagger
+ * tags:
+ *   name: Reports
+ *   description: API untuk menghasilkan laporan aset
+ */
+
+/**
+ * @swagger
+ * /api/reports:
+ *   get:
+ *     summary: Menghasilkan laporan aset dengan filter (Hanya Admin/Auditor)
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *         description: ID kategori aset (opsional, 'all' untuk semua)
+ *       - in: query
+ *         name: asset_value
+ *         schema:
+ *           type: string
+ *           enum: [Tinggi, Sedang, Rendah, Semua]
+ *         description: Nilai klasifikasi aset (opsional, 'Semua' untuk semua)
+ *     responses:
+ *       200:
+ *         description: Data laporan berhasil diambil
+ *       403:
+ *         description: Akses ditolak
+ */
 router.get('/', [verifyToken, canAccessReports], reportController.generateReport);
 
 module.exports = router;
@@ -574,14 +1010,7 @@ module.exports = router;
 2.  Buka terminal di dalam folder `si-pakat-backend`.
 3.  Jalankan perintah: `node server.js`
 4.  Server backend Anda akan berjalan di `http://localhost:3001`.
+5.  Buka browser dan akses `http://localhost:3001/api-docs` untuk melihat dan menguji dokumentasi API interaktif Anda.
 
-Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
+Anda sekarang memiliki backend yang lengkap dengan dokumentasi API otomatis yang siap diintegrasikan dengan frontend Next.js Anda.
 
-**Catatan Penting:**
-*   **Password Hashing**: Contoh di atas sudah menggunakan `bcryptjs` untuk meng-hash password saat membuat user dan membandingkannya saat login. Ini adalah praktik keamanan yang sangat penting.
-*   **Username vs Name**: Di `authController`, `username` dari database di-alias sebagai `name` untuk konsistensi dengan token JWT dan frontend.
-
----
-
-    
-    
