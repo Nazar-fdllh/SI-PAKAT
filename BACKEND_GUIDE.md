@@ -308,84 +308,6 @@ exports.login = async (req, res) => {
 
 ---
 
-### `/routes/authRoutes.js`
-
-Tambahkan komentar JSDoc untuk dokumentasi Swagger.
-
-```javascript
-// /routes/authRoutes.js
-const express = require('express');
-const router = express.Router();
-const authController = require('../controllers/authController');
-
-/**
- * @swagger
- * tags:
- *   name: Authentication
- *   description: API untuk autentikasi pengguna
- */
-
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     summary: Login pengguna ke sistem
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email pengguna
- *               password:
- *                 type: string
- *                 format: password
- *                 description: Password pengguna
- *             example:
- *               email: admin@sipakat.com
- *               password: "password123"
- *     responses:
- *       200:
- *         description: Login berhasil, mengembalikan token JWT.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: integer
- *                 name:
- *                   type: string
- *                 email:
- *                   type: string
- *                 role:
- *                   type: string
- *                 accessToken:
- *                   type: string
- *       400:
- *         description: Email atau password tidak diisi
- *       401:
- *         description: Password salah
- *       404:
- *         description: Email tidak ditemukan
- *       500:
- *         description: Error server internal
- */
-router.post('/login', authController.login);
-
-module.exports = router;
-```
-
----
-
 ### `/controllers/userController.js`
 
 Logika CRUD lengkap untuk entitas Pengguna.
@@ -467,6 +389,225 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ message: 'Gagal menghapus pengguna', error: error.message });
     }
 };
+```
+
+---
+
+### `/controllers/assetController.js`
+
+Logika CRUD lengkap untuk Aset.
+
+```javascript
+// /controllers/assetController.js
+const db = require('../config/db');
+
+// Mendapatkan semua aset dengan join untuk nama kategori dan nilai terbaru
+exports.getAllAssets = async (req, res) => {
+    try {
+        const [assets] = await db.query(`
+            SELECT 
+                a.*, 
+                c.name as category_name,
+                (SELECT aa.asset_value FROM asset_assessments aa WHERE aa.asset_id = a.id ORDER BY aa.assessment_date DESC LIMIT 1) as asset_value
+            FROM assets a
+            LEFT JOIN classifications c ON a.classification_id = c.id
+        `);
+        res.json(assets);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
+    }
+};
+
+// Mendapatkan satu aset berdasarkan ID
+exports.getAssetById = async (req, res) => {
+    try {
+        const [asset] = await db.query(`
+            SELECT a.*, c.name as category_name 
+            FROM assets a
+            LEFT JOIN classifications c ON a.classification_id = c.id
+            WHERE a.id = ?
+        `, [req.params.id]);
+        if (asset.length === 0) {
+            return res.status(404).json({ message: 'Aset tidak ditemukan' });
+        }
+        res.json(asset[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
+    }
+};
+
+// Menambah aset baru
+exports.createAsset = async (req, res) => {
+    const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner } = req.body;
+    try {
+        const [result] = await db.execute(
+            'INSERT INTO assets (asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
+        );
+        res.status(201).json({ id: result.insertId, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal menambah aset', error: error.message });
+    }
+};
+
+// Memperbarui aset
+exports.updateAsset = async (req, res) => {
+    const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner } = req.body;
+    try {
+        await db.execute(
+            'UPDATE assets SET asset_code = ?, asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
+            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, req.params.id]
+        );
+        res.json({ message: 'Aset berhasil diperbarui' });
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal memperbarui aset', error: error.message });
+    }
+};
+
+// Menghapus aset
+exports.deleteAsset = async (req, res) => {
+    try {
+        await db.execute('DELETE FROM assets WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal menghapus aset', error: error.message });
+    }
+};
+```
+
+---
+
+### `/controllers/reportController.js`
+
+Logika untuk menghasilkan data laporan dengan filter dinamis.
+
+```javascript
+// /controllers/reportController.js
+const db = require('../config/db');
+
+exports.generateReport = async (req, res) => {
+    const { categoryId, asset_value } = req.query;
+
+    let query = `
+        SELECT 
+            a.id, a.asset_code, a.asset_name, a.owner,
+            c.name as category_name,
+            latest_aa.asset_value
+        FROM assets a
+        JOIN classifications c ON a.classification_id = c.id
+        -- Join untuk mendapatkan penilaian terbaru
+        LEFT JOIN (
+            SELECT 
+                asset_id, 
+                asset_value,
+                ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
+            FROM asset_assessments
+        ) latest_aa ON a.id = latest_aa.asset_id AND latest_aa.rn = 1
+    `;
+
+    const params = [];
+    const conditions = [];
+
+    if (categoryId && categoryId !== 'all') {
+        conditions.push('a.classification_id = ?');
+        params.push(categoryId);
+    }
+
+    if (asset_value && asset_value !== 'Semua') {
+        conditions.push('latest_aa.asset_value = ?');
+        params.push(asset_value);
+    }
+
+    if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    try {
+        const [results] = await db.query(query, params);
+        res.json(results);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal menghasilkan laporan', error: error.message });
+    }
+};
+
+```
+
+---
+
+### `/routes/authRoutes.js`
+
+Tambahkan komentar JSDoc untuk dokumentasi Swagger.
+
+```javascript
+// /routes/authRoutes.js
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+
+/**
+ * @swagger
+ * tags:
+ *   name: Authentication
+ *   description: API untuk autentikasi pengguna
+ */
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login pengguna ke sistem
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email pengguna
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Password pengguna
+ *             example:
+ *               email: admin@sipakat.com
+ *               password: "password123"
+ *     responses:
+ *       200:
+ *         description: Login berhasil, mengembalikan token JWT.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 name:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 accessToken:
+ *                   type: string
+ *       400:
+ *         description: Email atau password tidak diisi
+ *       401:
+ *         description: Password salah
+ *       404:
+ *         description: Email tidak ditemukan
+ *       500:
+ *         description: Error server internal
+ */
+router.post('/login', authController.login);
+
+module.exports = router;
 ```
 
 ---
@@ -647,90 +788,6 @@ module.exports = router;
 
 ---
 
-### `/controllers/assetController.js`
-
-Logika CRUD lengkap untuk Aset.
-
-```javascript
-// /controllers/assetController.js
-const db = require('../config/db');
-
-// Mendapatkan semua aset dengan join untuk nama kategori dan nilai terbaru
-exports.getAllAssets = async (req, res) => {
-    try {
-        const [assets] = await db.query(`
-            SELECT 
-                a.*, 
-                c.name as category_name,
-                (SELECT aa.asset_value FROM asset_assessments aa WHERE aa.asset_id = a.id ORDER BY aa.assessment_date DESC LIMIT 1) as asset_value
-            FROM assets a
-            LEFT JOIN classifications c ON a.classification_id = c.id
-        `);
-        res.json(assets);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
-    }
-};
-
-// Mendapatkan satu aset berdasarkan ID
-exports.getAssetById = async (req, res) => {
-    try {
-        const [asset] = await db.query(`
-            SELECT a.*, c.name as category_name 
-            FROM assets a
-            LEFT JOIN classifications c ON a.classification_id = c.id
-            WHERE a.id = ?
-        `, [req.params.id]);
-        if (asset.length === 0) {
-            return res.status(404).json({ message: 'Aset tidak ditemukan' });
-        }
-        res.json(asset[0]);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
-    }
-};
-
-// Menambah aset baru
-exports.createAsset = async (req, res) => {
-    const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner } = req.body;
-    try {
-        const [result] = await db.execute(
-            'INSERT INTO assets (asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
-        );
-        res.status(201).json({ id: result.insertId, ...req.body });
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal menambah aset', error: error.message });
-    }
-};
-
-// Memperbarui aset
-exports.updateAsset = async (req, res) => {
-    const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner } = req.body;
-    try {
-        await db.execute(
-            'UPDATE assets SET asset_code = ?, asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
-            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, req.params.id]
-        );
-        res.json({ message: 'Aset berhasil diperbarui' });
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal memperbarui aset', error: error.message });
-    }
-};
-
-// Menghapus aset
-exports.deleteAsset = async (req, res) => {
-    try {
-        await db.execute('DELETE FROM assets WHERE id = ?', [req.params.id]);
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal menghapus aset', error: error.message });
-    }
-};
-```
-
----
-
 ### `/routes/assetRoutes.js`
 
 Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tulis (POST, PUT, DELETE). Semua pengguna terautentikasi bisa membaca data.
@@ -893,63 +950,6 @@ router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset
  */
 module.exports = router;
 ```
----
-
-### `/controllers/reportController.js`
-
-Logika untuk menghasilkan data laporan dengan filter dinamis.
-
-```javascript
-// /controllers/reportController.js
-const db = require('../config/db');
-
-exports.generateReport = async (req, res) => {
-    const { categoryId, asset_value } = req.query;
-
-    let query = `
-        SELECT 
-            a.id, a.asset_code, a.asset_name, a.owner,
-            c.name as category_name,
-            latest_aa.asset_value
-        FROM assets a
-        JOIN classifications c ON a.classification_id = c.id
-        -- Join untuk mendapatkan penilaian terbaru
-        LEFT JOIN (
-            SELECT 
-                asset_id, 
-                asset_value,
-                ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
-            FROM asset_assessments
-        ) latest_aa ON a.id = latest_aa.asset_id AND latest_aa.rn = 1
-    `;
-
-    const params = [];
-    const conditions = [];
-
-    if (categoryId && categoryId !== 'all') {
-        conditions.push('a.classification_id = ?');
-        params.push(categoryId);
-    }
-
-    if (asset_value && asset_value !== 'Semua') {
-        conditions.push('latest_aa.asset_value = ?');
-        params.push(asset_value);
-    }
-
-    if (conditions.length > 0) {
-        query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    try {
-        const [results] = await db.query(query, params);
-        res.json(results);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal menghasilkan laporan', error: error.message });
-    }
-};
-
-```
-
 ---
 
 ### `/routes/reportRoutes.js`
