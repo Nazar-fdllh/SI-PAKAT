@@ -44,7 +44,7 @@ Untuk menjaga kode tetap modular dan mudah dikelola, gunakan struktur folder ber
 
 ## 3. Instalasi Dependensi
 
-Buat folder proyek baru, inisialisasi `npm`, dan instal dependensi yang diperlukan.
+Buat folder proyek baru, inisialisasi `npm`, dan instal dependensi yang diperlukan. **Langkah ini penting untuk dijalankan** agar semua paket yang dibutuhkan tersedia.
 
 ```bash
 mkdir si-pakat-backend
@@ -1008,9 +1008,9 @@ module.exports = router;
 
 1.  Pastikan service Apache dan MySQL di Laragon sudah berjalan.
 2.  Buka terminal di dalam folder `si-pakat-backend`.
-3.  Jalankan perintah: `node server.js`
-4.  Server backend Anda akan berjalan di `http://localhost:3001`.
-5.  Buka browser dan akses `http://localhost:3001/api-docs` untuk melihat dan menguji dokumentasi API interaktif Anda.
+3.  Jalankan perintah instalasi dependensi jika belum: `npm install`
+4.  Jalankan perintah untuk memulai server: `node server.js`
+5.  Server backend Anda akan berjalan di `http://localhost:3001`.
+6.  Buka browser dan akses `http://localhost:3001/api-docs` untuk melihat dan menguji dokumentasi API interaktif Anda.
 
 Anda sekarang memiliki backend yang lengkap dengan dokumentasi API otomatis yang siap diintegrasikan dengan frontend Next.js Anda.
-
