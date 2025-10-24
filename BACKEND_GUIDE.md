@@ -242,11 +242,7 @@ const checkRole = (roles) => {
     };
 };
 
-const isAdmin = checkRole(['Administrator']);
-const isAssetManager = checkRole(['Administrator', 'Manajer Aset']);
-const isAuditor = checkRole(['Administrator', 'Auditor']);
-
-module.exports = { isAdmin, isAssetManager, isAuditor, checkRole };
+module.exports = { checkRole };
 ```
 
 ---
@@ -622,7 +618,9 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
-const { isAdmin } = require('../middlewares/roleMiddleware');
+const { checkRole } = require('../middlewares/roleMiddleware');
+
+const isAdmin = checkRole(['Administrator']);
 
 /**
  * @swagger
@@ -798,13 +796,67 @@ const express = require('express');
 const router = express.Router();
 const assetController = require('../controllers/assetController');
 const { verifyToken } = require('../middlewares/authMiddleware');
-const { isAssetManager } = require('../middlewares/roleMiddleware');
+const { checkRole } = require('../middlewares/roleMiddleware');
+
+const isAssetManager = checkRole(['Administrator', 'Manajer Aset']);
 
 /**
  * @swagger
  * tags:
  *   name: Assets
  *   description: API untuk manajemen aset
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Asset:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID unik aset.
+ *         asset_code:
+ *           type: string
+ *           description: Kode unik aset.
+ *         asset_name:
+ *           type: string
+ *           description: Nama aset.
+ *         classification_id:
+ *           type: integer
+ *           description: ID dari tabel klasifikasi.
+ *         sub_classification_id:
+ *           type: integer
+ *           nullable: true
+ *           description: ID dari tabel sub-klasifikasi.
+ *         identification_of_existence:
+ *           type: string
+ *           description: Cara identifikasi keberadaan aset (cth. Fisik, Virtual).
+ *         location:
+ *           type: string
+ *           description: Lokasi fisik atau logis dari aset.
+ *         owner:
+ *           type: string
+ *           description: Pemilik atau penanggung jawab aset.
+ *         category_name:
+ *           type: string
+ *           description: Nama kategori aset (dari join).
+ *         asset_value:
+ *           type: string
+ *           enum: [Tinggi, Sedang, Rendah, Belum Dinilai]
+ *           description: Nilai aset hasil penilaian terbaru.
+ *       example:
+ *         id: 15
+ *         asset_code: "PL-001"
+ *         asset_name": "Sistem Penyimpanan Cloud Diskominfo"
+ *         classification_id": 4
+ *         sub_classification_id": 7
+ *         identification_of_existence": "Virtual"
+ *         location": "Data Center Diskominfo Kalsel"
+ *         owner": "Diskominfo"
+ *         category_name": "Perangkat Lunak"
+ *         asset_value": "Sedang"
  */
 
 /**
@@ -818,6 +870,12 @@ const { isAssetManager } = require('../middlewares/roleMiddleware');
  *     responses:
  *       200:
  *         description: Daftar semua aset
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Asset'
  *       401:
  *         description: Tidak diotorisasi
  */
@@ -840,6 +898,10 @@ router.get('/', [verifyToken], assetController.getAllAssets);
  *     responses:
  *       200:
  *         description: Detail aset
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Asset'
  *       404:
  *         description: Aset tidak ditemukan
  */
@@ -899,7 +961,22 @@ router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Asset'
+ *             type: object
+ *             properties:
+ *               asset_code:
+ *                 type: string
+ *               asset_name:
+ *                 type: string
+ *               classification_id:
+ *                 type: integer
+ *               sub_classification_id:
+ *                 type: integer
+ *               identification_of_existence:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               owner:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Aset berhasil diperbarui
@@ -926,28 +1003,6 @@ router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
  */
 router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Asset:
- *       type: object
- *       properties:
- *         asset_code:
- *           type: string
- *         asset_name:
- *           type: string
- *         classification_id:
- *           type: integer
- *         sub_classification_id:
- *           type: integer
- *         identification_of_existence:
- *           type: string
- *         location:
- *           type: string
- *         owner:
- *           type: string
- */
 module.exports = router;
 ```
 ---
@@ -963,8 +1018,6 @@ const router = express.Router();
 const reportController = require('../controllers/reportController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { checkRole } = require('../middlewares/roleMiddleware');
-
-const canAccessReports = checkRole(['Administrator', 'Auditor']);
 
 /**
  * @swagger
@@ -999,7 +1052,7 @@ const canAccessReports = checkRole(['Administrator', 'Auditor']);
  *       403:
  *         description: Akses ditolak
  */
-router.get('/', [verifyToken, canAccessReports], reportController.generateReport);
+router.get('/', [verifyToken, checkRole(['Administrator', 'Auditor'])], reportController.generateReport);
 
 module.exports = router;
 ```
@@ -1014,3 +1067,5 @@ module.exports = router;
 6.  Buka browser dan akses `http://localhost:3001/api-docs` untuk melihat dan menguji dokumentasi API interaktif Anda.
 
 Anda sekarang memiliki backend yang lengkap dengan dokumentasi API otomatis yang siap diintegrasikan dengan frontend Next.js Anda.
+
+    
