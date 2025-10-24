@@ -1070,3 +1070,4 @@ module.exports = router;
 
 Anda sekarang memiliki backend yang lengkap dengan dokumentasi API otomatis yang siap diintegrasikan dengan frontend Next.js Anda.
 
+    
