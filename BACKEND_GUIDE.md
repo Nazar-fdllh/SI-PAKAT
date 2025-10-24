@@ -628,9 +628,6 @@ const isAdmin = checkRole(['Administrator']);
  *   description: API untuk manajemen pengguna (Hanya Administrator)
  */
 
-// Terapkan middleware untuk semua rute di file ini
-router.use(verifyToken, isAdmin);
-
 /**
  * @swagger
  * /api/users:
@@ -662,7 +659,7 @@ router.use(verifyToken, isAdmin);
  *       403:
  *         description: Akses ditolak
  */
-router.get('/', userController.getAllUsers);
+router.get('/', [verifyToken, isAdmin], userController.getAllUsers);
 
 /**
  * @swagger
@@ -693,7 +690,7 @@ router.get('/', userController.getAllUsers);
  *       500:
  *         description: Gagal membuat pengguna
  */
-router.post('/', userController.createUser);
+router.post('/', [verifyToken, isAdmin], userController.createUser);
 
 /**
  * @swagger
@@ -716,7 +713,7 @@ router.post('/', userController.createUser);
  *       404:
  *         description: Pengguna tidak ditemukan
  */
-router.get('/:id', userController.getUserById);
+router.get('/:id', [verifyToken, isAdmin], userController.getUserById);
 
 /**
  * @swagger
@@ -755,7 +752,7 @@ router.get('/:id', userController.getUserById);
  *       500:
  *         description: Gagal memperbarui pengguna
  */
-router.put('/:id', userController.updateUser);
+router.put('/:id', [verifyToken, isAdmin], userController.updateUser);
 
 /**
  * @swagger
@@ -778,7 +775,7 @@ router.put('/:id', userController.updateUser);
  *       500:
  *         description: Gagal menghapus pengguna
  */
-router.delete('/:id', userController.deleteUser);
+router.delete('/:id', [verifyToken, isAdmin], userController.deleteUser);
 
 module.exports = router;
 ```
