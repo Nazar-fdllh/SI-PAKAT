@@ -196,57 +196,6 @@ module.exports = options;
 
 ---
 
-### `/middlewares/authMiddleware.js`
-
-Middleware untuk memverifikasi token JWT dari header `Authorization`.
-
-```javascript
-// /middlewares/authMiddleware.js
-const jwt = require('jsonwebtoken');
-
-const verifyToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer <TOKEN>"
-
-    if (!token) {
-        return res.status(403).send({ message: "Token tidak disediakan." });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).send({ message: "Tidak diotorisasi! Token tidak valid." });
-        }
-        req.userId = decoded.id;
-        req.userRole = decoded.role;
-        next();
-    });
-};
-
-module.exports = verifyToken;
-```
-
----
-
-### `/middlewares/roleMiddleware.js`
-
-Middleware untuk membatasi akses endpoint berdasarkan peran pengguna.
-
-```javascript
-// /middlewares/roleMiddleware.js
-const checkRole = (roles) => {
-    return (req, res, next) => {
-        if (!req.userRole || !roles.includes(req.userRole)) {
-            return res.status(403).send({ message: "Akses ditolak. Peran tidak memadai." });
-        }
-        next();
-    };
-};
-
-module.exports = checkRole;
-```
-
----
-
 ### `/controllers/authController.js`
 
 Logika untuk menangani login pengguna. Password di-hash menggunakan `bcryptjs`.
@@ -525,6 +474,57 @@ exports.generateReport = async (req, res) => {
         res.status(500).json({ message: 'Gagal menghasilkan laporan', error: error.message });
     }
 };
+```
+
+---
+
+### `/middlewares/authMiddleware.js`
+
+Middleware untuk memverifikasi token JWT dari header `Authorization`.
+
+```javascript
+// /middlewares/authMiddleware.js
+const jwt = require('jsonwebtoken');
+
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer <TOKEN>"
+
+    if (!token) {
+        return res.status(403).send({ message: "Token tidak disediakan." });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: "Tidak diotorisasi! Token tidak valid." });
+        }
+        req.userId = decoded.id;
+        req.userRole = decoded.role;
+        next();
+    });
+};
+
+module.exports = verifyToken;
+```
+
+---
+
+### `/middlewares/roleMiddleware.js`
+
+Middleware untuk membatasi akses endpoint berdasarkan peran pengguna.
+
+```javascript
+// /middlewares/roleMiddleware.js
+const checkRole = (roles) => {
+    return (req, res, next) => {
+        if (!req.userRole || !roles.includes(req.userRole)) {
+            return res.status(403).send({ message: "Akses ditolak. Peran tidak memadai." });
+        }
+        next();
+    };
+};
+
+module.exports = checkRole;
 ```
 
 ---
