@@ -59,10 +59,10 @@ Berikut adalah contoh kode untuk setiap file dalam struktur proyek.
 
 ### `.env`
 
-Buat file ini di root proyek untuk menyimpan kredensial dan konfigurasi sensitif. Sesuaikan dengan pengaturan Laragon atau server MySQL Anda.
+Buat file ini di root proyek untuk menyimpan kredensial dan konfigurasi sensitif. Sesuaikan dengan pengaturan Laragon atau server MySQL Anda. **Penting**: `DB_HOST` diubah menjadi `127.0.0.1` untuk menghindari masalah koneksi IPv6.
 
 ```env
-DB_HOST=localhost
+DB_HOST=127.0.0.1
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=si_pakat_db
@@ -137,7 +137,7 @@ pool.getConnection()
         connection.release();
     })
     .catch(err => {
-        console.error('Gagal terhubung ke database:', err.stack);
+        console.error('Gagal terhubung ke database:', err);
     });
 
 module.exports = pool;
@@ -583,4 +583,5 @@ Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegras
 
 ---
 
+    
     
