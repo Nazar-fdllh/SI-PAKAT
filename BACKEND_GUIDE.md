@@ -95,14 +95,14 @@ const reportRoutes = require('./routes/reportRoutes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Setup Swagger
-const specs = swaggerJsdoc(swaggerDefinition);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Setup Swagger
+const specs = swaggerJsdoc(swaggerDefinition);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Routes
 app.get('/', (req, res) => {
@@ -343,14 +343,26 @@ const db = require('../config/db');
 // Mendapatkan semua aset dengan join untuk nama kategori dan nilai terbaru
 exports.getAllAssets = async (req, res) => {
     try {
-        const [assets] = await db.query(`
+        const query = `
             SELECT 
-                a.*, 
+                a.id,
+                a.asset_code,
+                a.asset_name,
+                a.classification_id,
+                a.sub_classification_id,
+                a.identification_of_existence,
+                a.location,
+                a.owner,
                 c.name as category_name,
-                (SELECT aa.asset_value FROM asset_assessments aa WHERE aa.asset_id = a.id ORDER BY aa.assessment_date DESC LIMIT 1) as asset_value
+                (SELECT aa.asset_value 
+                 FROM asset_assessments aa 
+                 WHERE aa.asset_id = a.id 
+                 ORDER BY aa.assessment_date DESC, aa.id DESC 
+                 LIMIT 1) as asset_value
             FROM assets a
             LEFT JOIN classifications c ON a.classification_id = c.id
-        `);
+        `;
+        const [assets] = await db.query(query);
         res.json(assets);
     } catch (error) {
         res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
@@ -360,12 +372,15 @@ exports.getAllAssets = async (req, res) => {
 // Mendapatkan satu aset berdasarkan ID
 exports.getAssetById = async (req, res) => {
     try {
-        const [asset] = await db.query(`
-            SELECT a.*, c.name as category_name 
+        const query = `
+            SELECT 
+                a.*, 
+                c.name as category_name
             FROM assets a
             LEFT JOIN classifications c ON a.classification_id = c.id
             WHERE a.id = ?
-        `, [req.params.id]);
+        `;
+        const [asset] = await db.query(query, [req.params.id]);
         if (asset.length === 0) {
             return res.status(404).json({ message: 'Aset tidak ditemukan' });
         }
@@ -424,25 +439,24 @@ const db = require('../config/db');
 exports.generateReport = async (req, res) => {
     const { categoryId, asset_value } = req.query;
 
-    let query = `
+    let baseQuery = `
         SELECT 
-            a.id, a.asset_code, a.asset_name, a.owner,
+            a.id, 
+            a.asset_code, 
+            a.asset_name, 
+            a.owner,
             c.name as category_name,
-            latest_aa.asset_value
+            (SELECT aa.asset_value 
+             FROM asset_assessments aa 
+             WHERE aa.asset_id = a.id 
+             ORDER BY aa.assessment_date DESC, aa.id DESC 
+             LIMIT 1) as asset_value
         FROM assets a
-        JOIN classifications c ON a.classification_id = c.id
-        -- Join untuk mendapatkan penilaian terbaru
-        LEFT JOIN (
-            SELECT 
-                asset_id, 
-                asset_value,
-                ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
-            FROM asset_assessments
-        ) latest_aa ON a.id = latest_aa.asset_id AND latest_aa.rn = 1
+        LEFT JOIN classifications c ON a.classification_id = c.id
     `;
 
-    const params = [];
     const conditions = [];
+    const params = [];
 
     if (categoryId && categoryId !== 'all') {
         conditions.push('a.classification_id = ?');
@@ -450,16 +464,23 @@ exports.generateReport = async (req, res) => {
     }
 
     if (asset_value && asset_value !== 'Semua') {
-        conditions.push('latest_aa.asset_value = ?');
+        // We need to filter on the subquery result, so we wrap the main query.
+        // This is a reliable way to filter on a calculated column.
+    }
+
+    let finalQuery = `SELECT * FROM (${baseQuery}) as filtered_assets`;
+
+    if (asset_value && asset_value !== 'Semua') {
+        conditions.push('asset_value = ?');
         params.push(asset_value);
     }
 
     if (conditions.length > 0) {
-        query += ' WHERE ' + conditions.join(' AND ');
+        finalQuery += ' WHERE ' + conditions.join(' AND ');
     }
 
     try {
-        const [results] = await db.query(query, params);
+        const [results] = await db.query(finalQuery, params);
         res.json(results);
     } catch (error) {
         res.status(500).json({ message: 'Gagal menghasilkan laporan', error: error.message });
@@ -780,7 +801,8 @@ const assetController = require('../controllers/assetController');
 const verifyToken = require('../middlewares/authMiddleware');
 const checkRole = require('../middlewares/roleMiddleware');
 
-const isAssetManager = checkRole(['Administrator', 'Manajer Aset']);
+const canManageAssets = checkRole(['Administrator', 'Manajer Aset']);
+const canViewAssets = checkRole(['Administrator', 'Manajer Aset', 'Auditor']);
 
 /**
  * @swagger
@@ -861,7 +883,7 @@ const isAssetManager = checkRole(['Administrator', 'Manajer Aset']);
  *       401:
  *         description: Tidak diotorisasi
  */
-router.get('/', verifyToken, assetController.getAllAssets);
+router.get('/', [verifyToken, canViewAssets], assetController.getAllAssets);
 
 /**
  * @swagger
@@ -887,7 +909,7 @@ router.get('/', verifyToken, assetController.getAllAssets);
  *       404:
  *         description: Aset tidak ditemukan
  */
-router.get('/:id', verifyToken, assetController.getAssetById);
+router.get('/:id', [verifyToken, canViewAssets], assetController.getAssetById);
 
 /**
  * @swagger
@@ -922,7 +944,7 @@ router.get('/:id', verifyToken, assetController.getAssetById);
  *       201:
  *         description: Aset berhasil dibuat
  */
-router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
+router.post('/', [verifyToken, canManageAssets], assetController.createAsset);
 
 /**
  * @swagger
@@ -963,7 +985,7 @@ router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
  *       200:
  *         description: Aset berhasil diperbarui
  */
-router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
+router.put('/:id', [verifyToken, canManageAssets], assetController.updateAsset);
 
 /**
  * @swagger
@@ -983,7 +1005,7 @@ router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
  *       204:
  *         description: Aset berhasil dihapus
  */
-router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
+router.delete('/:id', [verifyToken, canManageAssets], assetController.deleteAsset);
 
 module.exports = router;
 ```
@@ -1047,3 +1069,4 @@ module.exports = router;
 6.  Buka browser dan akses `http://localhost:3001/api-docs` untuk melihat dan menguji dokumentasi API interaktif Anda.
 
 Anda sekarang memiliki backend yang lengkap dengan dokumentasi API otomatis yang siap diintegrasikan dengan frontend Next.js Anda.
+
