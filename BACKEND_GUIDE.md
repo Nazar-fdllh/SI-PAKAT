@@ -480,37 +480,30 @@ exports.createAsset = async (req, res) => {
 
         // 1. Ambil data dari body
         const { 
-            asset_name, classification_id, sub_classification_id, identification_of_existence, 
+            asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, 
             location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
             authenticity_score, non_repudiation_score, total_score, asset_value
         } = req.body;
         
-        // 2. Insert ke tabel 'assets' dengan placeholder untuk asset_code
-        // Menggunakan 'TEMP' atau nilai sementara lain yang tidak akan melanggar constraint NOT NULL.
+        // 2. Insert ke tabel 'assets'
         const [assetResult] = await connection.execute(
             'INSERT INTO assets (asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            ['TEMP', asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
+            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
         );
         const newAssetId = assetResult.insertId;
 
-        // 3. Buat asset_code yang benar
-        const asset_code = `ASET-${String(newAssetId).padStart(3, '0')}`;
-        
-        // 4. Update asset_code di baris yang baru saja dibuat
-        await connection.execute('UPDATE assets SET asset_code = ? WHERE id = ?', [asset_code, newAssetId]);
-
-        // 5. Insert ke tabel 'asset_assessments'
+        // 3. Insert ke tabel 'asset_assessments'
         await connection.execute(
             `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, assessment_date, notes) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
             [newAssetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, 'Penilaian awal saat pembuatan aset']
         );
         
-        // 6. Commit transaksi jika semua berhasil
+        // 4. Commit transaksi jika semua berhasil
         await connection.commit();
 
-        // 7. Kembalikan respons sukses
-        res.status(201).json({ id: newAssetId, asset_code, ...req.body });
+        // 5. Kembalikan respons sukses
+        res.status(201).json({ id: newAssetId, ...req.body });
 
     } catch (error) {
         await connection.rollback();
@@ -525,7 +518,7 @@ exports.createAsset = async (req, res) => {
 exports.updateAsset = async (req, res) => {
     const assetId = req.params.id;
     const { 
-        asset_name, classification_id, sub_classification_id, identification_of_existence, 
+        asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, 
         location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
         authenticity_score, non_repudiation_score, total_score, asset_value, notes
     } = req.body;
@@ -539,8 +532,8 @@ exports.updateAsset = async (req, res) => {
 
         // 1. Update data dasar aset
         await connection.execute(
-            'UPDATE assets SET asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
-            [asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assetId]
+            'UPDATE assets SET asset_code = ?, asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
+            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assetId]
         );
 
         // 2. Jika ada data penilaian baru, insert ke tabel 'asset_assessments'
@@ -699,5 +692,6 @@ Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegras
     
 
     
+
 
 

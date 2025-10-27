@@ -216,9 +216,10 @@
 
     <div class="endpoint">
         <h3><span class="method post">POST</span> <span class="url">/api/assets</span></h3>
-        <p class="description">Menambah aset baru beserta penilaian awalnya (hanya Admin/Manajer Aset). Backend akan membuat `asset_code` secara otomatis.</p>
+        <p class="description">Menambah aset baru beserta penilaian awalnya (hanya Admin/Manajer Aset). `asset_code` harus diisi secara manual oleh pengguna.</p>
         <p class="section-title">Request Body</p>
         <pre><code>{
+    "asset_code": "ASET-MANUAL-01",
     "asset_name": "Laptop Staff Baru",
     "classification_id": 3,
     "sub_classification_id": null,
@@ -237,7 +238,7 @@
         <p class="section-title">Contoh Response Sukses (201 Created)</p>
         <pre><code>{
     "id": 28,
-    "asset_code": "ASET-028",
+    "asset_code": "ASET-MANUAL-01",
     "asset_name": "Laptop Staff Baru",
     "classification_id": 3,
     "sub_classification_id": null,
@@ -260,6 +261,7 @@
         <p class="description">Memperbarui data dasar aset. Jika data penilaian (skor-skor) disertakan, maka backend akan membuat **catatan penilaian baru** untuk aset ini (tidak menimpa yang lama).</p>
         <p class="section-title">Request Body (Contoh 1: Hanya memperbarui data dasar)</p>
         <pre><code>{
+    "asset_code": "SERVER-V2",
     "asset_name": "Server Enttron V2",
     "classification_id": 3,
     "sub_classification_id": 6,
@@ -269,6 +271,7 @@
 }</code></pre>
         <p class="section-title">Request Body (Contoh 2: Memperbarui data dasar DAN menambah penilaian baru)</p>
         <pre><code>{
+    "asset_code": "SERVER-V2",
     "asset_name": "Server Enttron V2",
     "classification_id": 3,
     "sub_classification_id": 6,

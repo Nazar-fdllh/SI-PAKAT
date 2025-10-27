@@ -51,6 +51,7 @@ const thresholds = {
 
 // Frontend schema now matches the backend payload for creation
 const formSchema = z.object({
+  asset_code: z.string().min(3, 'Kode aset minimal 3 karakter.'),
   asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.'),
   classification_id: z.coerce.number({required_error: 'Klasifikasi harus dipilih.'}),
   sub_classification_id: z.coerce.number().optional().nullable(),
@@ -91,6 +92,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     authenticity_score: 1,
     non_repudiation_score: 1,
   } : {
+    asset_code: '',
     asset_name: '',
     classification_id: 1,
     sub_classification_id: null,
@@ -142,6 +144,19 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <FormField
+            control={form.control}
+            name="asset_code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kode Aset</FormLabel>
+                <FormControl>
+                  <Input placeholder="cth. ASET-001" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="asset_name"
@@ -175,9 +190,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
               </FormItem>
             )}
           />
-        </div>
-        
-        <FormField
+           <FormField
             control={form.control}
             name="sub_classification_id"
             render={({ field }) => (
@@ -198,7 +211,8 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
               </FormItem>
             )}
           />
-
+        </div>
+        
         <FormField
           control={form.control}
           name="identification_of_existence"
