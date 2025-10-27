@@ -18,7 +18,9 @@ Untuk menghindari hardcoding URL `http://localhost:3001` di banyak tempat, kita 
 2.  Isi file tersebut dengan:
     ```
     NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+    JWT_SECRET=kunci-rahasia-yang-sangat-aman
     ```
+    **Penting**: `JWT_SECRET` harus sama persis dengan yang ada di file `.env` backend Anda.
 3.  Kode di `src/lib/data.ts` dan `src/lib/actions.ts` telah diubah untuk menggunakan `process.env.NEXT_PUBLIC_API_BASE_URL`. Saat Anda men-deploy aplikasi ke production, Anda hanya perlu mengubah nilai variabel ini di pengaturan hosting Anda.
 
 ### c. Halaman/Komponen yang Memerlukan Integrasi
@@ -41,7 +43,7 @@ Ini adalah bagian paling krusial. Alur login dan penggunaan token harus diimplem
 1.  **Proses Login**:
     -   Pengguna mengisi email dan password di `LoginForm`.
     -   Formulir memanggil Server Action `login` di `src/lib/actions.ts`.
-    -   Server Action `login` melakukan `fetch` ke endpoint backend `POST /api/auth/login` menggunakan `process.env.NEXT_PUBLIC_API_BASE_URL`.
+    -   Server Action `login` melakukan `fetch` ke endpoint backend `POST /api/auth/login`.
     -   Jika login di backend berhasil, backend akan mengembalikan **`accessToken`** (JWT).
     -   Server Action `login` menerima token ini dan menyimpannya di **HTTP-only cookie** pada browser pengguna.
 
@@ -63,7 +65,7 @@ Saat ini, sebagian besar frontend masih menggunakan data statis. Kita harus meng
 - **Sesudah**: Melakukan `fetch` ke `POST {NEXT_PUBLIC_API_BASE_URL}/api/auth/login` dengan body berisi email/password. Jika berhasil, simpan `accessToken` yang diterima ke dalam cookie.
 
 **Contoh Implementasi (`login` action):**
-```javascript
+```typescript
 // src/lib/actions.ts
 
 export async function login(prevState: any, formData: FormData) {
@@ -86,11 +88,13 @@ export async function login(prevState: any, formData: FormData) {
       httpOnly: true,
       path: '/',
       maxAge: 60 * 60 * 24, // 1 hari
+      secure: process.env.NODE_ENV === 'production',
     });
 
   } catch (error) {
     return { message: 'Tidak dapat terhubung ke server.' };
   }
+  revalidatePath('/');
   redirect('/dashboard');
 }
 
@@ -106,17 +110,17 @@ export async function logout() {
 File ini adalah pusat untuk semua komunikasi data dengan backend.
 
 - **Sebelumnya**: Mengimpor dan mengekspor data dummy.
-- **Sesudah**: Berisi fungsi `fetchFromApi` yang menjadi wrapper untuk semua panggilan `fetch`. Fungsi ini secara otomatis menambahkan token otorisasi. Semua fungsi data (seperti `getAllAssets`, `getAllUsers`) sekarang memanggil `fetchFromApi`.
+- **Sesudah**: Berisi fungsi `fetchFromApi` yang menjadi wrapper untuk semua panggilan `fetch`. Fungsi ini secara otomatis menambahkan token otorisasi dan menangani error. Semua fungsi data (seperti `getAllAssets`, `getAllUsers`) sekarang memanggil `fetchFromApi`.
 
 **Contoh Implementasi (`getAllAssets`):**
-```javascript
+```typescript
 // src/lib/data.ts
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = await getAuthToken(); // Mengambil token dari cookie
-    const headers = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
     };
@@ -131,8 +135,15 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     });
 
     if (!response.ok) {
-        throw new Error(`Gagal mengambil data dari server. Status: ${response.status}`);
+        const errorBody = await response.text();
+        let errorMessage = `Gagal mengambil data. Status: ${response.status}`;
+        try {
+            const errorJson = JSON.parse(errorBody);
+            errorMessage = errorJson.message || errorMessage;
+        } catch(e) {}
+        throw new Error(errorMessage);
     }
+    if (response.status === 204) return null as T;
     return response.json();
 }
 
@@ -142,37 +153,43 @@ export const createAsset = (data: Partial<Asset>) => fetchFromApi<Asset>('/api/a
 // ...dan fungsi lainnya
 ```
 
-### c. Penyesuaian Tampilan Berdasarkan Peran
+### c. Penyesuaian Tampilan Berdasarkan Peran (`src/lib/session.ts`)
 
 - **Sebelumnya**: Menggunakan data statis.
 - **Sesudah**: Mekanisme ini sekarang ditenagai oleh `src/lib/session.ts` yang membaca dan memverifikasi JWT dari cookie.
-    1.  Saat login, backend menyertakan `role` di dalam payload JWT.
+    1.  Saat login, backend menyertakan `role` dan `name` di dalam payload JWT.
     2.  Di `src/lib/session.ts`, fungsi `getCurrentUser` mendekode JWT dari cookie `accessToken` untuk mendapatkan detail pengguna, termasuk perannya.
     3.  Komponen `SidebarNav` dan lainnya menggunakan `useSession()` hook untuk mendapatkan peran ini dan menampilkan/menyembunyikan menu atau tombol yang sesuai.
 
 **Contoh Implementasi (`getCurrentUser` yang diperbarui):**
-```javascript
-// src/lib/session.ts (perlu install 'jose': npm install jose)
+```typescript
+// src/lib/session.ts
+import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
+import type { User } from './definitions';
 
-export async function getCurrentUser() {
-    const token = cookies().get('accessToken')?.value;
-    if (!token) return undefined;
+export async function getCurrentUser(): Promise<User | undefined> {
+  const token = cookies().get('accessToken')?.value;
+  if (!token) return undefined;
 
-    try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const { payload } = await jwtVerify(token, secret);
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
 
-        // Payload dari backend: { id: 1, name: 'Admin Utama', role: 'Administrator' }
-        return {
-            id: payload.id as number,
-            name: payload.name as string,
-            // ...properti lain yang dibutuhkan frontend
-            roleId: initialRoles.find(r => r.name === payload.role)?.id || 0,
-        };
-    } catch (e) {
-        return undefined;
-    }
+    // Payload dari backend: { id: 1, name: 'Admin Utama', role: 'Administrator', ... }
+    const userName = payload.name as string;
+
+    return {
+      id: payload.id as number,
+      name: userName,
+      username: userName, // Backend menggunakan 'username'
+      email: (payload.email as string) || `${userName.toLowerCase().replace(/ /g, '.')}@sipakat.com`,
+      role_id: initialRoles.find(r => r.name === payload.role)?.id || 0,
+    };
+  } catch (e) {
+    console.error('JWT verification failed:', e);
+    return undefined;
+  }
 }
 ```
 
