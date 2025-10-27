@@ -26,6 +26,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #f2f2f2; }
+        ol li { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -256,6 +257,72 @@
         "asset_value": "Tinggi"
     }
 ]</code></pre>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!--                        TESTING WITH POSTMAN                          -->
+    <!-- ====================================================================== -->
+    <h2><span style="color:#ff6c37;">&#x1F680;</span> Menguji API dengan Postman</h2>
+    <div class="endpoint">
+        <h3>Contoh: Membuat Pengguna Baru (Memerlukan Akses Admin)</h3>
+        <p class="description">Karena endpoint untuk membuat pengguna baru memerlukan hak akses Administrator, Anda tidak bisa langsung memanggilnya. Anda harus login sebagai admin terlebih dahulu untuk mendapatkan token, lalu menggunakan token tersebut untuk request selanjutnya.</p>
+        
+        <ol>
+            <li>
+                <strong>Langkah 1: Login sebagai Admin</strong>
+                <p>Buat request baru di Postman:</p>
+                <ul>
+                    <li>Metode: <span class="method post">POST</span></li>
+                    <li>URL: <span class="url">http://localhost:3001/api/auth/login</span></li>
+                    <li>Pilih tab <strong>Body</strong> > <strong>raw</strong> > <strong>JSON</strong>.</li>
+                    <li>Masukkan body berikut:
+                        <pre><code>{
+    "email": "admin@sipakat.com",
+    "password": "password123"
+}</code></pre>
+                    </li>
+                </ul>
+                <p>Kirim request tersebut. Anda akan mendapatkan respons yang berisi <code>accessToken</code>.</p>
+                <pre><code>{
+    "id": 1,
+    "name": "Admin Utama",
+    "email": "admin@sipakat.com",
+    "role": "Administrator",
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6IkFkbWluaXN0cmF0b3IiLCJuYW1lIjoiQWRtaW4gVXRhbWEiLCJpYXQiOjE2ODc4OT..."
+}</code></pre>
+            </li>
+            <li>
+                <strong>Langkah 2: Salin <code>accessToken</code></strong>
+                <p>Salin seluruh nilai dari field <code>accessToken</code> yang Anda dapatkan dari respons login.</p>
+            </li>
+            <li>
+                <strong>Langkah 3: Buat Request "Tambah Pengguna Baru"</strong>
+                <p>Buat request baru lagi di Postman:</p>
+                <ul>
+                    <li>Metode: <span class="method post">POST</span></li>
+                    <li>URL: <span class="url">http://localhost:3001/api/users</span></li>
+                    <li>Pilih tab <strong>Authorization</strong>:
+                        <ul>
+                            <li>Type: <strong>Bearer Token</strong></li>
+                            <li>Token: Tempel (paste) <code>accessToken</code> yang sudah Anda salin di sini.</li>
+                        </ul>
+                    </li>
+                    <li>Pilih tab <strong>Body</strong> > <strong>raw</strong> > <strong>JSON</strong>.</li>
+                    <li>Masukkan data pengguna baru yang ingin Anda buat. Pastikan `role_id` sesuai (1: Administrator, 2: Manajer Aset, 3: Auditor).
+                        <pre><code>{
+    "username": "Pengguna Baru Dari Postman",
+    "email": "postman.user@example.com",
+    "password": "securepassword",
+    "role_id": 3
+}</code></pre>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>Langkah 4: Kirim Request dan Verifikasi</strong>
+                <p>Kirim request "Tambah Pengguna Baru". Jika berhasil, Anda akan mendapatkan status `201 Created` dan detail pengguna yang baru saja dibuat. Anda juga bisa memverifikasi dengan memanggil <span class="method get">GET</span> <span class="url">/api/users</span> untuk melihat apakah pengguna baru tersebut sudah masuk ke dalam daftar.</p>
+            </li>
+        </ol>
     </div>
 
 </body>
