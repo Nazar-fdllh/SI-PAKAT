@@ -72,19 +72,19 @@ export default async function DashboardPage() {
             <CardHeader>
               <CardTitle className="font-headline">Nilai Aset</CardTitle>
               <CardDescription>Jumlah aset berdasarkan nilai hasil penilaian.</CardDescription>
-            </Header>
+            </CardHeader>
             <CardContent>
               <AssetClassificationChart assets={assets} />
             </CardContent>
           </Card>
         </div>
         <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Aset yang Baru Ditambahkan</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <RecentAssetsTable assets={assets} />
-            </CardContent>
+          <CardHeader>
+              <CardTitle className="font-headline">Aset yang Baru Ditambahkan</CardTitle>
+          </CardHeader>
+          <CardContent>
+              <RecentAssetsTable assets={assets} />
+          </CardContent>
         </Card>
       </div>
     </div>
