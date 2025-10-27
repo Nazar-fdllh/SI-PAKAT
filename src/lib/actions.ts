@@ -54,6 +54,8 @@ export async function login(prevState: any, formData: FormData) {
     return { message: 'Terjadi kesalahan yang tidak diketahui.' };
   }
 
+  // Redirect should be called outside of try...catch
+  // because it throws an error to stop execution and redirect.
   revalidatePath('/');
   redirect('/dashboard');
 }
