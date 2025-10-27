@@ -434,7 +434,7 @@ exports.getAllAssets = async (req, res) => {
             LEFT JOIN classifications c ON a.classification_id = c.id
         `);
         res.json(assets);
-    } catch (error) => {
+    } catch (error) {
         res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
     }
 };
