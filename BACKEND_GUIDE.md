@@ -457,17 +457,47 @@ exports.getAssetById = async (req, res) => {
     }
 };
 
-// Menambah aset baru
+// Menambah aset baru dengan penilaian awal (dalam transaksi)
 exports.createAsset = async (req, res) => {
-    const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner } = req.body;
+    const connection = await db.getConnection();
     try {
-        const [result] = await db.execute(
-            'INSERT INTO assets (asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
+        await connection.beginTransaction();
+
+        // 1. Ambil data dari body
+        const { 
+            asset_name, classification_id, sub_classification_id, identification_of_existence, 
+            location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
+            authenticity_score, non_repudiation_score, total_score, asset_value
+        } = req.body;
+
+        // 2. Insert ke tabel 'assets' (tanpa asset_code dulu)
+        const [assetResult] = await connection.execute(
+            'INSERT INTO assets (asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?)',
+            [asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
         );
-        res.status(201).json({ id: result.insertId, ...req.body });
+        const newAssetId = assetResult.insertId;
+
+        // 3. Buat asset_code secara otomatis
+        const asset_code = `ASET-${String(newAssetId).padStart(3, '0')}`;
+        await connection.execute('UPDATE assets SET asset_code = ? WHERE id = ?', [asset_code, newAssetId]);
+
+        // 4. Insert ke tabel 'asset_assessments'
+        await connection.execute(
+            `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, assessment_date, notes) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+            [newAssetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, 'Penilaian awal saat pembuatan aset']
+        );
+        
+        // 5. Commit transaksi jika semua berhasil
+        await connection.commit();
+
+        res.status(201).json({ id: newAssetId, asset_code, ...req.body });
+
     } catch (error) {
-        res.status(500).json({ message: 'Gagal menambah aset', error: error.message });
+        await connection.rollback();
+        res.status(500).json({ message: 'Gagal menambah aset dan penilaiannya', error: error.message });
+    } finally {
+        connection.release();
     }
 };
 

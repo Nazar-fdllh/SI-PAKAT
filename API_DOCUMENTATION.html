@@ -60,7 +60,7 @@
     "name": "Admin Utama",
     "email": "admin@sipakat.com",
     "role": "Administrator",
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI..."
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }</code></pre>
         <p class="section-title">Kemungkinan Error</p>
         <ul>
@@ -160,7 +160,7 @@
     <h2><span style="color:#28a745;">&#x1F4BB;</span> Manajemen Aset</h2>
     <div class="endpoint">
         <h3><span class="method get">GET</span> <span class="url">/api/assets</span></h3>
-        <p class="description">Mengambil daftar semua aset TIK (bisa diakses oleh semua peran terautentikasi).</p>
+        <p class="description">Mengambil daftar semua aset TIK (bisa diakses oleh semua peran terautentikasi). Termasuk nilai aset terakhir.</p>
         <p class="section-title">Contoh Response Sukses (200 OK)</p>
         <pre><code>[
     {
@@ -192,33 +192,48 @@
 
     <div class="endpoint">
         <h3><span class="method post">POST</span> <span class="url">/api/assets</span></h3>
-        <p class="description">Menambah aset baru (hanya Admin/Manajer Aset).</p>
+        <p class="description">Menambah aset baru beserta penilaian awalnya (hanya Admin/Manajer Aset). Backend akan membuat `asset_code` secara otomatis.</p>
         <p class="section-title">Request Body</p>
         <pre><code>{
-    "asset_code": "HW-010",
     "asset_name": "Laptop Staff Baru",
     "classification_id": 3,
     "sub_classification_id": null,
     "identification_of_existence": "Fisik",
     "location": "Ruang Kerja Staff",
-    "owner": "Divisi TI"
+    "owner": "Divisi TI",
+    "assessed_by": 2,
+    "confidentiality_score": 1,
+    "integrity_score": 2,
+    "availability_score": 1,
+    "authenticity_score": 1,
+    "non_repudiation_score": 1,
+    "total_score": 6,
+    "asset_value": "Sedang"
 }</code></pre>
         <p class="section-title">Contoh Response Sukses (201 Created)</p>
         <pre><code>{
     "id": 28,
-    "asset_code": "HW-010",
+    "asset_code": "ASET-028",
     "asset_name": "Laptop Staff Baru",
     "classification_id": 3,
     "sub_classification_id": null,
     "identification_of_existence": "Fisik",
     "location": "Ruang Kerja Staff",
-    "owner": "Divisi TI"
+    "owner": "Divisi TI",
+    "assessed_by": 2,
+    "confidentiality_score": 1,
+    "integrity_score": 2,
+    "availability_score": 1,
+    "authenticity_score": 1,
+    "non_repudiation_score": 1,
+    "total_score": 6,
+    "asset_value": "Sedang"
 }</code></pre>
     </div>
 
     <div class="endpoint">
         <h3><span class="method put">PUT</span> <span class="url">/api/assets/{id}</span></h3>
-        <p class="description">Memperbarui aset (hanya Admin/Manajer Aset).</p>
+        <p class="description">Memperbarui data dasar aset (hanya Admin/Manajer Aset). Endpoint ini tidak untuk memperbarui penilaian.</p>
          <p class="section-title">Contoh Response Sukses (200 OK)</p>
         <pre><code>{
     "message": "Aset berhasil diperbarui"
