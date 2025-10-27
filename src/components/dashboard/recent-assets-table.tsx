@@ -1,3 +1,4 @@
+
 import {
     Table,
     TableBody,
@@ -15,32 +16,34 @@ import type { Asset } from "@/lib/definitions";
       .slice(0, 5);
   
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nama Aset</TableHead>
-            <TableHead>Kategori</TableHead>
-            <TableHead>Pemilik</TableHead>
-            <TableHead className="text-right">Nilai Aset</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {recentAssets.length > 0 ? recentAssets.map((asset) => (
-            <TableRow key={asset.id}>
-              <TableCell className="font-medium">{asset.asset_name}</TableCell>
-              <TableCell>{asset.category_name}</TableCell>
-              <TableCell>{asset.owner}</TableCell>
-              <TableCell className="text-right font-medium">{asset.asset_value || 'N/A'}</TableCell>
-            </TableRow>
-          )) : (
+      <div>
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={4} className="text-center h-24">
-                Tidak ada aset terbaru untuk ditampilkan.
-              </TableCell>
+              <TableHead>Nama Aset</TableHead>
+              <TableHead>Kategori</TableHead>
+              <TableHead>Pemilik</TableHead>
+              <TableHead className="text-right">Nilai Aset</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {recentAssets.length > 0 ? recentAssets.map((asset) => (
+              <TableRow key={asset.id}>
+                <TableCell className="font-medium">{asset.asset_name}</TableCell>
+                <TableCell>{asset.category_name}</TableCell>
+                <TableCell>{asset.owner}</TableCell>
+                <TableCell className="text-right font-medium">{asset.asset_value || 'N/A'}</TableCell>
+              </TableRow>
+            )) : (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center h-24">
+                  Tidak ada aset terbaru untuk ditampilkan.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     )
   }
   
