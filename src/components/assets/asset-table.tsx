@@ -57,16 +57,17 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Skeleton } from "../ui/skeleton"
 
 type AssetTableProps = {
   assets: Asset[];
+  isLoading: boolean;
   userRole: UserRole | null;
   onEdit: (asset: Asset) => void;
   onDelete: (assetId: number) => void;
 };
 
-export default function AssetTable({ assets, userRole, onEdit, onDelete }: AssetTableProps) {
-  const [data, setData] = React.useState(assets);
+export default function AssetTable({ assets, isLoading, userRole, onEdit, onDelete }: AssetTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
@@ -76,10 +77,6 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
     location: false,
   })
   const [rowSelection, setRowSelection] = React.useState({})
-
-  React.useEffect(() => {
-    setData(assets);
-  }, [assets]);
 
   const canManage = userRole === 'Administrator' || userRole === 'Manajer Aset';
 
@@ -151,14 +148,15 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
       header: "Nilai Aset",
       cell: ({ row }) => {
         const classification = row.getValue("asset_value") as AssetClassificationValue;
+        if (!classification) return <Badge variant="secondary">N/A</Badge>;
         return (
           <Badge 
             variant="outline"
             className={cn(
+              'rounded-md',
               classification === 'Tinggi' && 'text-red-600 border-red-400',
               classification === 'Sedang' && 'text-yellow-600 border-yellow-400',
               classification === 'Rendah' && 'text-blue-600 border-blue-400',
-              'rounded-md'
             )}
           >
             {classification}
@@ -213,7 +211,7 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
   ];
 
   const table = useReactTable({
-    data,
+    data: assets,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -318,7 +316,21 @@ export default function AssetTable({ assets, userRole, onEdit, onDelete }: Asset
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell colSpan={columns.length} className="p-0">
+                           <div className="flex items-center space-x-4 p-4">
+                                <Skeleton className="h-5 w-5"/>
+                                <Skeleton className="h-6 w-1/4" />
+                                <Skeleton className="h-6 w-1/4" />
+                                <Skeleton className="h-6 w-1/4" />
+                                <Skeleton className="h-6 w-1/4" />
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

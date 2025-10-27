@@ -26,15 +26,16 @@ import { initialRoles } from '@/lib/data';
 const formSchema = z.object({
   name: z.string().min(3, 'Nama lengkap minimal 3 karakter.'),
   email: z.string().email('Email tidak valid.'),
-  password: z.string().min(6, 'Password minimal 6 karakter.'),
-  roleId: z.coerce.number({ required_error: 'Peran harus dipilih.' }),
+  // Password is now optional. If provided, it must be at least 6 chars.
+  password: z.string().min(6, 'Password minimal 6 karakter.').optional().or(z.literal('')),
+  role_id: z.coerce.number({ required_error: 'Peran harus dipilih.' }),
 });
 
 type UserFormValues = z.infer<typeof formSchema>;
 
 interface UserFormProps {
   user: User | null;
-  onSave: (user: User) => void;
+  onSave: (user: Partial<User>) => void;
   onCancel: () => void;
 }
 
@@ -44,23 +45,26 @@ export function UserForm({ user, onSave, onCancel }: UserFormProps) {
     defaultValues: user ? {
         name: user.name,
         email: user.email,
-        password: user.password || '', // Password can be optional on edit
-        roleId: user.roleId,
+        password: '', // Always empty password field for editing
+        role_id: initialRoles.find(r => r.name === user.role)?.id || 2,
     } : {
       name: '',
       email: '',
       password: '',
-      roleId: 2, // Default to Manajer Aset
+      role_id: 2, // Default to Manajer Aset
     },
   });
 
   function onSubmit(data: UserFormValues) {
-    onSave({
-      ...data,
-      id: user?.id || 0,
-      username: data.name.toLowerCase().replace(/\s/g, '.'), // Generate username from name
-      avatarUrl: user?.avatarUrl || '',
-    });
+    const payload: Partial<User> = {
+      username: data.name, // The backend expects 'username'
+      email: data.email,
+      role_id: data.role_id,
+    };
+    if (data.password) {
+        payload.password = data.password;
+    }
+    onSave(payload);
   }
 
   return (
@@ -99,7 +103,7 @@ export function UserForm({ user, onSave, onCancel }: UserFormProps) {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="******" {...field} />
+                <Input type="password" placeholder={user ? "Isi untuk mengubah password" : "******"} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -107,7 +111,7 @@ export function UserForm({ user, onSave, onCancel }: UserFormProps) {
         />
         <FormField
           control={form.control}
-          name="roleId"
+          name="role_id"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Peran</FormLabel>

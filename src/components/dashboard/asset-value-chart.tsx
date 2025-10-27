@@ -1,24 +1,13 @@
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { getEnrichedAssets } from '@/lib/data';
+import type { Asset } from '@/lib/definitions';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-const assets = getEnrichedAssets();
-const chartData = assets.reduce((acc, asset) => {
-  const category = asset.category_name || 'Tidak Diketahui';
-  const existing = acc.find((item) => item.category === category);
-  if (existing) {
-    existing.count += 1;
-  } else {
-    acc.push({ category, count: 1 });
-  }
-  return acc;
-}, [] as { category: string; count: number }[]);
 
 const chartConfig = {
   count: {
@@ -27,7 +16,18 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function AssetValueDistributionChart() {
+export default function AssetValueDistributionChart({ assets }: { assets: Asset[] }) {
+  const chartData = (assets || []).reduce((acc, asset) => {
+    const category = asset.category_name || 'Tidak Diketahui';
+    const existing = acc.find((item) => item.category === category);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      acc.push({ category, count: 1 });
+    }
+    return acc;
+  }, [] as { category: string; count: number }[]);
+
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

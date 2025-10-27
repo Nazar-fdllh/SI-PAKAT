@@ -1,19 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import AssetTable from '@/components/assets/asset-table';
-import { getEnrichedAssets } from '@/lib/data';
+import { getAllAssets, createAsset, updateAsset, deleteAsset } from '@/lib/data';
 import type { Asset } from '@/lib/definitions';
 import { AssetDialog } from '@/components/assets/asset-dialog';
 import { useSession } from '@/hooks/use-session';
+import { toast } from '@/hooks/use-toast';
 
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>(getEnrichedAssets());
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const { user, role } = useSession();
+
+  const fetchAssets = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAllAssets();
+      setAssets(data);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Memuat Aset',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan yang tidak diketahui.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (role) {
+        fetchAssets();
+    }
+  }, [role]);
   
   if (!user || !role) {
     return <div className="flex justify-center items-center h-full"><p>Memuat data pengguna...</p></div>;
@@ -31,29 +56,50 @@ export default function AssetsPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteAsset = (assetId: number) => {
-    setAssets(prevAssets => prevAssets.filter(asset => asset.id !== assetId));
+  const handleDeleteAsset = async (assetId: number) => {
+    try {
+      await deleteAsset(assetId);
+      toast({
+        title: 'Aset Dihapus',
+        description: 'Aset telah berhasil dihapus dari sistem.',
+      });
+      fetchAssets(); // Refresh data
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menghapus Aset',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan yang tidak diketahui.',
+      });
+    }
   };
 
-  const handleSaveAsset = (assetData: Asset) => {
-    if (selectedAsset) {
-      // Update asset
-      setAssets(prevAssets =>
-        prevAssets.map(asset =>
-          asset.id === assetData.id ? assetData : asset
-        )
-      );
-    } else {
-      // Add new asset
-      const newAsset: Asset = {
-        ...assetData,
-        id: Date.now(), // simple id generation
-        asset_code: `NEW-${Math.floor(Math.random() * 1000)}`,
-      };
-      setAssets(prevAssets => [newAsset, ...prevAssets]);
+  const handleSaveAsset = async (assetData: Partial<Asset>) => {
+    try {
+      if (selectedAsset) {
+        await updateAsset(selectedAsset.id, assetData);
+        toast({
+          title: 'Aset Diperbarui',
+          description: 'Detail aset telah berhasil diperbarui.',
+        });
+      } else {
+        await createAsset(assetData);
+        toast({
+          title: 'Aset Ditambahkan',
+          description: 'Aset baru telah berhasil ditambahkan.',
+        });
+      }
+      setDialogOpen(false);
+      setSelectedAsset(null);
+      fetchAssets(); // Refresh data
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan Aset',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan yang tidak diketahui.',
+      });
     }
-    setDialogOpen(false);
-    setSelectedAsset(null);
   };
 
   return (
@@ -75,6 +121,7 @@ export default function AssetsPage() {
 
       <AssetTable
         assets={assets}
+        isLoading={isLoading}
         userRole={role.name}
         onEdit={handleEditAsset}
         onDelete={handleDeleteAsset}

@@ -2,29 +2,49 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { initialUsers } from '@/lib/data';
+import { getAllUsers, createUser, updateUser, deleteUser } from '@/lib/data';
 import UserTable from '@/components/users/user-table';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { UserDialog } from '@/components/users/user-dialog';
 import type { User } from '@/lib/definitions';
 import { useSession } from '@/hooks/use-session';
+import { toast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
   const router = useRouter();
   const { role } = useSession();
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAllUsers();
+      setUsers(data);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Memuat Pengguna',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Redirect if user data is loaded and the user is not an administrator
     if (role && role.name !== 'Administrator') {
       router.push('/dashboard');
     }
+    if (role && role.name === 'Administrator') {
+      fetchUsers();
+    }
   }, [role, router]);
 
-  // Show a loading state while user data is being fetched
   if (!role) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -33,7 +53,6 @@ export default function UsersPage() {
     );
   }
 
-  // If the user is not an administrator, they will be redirected, so we can return null here.
   if (role.name !== 'Administrator') {
     return null;
   }
@@ -48,27 +67,47 @@ export default function UsersPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteUser = (userId: number) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+  const handleDeleteUser = async (userId: number) => {
+    try {
+      await deleteUser(userId);
+      toast({
+        title: 'Pengguna Dihapus',
+        description: 'Pengguna telah berhasil dihapus.'
+      });
+      fetchUsers();
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Gagal Menghapus',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan.',
+      });
+    }
   };
 
-  const handleSaveUser = (userData: User) => {
-    if (selectedUser) {
-      // Update user
-      setUsers(prevUsers =>
-        prevUsers.map(user => (user.id === userData.id ? userData : user))
-      );
-    } else {
-      // Add new user
-      const newUser: User = {
-        ...userData,
-        id: Date.now(),
-        avatarUrl: `https://i.pravatar.cc/150?u=${userData.email}`,
-      };
-      setUsers(prevUsers => [newUser, ...prevUsers]);
+  const handleSaveUser = async (userData: Partial<User>) => {
+     try {
+      if (selectedUser) {
+        // The API expects 'username', not 'name'
+        const payload = { ...userData, username: userData.name };
+        delete payload.name;
+        await updateUser(selectedUser.id, payload);
+        toast({ title: 'Pengguna Diperbarui' });
+      } else {
+        const payload = { ...userData, username: userData.name };
+        delete payload.name;
+        await createUser(payload);
+        toast({ title: 'Pengguna Dibuat' });
+      }
+      setDialogOpen(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan.',
+      });
     }
-    setDialogOpen(false);
-    setSelectedUser(null);
   };
 
   return (
@@ -87,6 +126,7 @@ export default function UsersPage() {
       </div>
       <UserTable
         users={users}
+        isLoading={isLoading}
         onEdit={handleEditUser}
         onDelete={handleDeleteUser}
       />

@@ -6,12 +6,13 @@ export type Role = {
 
 export type User = {
   id: number;
-  username: string; // This field exists in the DB, but is now used for the full name.
+  username: string;
   name: string;
   email: string;
-  password?: string; // Added for the form, will be required.
-  roleId: number;
-  avatarUrl: string; 
+  password?: string;
+  roleId?: number; // From form
+  role?: 'Administrator' | 'Manajer Aset' | 'Auditor'; // From API
+  avatarUrl?: string; 
 };
 
 export type Classification = {
@@ -27,7 +28,7 @@ export type SubClassification = {
   description?: string;
 };
 
-export type AssetClassificationValue = 'Tinggi' | 'Sedang' | 'Rendah' | 'Belum Dinilai';
+export type AssetClassificationValue = 'Tinggi' | 'Sedang' | 'Rendah';
 
 export type Asset = {
   id: number;
@@ -39,7 +40,7 @@ export type Asset = {
   location: string;
   owner: string;
   category_name?: string; 
-  asset_value?: AssetClassificationValue; 
+  asset_value?: AssetClassificationValue | null;
 };
 
 export type Assessment = {
@@ -59,3 +60,9 @@ export type Assessment = {
 };
 
 export type UserRole = Role['name'];
+
+// Helper type for paginated API responses
+export type ApiCollectionResponse<T> = {
+  data: T[];
+  // any other pagination fields
+};

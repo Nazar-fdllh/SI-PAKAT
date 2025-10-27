@@ -5,13 +5,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getEnrichedAssets } from "@/lib/data";
+import { getAllAssets } from "@/lib/data";
 import { getCurrentUser } from "@/lib/session";
-import { BarChart, Database, ShieldAlert, Activity } from "lucide-react";
+import { Database, ShieldAlert, Activity } from "lucide-react";
 import AssetClassificationChart from "@/components/dashboard/asset-classification-chart";
 import AssetValueDistributionChart from "@/components/dashboard/asset-value-chart";
 import RecentAssetsTable from "@/components/dashboard/recent-assets-table";
 import { redirect } from "next/navigation";
+import type { Asset } from "@/lib/definitions";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -19,12 +20,18 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  const assets = getEnrichedAssets();
+  let assets: Asset[] = [];
+  try {
+    assets = await getAllAssets();
+  } catch (error) {
+    console.error("Failed to fetch assets for dashboard:", error);
+    // Render the page with empty data or show an error message
+  }
+
   const totalAssets = assets.length;
   const highValueAssets = assets.filter(a => a.asset_value === 'Tinggi').length;
   
-  // Note: The 'Akan Kadaluarsa' status is gone from the new data structure.
-  // This stat will now be 0 or needs to be re-evaluated based on new logic.
+  // This logic needs to be re-evaluated as 'Akan Kadaluarsa' is not in the data.
   const expiringSoonAssets = 0;
 
   const stats = [
@@ -58,16 +65,16 @@ export default async function DashboardPage() {
               <CardTitle className="font-headline">Distribusi Aset per Kategori</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
-              <AssetValueDistributionChart />
+              <AssetValueDistributionChart assets={assets} />
             </CardContent>
           </Card>
           <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle className="font-headline">Nilai Aset</CardTitle>
               <CardDescription>Jumlah aset berdasarkan nilai hasil penilaian.</CardDescription>
-            </CardHeader>
+            </Header>
             <CardContent>
-              <AssetClassificationChart />
+              <AssetClassificationChart assets={assets} />
             </CardContent>
           </Card>
         </div>
@@ -76,7 +83,7 @@ export default async function DashboardPage() {
                 <CardTitle className="font-headline">Aset yang Baru Ditambahkan</CardTitle>
             </CardHeader>
             <CardContent>
-                <RecentAssetsTable />
+                <RecentAssetsTable assets={assets} />
             </CardContent>
         </Card>
       </div>

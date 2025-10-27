@@ -1,13 +1,14 @@
 'use client'
 
-import React from 'react'
-import { getEnrichedAssets, initialClassifications } from '@/lib/data'
+import React, { useEffect, useState } from 'react'
+import { getReportData, initialClassifications } from '@/lib/data'
 import { Button } from '@/components/ui/button'
-import { Printer, Shield, ArrowLeft } from 'lucide-react'
+import { Printer, Shield, ArrowLeft, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { useSearchParams, useRouter } from 'next/navigation'
 import type { Asset, AssetClassificationValue } from '@/lib/definitions'
+import { toast } from '@/hooks/use-toast'
 
 function ReportHeader({ title }: { title: string }) {
   return (
@@ -32,11 +33,10 @@ function ReportHeader({ title }: { title: string }) {
 function ReportStats({ data }: { data: Asset[] }) {
     const totalAssets = data.length;
     const classifications = data.reduce((acc, asset) => {
-        if (asset.asset_value) {
-            acc[asset.asset_value] = (acc[asset.asset_value] || 0) + 1;
-        }
+        const value = asset.asset_value || 'N/A';
+        acc[value] = (acc[value] || 0) + 1;
         return acc;
-    }, {} as Record<AssetClassificationValue, number>);
+    }, {} as Record<string, number>);
 
   return (
     <div className="grid grid-cols-3 gap-4 my-6 text-center">
@@ -59,24 +59,44 @@ function ReportStats({ data }: { data: Asset[] }) {
 export default function ReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const assetValueFilter = searchParams.get('asset_value') as AssetClassificationValue | null;
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const assetValueFilter = searchParams.get('asset_value');
   const categoryIdFilter = searchParams.get('categoryId');
 
-  const allAssets = getEnrichedAssets();
+  useEffect(() => {
+    const fetchReport = async () => {
+      setIsLoading(true);
+      try {
+        const filters = {
+          asset_value: assetValueFilter || undefined,
+          categoryId: categoryIdFilter || undefined,
+        };
+        const data = await getReportData(filters);
+        setFilteredAssets(data);
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Membuat Laporan',
+          description: error instanceof Error ? error.message : 'Terjadi kesalahan'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const filteredAssets = allAssets.filter(asset => {
-    const categoryId = categoryIdFilter && categoryIdFilter !== 'all' ? parseInt(categoryIdFilter) : null;
-    if (assetValueFilter && asset.asset_value !== assetValueFilter) return false;
-    if (categoryId && asset.classification_id !== categoryId) return false;
-    return true;
-  });
+    fetchReport();
+  }, [assetValueFilter, categoryIdFilter]);
+
 
   const getReportTitle = () => {
     let title = "Laporan Aset";
     const categoryId = categoryIdFilter && categoryIdFilter !== 'all' ? parseInt(categoryIdFilter) : null;
     const category = categoryId ? initialClassifications.find(c => c.id === categoryId) : null;
 
-    if (assetValueFilter) {
+    if (assetValueFilter && assetValueFilter !== 'Semua') {
       title += ` Bernilai ${assetValueFilter}`;
     } else {
       title = "Laporan Inventaris Aset Lengkap";
@@ -90,6 +110,17 @@ export default function ReportPage() {
   }
   
   const reportTitle = getReportTitle();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary"/>
+            <p className="text-muted-foreground">Menyiapkan laporan...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-gray-100">

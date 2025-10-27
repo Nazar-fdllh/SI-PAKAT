@@ -1,27 +1,12 @@
 'use client';
 
 import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from 'recharts';
-import { getEnrichedAssets } from '@/lib/data';
-import type { AssetClassificationValue } from '@/lib/definitions';
-import { useTheme } from 'next-themes';
+import type { Asset, AssetClassificationValue } from '@/lib/definitions';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-
-const assets = getEnrichedAssets();
-const chartData = assets.reduce((acc, asset) => {
-  const classification = asset.asset_value;
-  if (!classification) return acc;
-  const existing = acc.find((item) => item.classification === classification);
-  if (existing) {
-    existing.count += 1;
-  } else {
-    acc.push({ classification, count: 1 });
-  }
-  return acc;
-}, [] as { classification: AssetClassificationValue; count: number }[]);
 
 const chartConfig = {
   count: {
@@ -45,9 +30,18 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function AssetClassificationChart() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+export default function AssetClassificationChart({ assets }: { assets: Asset[] }) {
+  const chartData = (assets || []).reduce((acc, asset) => {
+    const classification = asset.asset_value || 'Belum Dinilai';
+    const existing = acc.find((item) => item.classification === classification);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      acc.push({ classification, count: 1 });
+    }
+    return acc;
+  }, [] as { classification: AssetClassificationValue | 'Belum Dinilai'; count: number }[]);
+
 
   return (
     <ChartContainer

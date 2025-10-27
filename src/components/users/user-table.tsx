@@ -46,21 +46,18 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Skeleton } from "../ui/skeleton"
 
 type UserTableProps = {
   users: User[];
+  isLoading: boolean;
   onEdit: (user: User) => void;
   onDelete: (userId: number) => void;
 };
 
-export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
-  const [data, setData] = React.useState(users);
+export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-
-  React.useEffect(() => {
-    setData(users);
-  }, [users]);
   
   const columns: ColumnDef<User>[] = [
     {
@@ -77,8 +74,8 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={row.original.avatarUrl} alt={row.original.name} />
-            <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={`https://i.pravatar.cc/150?u=${row.original.email}`} alt={row.original.name} />
+            <AvatarFallback>{row.original.name?.charAt(0)}</AvatarFallback>
           </Avatar>
           <span className="font-medium">{row.getValue("name")}</span>
         </div>
@@ -89,11 +86,11 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
       header: "Email",
     },
     {
-      accessorKey: "roleId",
+      accessorKey: "role",
       header: "Peran",
       cell: ({ row }) => {
-        const role = initialRoles.find(r => r.id === row.getValue("roleId"))
-        return <Badge variant="outline">{role ? role.name : 'Tidak Diketahui'}</Badge>
+        const role = row.getValue("role") as string;
+        return <Badge variant="outline">{role || 'Tidak Diketahui'}</Badge>
       },
     },
     {
@@ -137,7 +134,7 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
   ]
 
   const table = useReactTable({
-    data,
+    data: users,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -182,7 +179,21 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+                 Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell colSpan={columns.length} className="p-0">
+                           <div className="flex items-center space-x-4 p-4">
+                                <Skeleton className="h-10 w-10 rounded-full"/>
+                                <div className="space-y-2">
+                                  <Skeleton className="h-4 w-[250px]" />
+                                  <Skeleton className="h-4 w-[200px]" />
+                                </div>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (

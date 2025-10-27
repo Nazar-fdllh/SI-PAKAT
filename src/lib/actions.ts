@@ -3,7 +3,6 @@
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { initialUsers } from './data';
 import {
   configureSecurityThresholds,
   type ConfigureSecurityThresholdsInput,
@@ -26,28 +25,42 @@ export async function login(prevState: any, formData: FormData) {
     };
   }
 
-  const { email } = validatedFields.data;
-  const user = initialUsers.find((u) => u.email === email);
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validatedFields.data),
+    });
 
-  if (!user) {
-    return {
-      message: 'Email atau password salah.',
-    };
+    const result = await response.json();
+
+    if (!response.ok) {
+      return { message: result.message || 'Login gagal. Periksa kembali email dan password Anda.' };
+    }
+
+    // Simpan token ke cookie
+    cookies().set('accessToken', result.accessToken, {
+      httpOnly: true,
+      path: '/',
+      maxAge: 60 * 60 * 24, // 1 hari, sesuaikan dengan backend
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch failed')) {
+      return { message: 'Tidak dapat terhubung ke server backend. Pastikan server sudah berjalan.' };
+    }
+    console.error('Login error:', error);
+    return { message: 'Terjadi kesalahan yang tidak diketahui.' };
   }
 
-  // In a real app, you would verify the password here.
-  // For this demo, we'll set the user's email in a cookie.
-  cookies().set('user_email', user.email, {
-    httpOnly: true,
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-  });
-
+  revalidatePath('/');
   redirect('/dashboard');
 }
 
+
 export async function logout() {
-  cookies().delete('user_email');
+  cookies().delete('accessToken');
   redirect('/login');
 }
 
