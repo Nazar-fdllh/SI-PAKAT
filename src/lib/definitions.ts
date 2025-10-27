@@ -6,12 +6,14 @@ export type Role = {
 
 export type User = {
   id: number;
+  // `username` is used by the backend API for the user's full name.
+  // `name` will be used consistently on the frontend for clarity.
   username: string;
-  name: string;
+  name: string; 
   email: string;
   password?: string;
-  roleId?: number; // From form
-  role?: 'Administrator' | 'Manajer Aset' | 'Auditor'; // From API
+  role_id?: number; 
+  role?: 'Administrator' | 'Manajer Aset' | 'Auditor';
   avatarUrl?: string; 
 };
 

@@ -22,13 +22,18 @@ export async function getCurrentUser(): Promise<User | undefined> {
 
     // The payload from the backend JWT is expected to have this structure.
     // { id: 1, role: 'Administrator', name: 'Admin Utama', iat: ..., exp: ... }
-    // We add a dummy email and avatarUrl to satisfy the frontend's User type.
+    
+    // The backend's "name" property is the user's full name.
+    // We map it to `name` for frontend consistency.
+    const userName = (payload.name as string) || 'Pengguna';
+    const userEmail = `${userName.toLowerCase().replace(/ /g, '.')}@sipakat.com`;
+
     return {
       id: payload.id as number,
-      name: payload.name as string,
-      email: `${String(payload.name).toLowerCase().replace(' ', '.')}@sipakat.com`, // Create dummy email
-      username: String(payload.name).toLowerCase().replace(' ', '.'),
-      roleId: initialRoles.find(r => r.name === payload.role)?.id || 0,
+      name: userName, // Use the name from the token
+      username: userName, // Backend uses `username` field for the name
+      email: userEmail, // Create dummy email for display
+      role_id: initialRoles.find(r => r.name === payload.role)?.id || 0,
       avatarUrl: `https://i.pravatar.cc/150?u=${payload.id}`,
     };
   } catch (e) {
@@ -40,8 +45,8 @@ export async function getCurrentUser(): Promise<User | undefined> {
 
 export async function getCurrentRole(): Promise<Role | null> {
     const user = await getCurrentUser();
-    if (!user) return null;
-    const role = initialRoles.find(r => r.id === user.roleId);
+    if (!user || !user.role_id) return null;
+    const role = initialRoles.find(r => r.id === user.role_id);
     return role || null;
 }
 

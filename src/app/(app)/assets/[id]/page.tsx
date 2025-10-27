@@ -1,6 +1,6 @@
 'use client';
 
-import { getEnrichedAssets, initialAssessments, initialUsers } from '@/lib/data';
+import { getAssetById, getAssessmentsForAsset } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import AssetDetails from '@/components/assets/asset-details';
 import AssessmentForm from '@/components/assets/assessment-form';
@@ -9,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useSession } from '@/hooks/use-session';
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
+import type { Asset, Assessment } from '@/lib/definitions';
+import { toast } from '@/hooks/use-toast';
 
 export default function AssetDetailPage() {
   const router = useRouter();
@@ -17,11 +19,41 @@ export default function AssetDetailPage() {
   const id = params.id as string;
   const { user, role } = useSession();
 
-  const asset = useMemo(() => getEnrichedAssets().find((a) => a.id === parseInt(id)), [id]);
-  const assessments = useMemo(() => initialAssessments.filter((a) => a.asset_id === parseInt(id)), [id]);
+  const [asset, setAsset] = useState<Asset | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (id && user) {
+      const fetchData = async () => {
+        setIsLoading(true);
+        try {
+          const assetData = await getAssetById(id);
+          if (!assetData) {
+            notFound();
+            return;
+          }
+          setAsset(assetData);
+          const assessmentData = await getAssessmentsForAsset(parseInt(id));
+          setAssessments(assessmentData);
+        } catch (error) {
+          console.error("Failed to fetch asset details:", error);
+          toast({
+            variant: 'destructive',
+            title: 'Gagal Memuat Detail Aset',
+            description: error instanceof Error ? error.message : 'Terjadi kesalahan tidak diketahui.'
+          });
+          notFound();
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchData();
+    }
+  }, [id, user]);
   
-  if (!asset) {
-    notFound();
+  if (isLoading || !asset) {
+    return <div className="flex justify-center items-center h-full"><p>Memuat data aset...</p></div>;
   }
   
   if (!user || !role) {

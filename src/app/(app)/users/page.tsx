@@ -86,15 +86,17 @@ export default function UsersPage() {
 
   const handleSaveUser = async (userData: Partial<User>) => {
      try {
+      // The API expects 'username' for the name field.
+      const payload: Partial<User> & { username?: string } = {
+        ...userData,
+        username: userData.name, // Map frontend 'name' to backend 'username'
+      };
+      delete payload.name; // Clean up frontend-only property
+
       if (selectedUser) {
-        // The API expects 'username', not 'name'
-        const payload = { ...userData, username: userData.name };
-        delete payload.name;
         await updateUser(selectedUser.id, payload);
         toast({ title: 'Pengguna Diperbarui' });
       } else {
-        const payload = { ...userData, username: userData.name };
-        delete payload.name;
         await createUser(payload);
         toast({ title: 'Pengguna Dibuat' });
       }

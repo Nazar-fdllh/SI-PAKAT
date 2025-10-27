@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = await getAuthToken();
-    const headers = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
     };
@@ -26,7 +26,17 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             // Log more details for debugging
             const errorBody = await response.text();
             console.error(`API Error: ${response.status} ${response.statusText} on ${endpoint}. Body: ${errorBody}`);
-            throw new Error(`Gagal mengambil data dari server. Status: ${response.status}`);
+            
+            let errorMessage = `Gagal mengambil data dari server. Status: ${response.status}`;
+            try {
+                const errorJson = JSON.parse(errorBody);
+                if (errorJson.message) {
+                    errorMessage = errorJson.message;
+                }
+            } catch (e) {
+                // Not a JSON response
+            }
+            throw new Error(errorMessage);
         }
 
         if (response.status === 204) { // Handle No Content response
