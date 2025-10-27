@@ -434,7 +434,7 @@ exports.getAllAssets = async (req, res) => {
             LEFT JOIN classifications c ON a.classification_id = c.id
         `);
         res.json(assets);
-    } catch (error) {
+    } catch (error) => {
         res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
     }
 };
@@ -470,10 +470,10 @@ exports.createAsset = async (req, res) => {
             authenticity_score, non_repudiation_score, total_score, asset_value
         } = req.body;
 
-        // 2. Insert ke tabel 'assets' (tanpa asset_code dulu)
+        // 2. Insert ke tabel 'assets', set asset_code ke NULL untuk sementara
         const [assetResult] = await connection.execute(
-            'INSERT INTO assets (asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?)',
-            [asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
+            'INSERT INTO assets (asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [null, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
         );
         const newAssetId = assetResult.insertId;
 
@@ -495,6 +495,7 @@ exports.createAsset = async (req, res) => {
 
     } catch (error) {
         await connection.rollback();
+        console.error("Create Asset Error:", error); // Log error untuk debugging
         res.status(500).json({ message: 'Gagal menambah aset dan penilaiannya', error: error.message });
     } finally {
         connection.release();
@@ -645,4 +646,6 @@ Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegras
 ---
 
     
+    
+
     
