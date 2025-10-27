@@ -484,33 +484,37 @@ exports.createAsset = async (req, res) => {
             location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
             authenticity_score, non_repudiation_score, total_score, asset_value
         } = req.body;
-
-        // 2. Insert ke tabel 'assets', set asset_code ke NULL untuk sementara
+        
+        // 2. Insert ke tabel 'assets' dengan placeholder untuk asset_code
+        // Menggunakan 'TEMP' atau nilai sementara lain yang tidak akan melanggar constraint NOT NULL.
         const [assetResult] = await connection.execute(
             'INSERT INTO assets (asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [null, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
+            ['TEMP', asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
         );
         const newAssetId = assetResult.insertId;
 
-        // 3. Buat asset_code secara otomatis
+        // 3. Buat asset_code yang benar
         const asset_code = `ASET-${String(newAssetId).padStart(3, '0')}`;
+        
+        // 4. Update asset_code di baris yang baru saja dibuat
         await connection.execute('UPDATE assets SET asset_code = ? WHERE id = ?', [asset_code, newAssetId]);
 
-        // 4. Insert ke tabel 'asset_assessments'
+        // 5. Insert ke tabel 'asset_assessments'
         await connection.execute(
             `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, assessment_date, notes) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
             [newAssetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, 'Penilaian awal saat pembuatan aset']
         );
         
-        // 5. Commit transaksi jika semua berhasil
+        // 6. Commit transaksi jika semua berhasil
         await connection.commit();
 
+        // 7. Kembalikan respons sukses
         res.status(201).json({ id: newAssetId, asset_code, ...req.body });
 
     } catch (error) {
         await connection.rollback();
-        console.error("Create Asset Error:", error); // Log error untuk debugging
+        console.error("Create Asset Error:", error);
         res.status(500).json({ message: 'Gagal menambah aset dan penilaiannya', error: error.message });
     } finally {
         connection.release();
@@ -695,4 +699,5 @@ Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegras
     
 
     
+
 
