@@ -439,15 +439,30 @@ exports.getAllAssets = async (req, res) => {
     }
 };
 
-// Mendapatkan satu aset berdasarkan ID
+// Mendapatkan satu aset berdasarkan ID beserta penilaian terakhirnya
 exports.getAssetById = async (req, res) => {
     try {
         const [asset] = await db.query(`
-            SELECT a.*, c.name as category_name 
+            SELECT 
+                a.*, 
+                c.name as category_name,
+                aa.asset_value,
+                aa.total_score,
+                aa.confidentiality_score,
+                aa.integrity_score,
+                aa.availability_score,
+                aa.authenticity_score,
+                aa.non_repudiation_score
             FROM assets a
             LEFT JOIN classifications c ON a.classification_id = c.id
+            -- Join untuk mendapatkan penilaian terbaru
+            LEFT JOIN (
+                SELECT *, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
+                FROM asset_assessments
+            ) aa ON a.id = aa.asset_id AND aa.rn = 1
             WHERE a.id = ?
         `, [req.params.id]);
+
         if (asset.length === 0) {
             return res.status(404).json({ message: 'Aset tidak ditemukan' });
         }
@@ -502,23 +517,54 @@ exports.createAsset = async (req, res) => {
     }
 };
 
-// Memperbarui aset
+// Memperbarui aset dan opsional menambahkan penilaian baru
 exports.updateAsset = async (req, res) => {
-    const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner } = req.body;
+    const assetId = req.params.id;
+    const { 
+        asset_name, classification_id, sub_classification_id, identification_of_existence, 
+        location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
+        authenticity_score, non_repudiation_score, total_score, asset_value, notes
+    } = req.body;
+
+    // Cek apakah data penilaian dikirim
+    const isNewAssessment = total_score !== undefined;
+
+    const connection = await db.getConnection();
     try {
-        await db.execute(
-            'UPDATE assets SET asset_code = ?, asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
-            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, req.params.id]
+        await connection.beginTransaction();
+
+        // 1. Update data dasar aset
+        await connection.execute(
+            'UPDATE assets SET asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
+            [asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assetId]
         );
-        res.json({ message: 'Aset berhasil diperbarui' });
+
+        // 2. Jika ada data penilaian baru, insert ke tabel 'asset_assessments'
+        if (isNewAssessment) {
+            await connection.execute(
+                `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, assessment_date, notes) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+                [assetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, notes || 'Penilaian baru']
+            );
+        }
+
+        await connection.commit();
+        res.json({ message: 'Aset berhasil diperbarui' + (isNewAssessment ? ' dan penilaian baru telah ditambahkan.' : '.') });
+
     } catch (error) {
+        await connection.rollback();
+        console.error("Update Asset Error:", error);
         res.status(500).json({ message: 'Gagal memperbarui aset', error: error.message });
+    } finally {
+        connection.release();
     }
 };
 
 // Menghapus aset
 exports.deleteAsset = async (req, res) => {
     try {
+        // Karena ada foreign key constraint (ON DELETE CASCADE),
+        // menghapus aset akan otomatis menghapus penilaian terkait.
         await db.execute('DELETE FROM assets WHERE id = ?', [req.params.id]);
         res.status(204).send();
     } catch (error) {
@@ -649,3 +695,4 @@ Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegras
     
 
     
+

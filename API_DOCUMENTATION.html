@@ -165,7 +165,7 @@
         <pre><code>[
     {
         "id": 15,
-        "asset_code": "PL-001",
+        "asset_code": "ASET-015",
         "asset_name": "Sistem Penyimpanan Cloud Diskominfo",
         "classification_id": 4,
         "sub_classification_id": 7,
@@ -177,7 +177,7 @@
     },
     {
         "id": 24,
-        "asset_code": "PK-001",
+        "asset_code": "ASET-024",
         "asset_name": "Server Enttron",
         "classification_id": 3,
         "sub_classification_id": 6,
@@ -188,6 +188,30 @@
         "asset_value": "Tinggi"
     }
 ]</code></pre>
+    </div>
+    
+     <div class="endpoint">
+        <h3><span class="method get">GET</span> <span class="url">/api/assets/{id}</span></h3>
+        <p class="description">Mengambil detail satu aset berdasarkan ID-nya, termasuk data penilaian terakhirnya.</p>
+        <p class="section-title">Contoh Response Sukses (200 OK)</p>
+        <pre><code>{
+    "id": 24,
+    "asset_code": "ASET-024",
+    "asset_name": "Server Enttron",
+    "classification_id": 3,
+    "sub_classification_id": 6,
+    "identification_of_existence": "Fisik",
+    "location": "Data Center Diskominfo Kalsel",
+    "owner": "Diskominfo",
+    "category_name": "Perangkat Keras",
+    "asset_value": "Tinggi",
+    "total_score": 13,
+    "confidentiality_score": 3,
+    "integrity_score": 3,
+    "availability_score": 2,
+    "authenticity_score": 3,
+    "non_repudiation_score": 2
+}</code></pre>
     </div>
 
     <div class="endpoint">
@@ -233,16 +257,43 @@
 
     <div class="endpoint">
         <h3><span class="method put">PUT</span> <span class="url">/api/assets/{id}</span></h3>
-        <p class="description">Memperbarui data dasar aset (hanya Admin/Manajer Aset). Endpoint ini tidak untuk memperbarui penilaian.</p>
+        <p class="description">Memperbarui data dasar aset. Jika data penilaian (skor-skor) disertakan, maka backend akan membuat **catatan penilaian baru** untuk aset ini (tidak menimpa yang lama).</p>
+        <p class="section-title">Request Body (Contoh 1: Hanya memperbarui data dasar)</p>
+        <pre><code>{
+    "asset_name": "Server Enttron V2",
+    "classification_id": 3,
+    "sub_classification_id": 6,
+    "identification_of_existence": "Fisik",
+    "location": "Data Center Utama",
+    "owner": "Divisi Infrastruktur TI"
+}</code></pre>
+        <p class="section-title">Request Body (Contoh 2: Memperbarui data dasar DAN menambah penilaian baru)</p>
+        <pre><code>{
+    "asset_name": "Server Enttron V2",
+    "classification_id": 3,
+    "sub_classification_id": 6,
+    "identification_of_existence": "Fisik",
+    "location": "Data Center Utama",
+    "owner": "Divisi Infrastruktur TI",
+    "assessed_by": 1,
+    "confidentiality_score": 3,
+    "integrity_score": 3,
+    "availability_score": 3,
+    "authenticity_score": 3,
+    "non_repudiation_score": 3,
+    "total_score": 15,
+    "asset_value": "Tinggi",
+    "notes": "Penilaian ulang setelah upgrade hardware."
+}</code></pre>
          <p class="section-title">Contoh Response Sukses (200 OK)</p>
         <pre><code>{
-    "message": "Aset berhasil diperbarui"
+    "message": "Aset berhasil diperbarui dan penilaian baru telah ditambahkan."
 }</code></pre>
     </div>
 
      <div class="endpoint">
         <h3><span class="method delete">DELETE</span> <span class="url">/api/assets/{id}</span></h3>
-        <p class="description">Menghapus aset (hanya Admin/Manajer Aset).</p>
+        <p class="description">Menghapus aset (hanya Admin/Manajer Aset). Ini juga akan menghapus semua riwayat penilaian yang terkait.</p>
          <p class="section-title">Contoh Response Sukses (204 No Content)</p>
         <p>Tidak ada body respons.</p>
     </div>
@@ -265,7 +316,7 @@
         <pre><code>[
     {
         "id": 24,
-        "asset_code": "PK-001",
+        "asset_code": "ASET-024",
         "asset_name": "Server Enttron",
         "owner": "Diskominfo",
         "category_name": "Perangkat Keras",
