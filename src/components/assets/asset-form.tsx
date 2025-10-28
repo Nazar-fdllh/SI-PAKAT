@@ -87,20 +87,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      asset_code: '',
-      asset_name: '',
-      classification_id: undefined,
-      sub_classification_id: null,
-      identification_of_existence: '',
-      location: '',
-      owner: '',
-      confidentiality_score: 1,
-      integrity_score: 1,
-      availability_score: 1,
-      authenticity_score: 1,
-      non_repudiation_score: 1,
-    },
+    // Default values are now set inside useEffect
   });
 
   useEffect(() => {
@@ -109,11 +96,12 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
       form.reset({
         asset_code: asset.asset_code || '',
         asset_name: asset.asset_name || '',
-        classification_id: asset.classification_id || 1,
+        classification_id: asset.classification_id || undefined,
         sub_classification_id: asset.sub_classification_id || null,
         identification_of_existence: asset.identification_of_existence || '',
         location: asset.location || '',
         owner: asset.owner || '',
+        // Use actual scores, with a fallback to 1 to prevent NaN
         confidentiality_score: asset.confidentiality_score || 1,
         integrity_score: asset.integrity_score || 1,
         availability_score: asset.availability_score || 1,
@@ -125,7 +113,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
       form.reset({
         asset_code: '',
         asset_name: '',
-        classification_id: 1,
+        classification_id: undefined,
         sub_classification_id: null,
         identification_of_existence: '',
         location: '',
@@ -151,6 +139,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   });
 
   const subClassifications = useMemo(() => {
+    if (!watchedClassificationId) return [];
     return initialSubClassifications.filter(sc => sc.classification_id === watchedClassificationId);
   }, [watchedClassificationId]);
 
@@ -352,5 +341,3 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     </Form>
   );
 }
-
-    
