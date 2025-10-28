@@ -18,7 +18,7 @@ Dokumen ini memberikan panduan langkah demi langkah untuk mengunggah (push) proy
 3.  **Repository name**: Beri nama repositori Anda, misalnya `si-pakat-app`.
 4.  **Description** (Opsional): Berikan deskripsi singkat tentang proyek Anda.
 5.  Pilih **"Private"** jika Anda ingin repositori ini hanya bisa diakses oleh Anda dan kolaborator yang Anda undang. Pilih **"Public"** jika siapa saja bisa melihatnya.
-6.  **Penting**: Jangan centang opsi "Add a README file", "Add .gitignore", atau "Choose a license". Proyek ini sudah memiliki file-file tersebut.
+6.  **Penting**: Jangan centang opsi "Add a README file", "Add .gitignore", atau "Choose a license". Proyek ini sudah memiliki file-file tersebut. Jika Anda tidak sengaja mencentangnya, ini akan membuat commit awal di remote, dan Anda harus menjalankan `git pull origin main` sebelum bisa melakukan `push`.
 7.  Klik tombol **"Create repository"**.
 
 Setelah itu, Anda akan diarahkan ke halaman repositori baru Anda yang masih kosong. Di sana, Anda akan melihat beberapa perintah. Kita akan menggunakan URL repositori dari bagian **"…or push an existing repository from the command line"**. URL-nya akan terlihat seperti ini:
@@ -65,6 +65,23 @@ Buka terminal atau command prompt di direktori utama proyek SI-PAKAT Anda, lalu 
     Perintah ini akan mengirim semua commit dari branch `main` di lokal Anda ke repositori `origin` (GitHub).
     ```bash
     git push -u origin main
+    ```
+
+### Mengatasi Error "non-fast-forward"
+
+Jika Anda mendapatkan error yang menyebutkan `rejected` atau `non-fast-forward` saat melakukan `git push`, ini berarti ada commit di repositori GitHub yang tidak Anda miliki di komputer lokal Anda.
+
+**Solusi:**
+Sebelum melakukan `push`, Anda harus terlebih dahulu menarik perubahan dari GitHub dan menggabungkannya dengan pekerjaan lokal Anda.
+
+1.  **Tarik perubahan dari remote:**
+    ```bash
+    git pull origin main
+    ```
+
+2.  **Setelah `pull` berhasil, coba `push` lagi:**
+    ```bash
+    git push origin main
     ```
 
 Selesai! Sekarang, jika Anda me-refresh halaman repositori di GitHub, Anda akan melihat semua file proyek Anda sudah berhasil diunggah.
