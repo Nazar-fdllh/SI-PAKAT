@@ -96,23 +96,14 @@ export const deleteAsset = async (id: number) => {
 
 
 // --- Assessment Data ---
-// Backend does not have assessment endpoints yet, so these will be mocked.
-export const getAssessmentsForAsset = async (assetId: number) => {
-    // In a real app, this would also use fetchFromApi
-    const token = await getAuthToken();
-    return Promise.resolve(initialAssessments.filter(a => a.asset_id === assetId));
-};
-export const createAssessment = async (data: Partial<Assessment>) => {
-    // In a real app, this would also use fetchFromApi
-    const token = await getAuthToken();
-    const newAssessment = {
-        ...data,
-        id: Date.now(),
-        assessment_date: new Date().toISOString(),
-        assessed_by_name: 'Pengguna Saat Ini', // Mock
-    } as Assessment;
-    initialAssessments.push(newAssessment);
-    return Promise.resolve(newAssessment);
+// Backend does not have a dedicated assessment history endpoint yet.
+// This function returns an empty array to reflect that.
+export const getAssessmentsForAsset = async (assetId: number): Promise<Assessment[]> => {
+    console.log(`Fetching assessments for assetId: ${assetId}. Currently returning empty array as endpoint is not implemented.`);
+    // When the backend endpoint is ready, it can be called here, for example:
+    // const token = await getAuthToken();
+    // return fetchFromApi<Assessment[]>(`/api/assets/${assetId}/assessments`, {}, token);
+    return Promise.resolve([]);
 };
 
 
@@ -152,12 +143,4 @@ export const initialSubClassifications: SubClassification[] = [
     { id: 10, classification_id: 5, name: 'Prosedur' },
     { id: 11, classification_id: 5, name: 'Dokumen' },
     { id: 12, classification_id: 5, name: 'Formulir' },
-];
-
-
-// --- Mock Data (will be replaced by API calls if endpoints are created) ---
-export let initialAssessments: Assessment[] = [
-    { id: 1, asset_id: 24, assessed_by: 2, confidentiality_score: 3, integrity_score: 2, availability_score: 1, authenticity_score: 3, non_repudiation_score: 2, total_score: 11, asset_value: 'Tinggi', assessment_date: '2023-09-18', notes: 'Penilaian awal server utama.', assessed_by_name: 'Budi Manajer' },
-    { id: 2, asset_id: 15, assessed_by: 2, confidentiality_score: 1, integrity_score: 1, availability_score: 3, authenticity_score: 1, non_repudiation_score: 1, total_score: 7, asset_value: 'Sedang', assessment_date: '2023-10-20', notes: 'Pemeriksaan rutin cloud storage.', assessed_by_name: 'Budi Manajer' },
-    { id: 3, asset_id: 24, assessed_by: 1, confidentiality_score: 3, integrity_score: 3, availability_score: 2, authenticity_score: 3, non_repudiation_score: 2, total_score: 13, asset_value: 'Tinggi', assessment_date: '2024-03-15', notes: 'Penilaian ulang setelah update patch keamanan.', assessed_by_name: 'Admin Utama' },
 ];
