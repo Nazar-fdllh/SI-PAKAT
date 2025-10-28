@@ -55,52 +55,56 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}, toke
 
 // --- User Data ---
 export const getAllUsers = async () => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<User[]>('/api/users', {}, token);
 };
 export const createUser = async (data: Partial<User>) => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<User>('/api/users', { method: 'POST', body: JSON.stringify(data) }, token);
 };
 export const updateUser = async (id: number, data: Partial<User>) => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<User>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
 };
 export const deleteUser = async (id: number) => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' }, token);
 };
 
 
 // --- Asset Data ---
 export const getAllAssets = async () => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<Asset[]>('/api/assets', {}, token);
 };
 export const getAssetById = async (id: number | string) => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<Asset>(`/api/assets/${id}`, {}, token);
 };
 export const createAsset = async (data: Partial<Asset>) => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) }, token);
 };
 export const updateAsset = async (id: number, data: Partial<Asset>) => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
 };
 export const deleteAsset = async (id: number) => {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     return fetchFromApi<void>(`/api/assets/${id}`, { method: 'DELETE' }, token);
 };
 
 
 // --- Assessment Data ---
 // Backend does not have assessment endpoints yet, so these will be mocked.
-export const getAssessmentsForAsset = (assetId: number) => {
+export const getAssessmentsForAsset = async (assetId: number) => {
+    // In a real app, this would also use fetchFromApi
+    const token = await getAuthToken();
     return Promise.resolve(initialAssessments.filter(a => a.asset_id === assetId));
 };
-export const createAssessment = (data: Partial<Assessment>) => {
+export const createAssessment = async (data: Partial<Assessment>) => {
+    // In a real app, this would also use fetchFromApi
+    const token = await getAuthToken();
     const newAssessment = {
         ...data,
         id: Date.now(),
@@ -114,8 +118,8 @@ export const createAssessment = (data: Partial<Assessment>) => {
 
 // --- Report Data ---
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
-    const params = new URLSearchParams(filters);
-    const token = getAuthToken();
+    const params = new URLSearchParams(filters as Record<string, string>);
+    const token = await getAuthToken();
     return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, {}, token);
 };
 
@@ -152,7 +156,7 @@ export const initialSubClassifications: SubClassification[] = [
 
 
 // --- Mock Data (will be replaced by API calls if endpoints are created) ---
-export const initialAssessments: Assessment[] = [
+export let initialAssessments: Assessment[] = [
     { id: 1, asset_id: 24, assessed_by: 2, confidentiality_score: 3, integrity_score: 2, availability_score: 1, authenticity_score: 3, non_repudiation_score: 2, total_score: 11, asset_value: 'Tinggi', assessment_date: '2023-09-18', notes: 'Penilaian awal server utama.', assessed_by_name: 'Budi Manajer' },
     { id: 2, asset_id: 15, assessed_by: 2, confidentiality_score: 1, integrity_score: 1, availability_score: 3, authenticity_score: 1, non_repudiation_score: 1, total_score: 7, asset_value: 'Sedang', assessment_date: '2023-10-20', notes: 'Pemeriksaan rutin cloud storage.', assessed_by_name: 'Budi Manajer' },
     { id: 3, asset_id: 24, assessed_by: 1, confidentiality_score: 3, integrity_score: 3, availability_score: 2, authenticity_score: 3, non_repudiation_score: 2, total_score: 13, asset_value: 'Tinggi', assessment_date: '2024-03-15', notes: 'Penilaian ulang setelah update patch keamanan.', assessed_by_name: 'Admin Utama' },

@@ -7,7 +7,8 @@ import { initialRoles } from './data';
 
 // This function now decodes the JWT to get user information
 export async function getCurrentUser(): Promise<User | undefined> {
-  const token = cookies().get('accessToken')?.value;
+  const cookieStore = cookies();
+  const token = cookieStore.get('accessToken')?.value;
 
   if (!token) return undefined;
 
@@ -43,6 +44,7 @@ export async function getCurrentRole(): Promise<Role | null> {
 }
 
 // This is a server-only function to get the raw token
-export function getAuthToken(): string | undefined {
-  return cookies().get('accessToken')?.value;
+export async function getAuthToken(): Promise<string | undefined> {
+  const cookieStore = cookies();
+  return cookieStore.get('accessToken')?.value;
 }
