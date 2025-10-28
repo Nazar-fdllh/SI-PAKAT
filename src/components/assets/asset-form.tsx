@@ -84,29 +84,20 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   const { user } = useSession();
   const isEditMode = asset !== null;
 
-  const defaultValues = useMemo(() => {
-    return asset ? {
-      ...asset,
-      confidentiality_score: asset.confidentiality_score || 1,
-      integrity_score: asset.integrity_score || 1,
-      availability_score: asset.availability_score || 1,
-      authenticity_score: asset.authenticity_score || 1,
-      non_repudiation_score: asset.non_repudiation_score || 1,
-    } : {
-      asset_code: '',
-      asset_name: '',
-      classification_id: 1,
-      sub_classification_id: null,
-      identification_of_existence: '',
-      location: '',
-      owner: '',
-      confidentiality_score: 1,
-      integrity_score: 1,
-      availability_score: 1,
-      authenticity_score: 1,
-      non_repudiation_score: 1,
-    };
-  }, [asset]);
+  const defaultValues = useMemo(() => ({
+    asset_code: asset?.asset_code || '',
+    asset_name: asset?.asset_name || '',
+    classification_id: asset?.classification_id || 1,
+    sub_classification_id: asset?.sub_classification_id || null,
+    identification_of_existence: asset?.identification_of_existence || '',
+    location: asset?.location || '',
+    owner: asset?.owner || '',
+    confidentiality_score: asset?.confidentiality_score || 1,
+    integrity_score: asset?.integrity_score || 1,
+    availability_score: asset?.availability_score || 1,
+    authenticity_score: asset?.authenticity_score || 1,
+    non_repudiation_score: asset?.non_repudiation_score || 1,
+  }), [asset]);
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),

@@ -73,7 +73,7 @@ export default function AssessmentForm({ initialScores, onSave }: AssessmentForm
     setScores((prev) => ({ ...prev, [criterionId]: parseInt(value, 10) }));
   };
 
-  const totalScore = Object.values(scores).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(scores).reduce((sum, score) => sum + (Number(score) || 0), 0);
 
   const getClassification = (score: number) => {
     if (score >= thresholds.high) return 'Tinggi';
