@@ -455,7 +455,6 @@ exports.getAssetById = async (req, res) => {
                 aa.non_repudiation_score
             FROM assets a
             LEFT JOIN classifications c ON a.classification_id = c.id
-            -- Join untuk mendapatkan penilaian terbaru
             LEFT JOIN (
                 SELECT *, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
                 FROM asset_assessments
@@ -492,7 +491,7 @@ exports.createAsset = async (req, res) => {
         );
         const newAssetId = assetResult.insertId;
 
-        // 3. Insert ke tabel 'asset_assessments', TANPA menyertakan 'total_score' dan 'asset_value'
+        // 3. Insert ke tabel 'asset_assessments'
         await connection.execute(
             `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, assessment_date, notes) 
              VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
@@ -502,8 +501,28 @@ exports.createAsset = async (req, res) => {
         // 4. Commit transaksi jika semua berhasil
         await connection.commit();
 
-        // 5. Kembalikan respons sukses
-        res.status(201).json({ id: newAssetId, ...req.body });
+        // 5. Ambil kembali data yang baru dibuat beserta nilai kalkulasinya
+        const [newAsset] = await connection.query(`
+            SELECT 
+                a.*, 
+                c.name as category_name,
+                aa.asset_value,
+                aa.total_score,
+                aa.confidentiality_score,
+                aa.integrity_score,
+                aa.availability_score,
+                aa.authenticity_score,
+                aa.non_repudiation_score
+            FROM assets a
+            LEFT JOIN classifications c ON a.classification_id = c.id
+            LEFT JOIN (
+                SELECT *, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
+                FROM asset_assessments
+            ) aa ON a.id = aa.asset_id AND aa.rn = 1
+            WHERE a.id = ?
+        `, [newAssetId]);
+
+        res.status(201).json(newAsset[0]);
 
     } catch (error) {
         await connection.rollback();
@@ -692,6 +711,7 @@ Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegras
     
 
     
+
 
 
 
