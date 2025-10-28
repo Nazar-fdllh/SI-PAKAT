@@ -43,6 +43,13 @@ export type Asset = {
   owner: string;
   category_name?: string; 
   asset_value?: AssetClassificationValue | null;
+  // These are from the latest assessment, returned by /api/assets/:id
+  total_score?: number;
+  confidentiality_score?: number;
+  integrity_score?: number;
+  availability_score?: number;
+  authenticity_score?: number;
+  non_repudiation_score?: number;
 };
 
 export type Assessment = {

@@ -21,12 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Asset, AssetClassificationValue } from '@/lib/definitions';
+import type { Asset, AssetClassificationValue, Assessment } from '@/lib/definitions';
 import { initialClassifications, initialSubClassifications } from '@/lib/data';
 import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useEffect, useMemo } from 'react';
-import { getCurrentUser } from '@/lib/session';
 import { useSession } from '@/hooks/use-session';
 
 const criteria = [
@@ -49,7 +48,7 @@ const thresholds = {
   low: 5,
 };
 
-// Frontend schema now matches the backend payload for creation
+// For creation, scores are required. For updates, they are optional.
 const formSchema = z.object({
   asset_code: z.string().min(3, 'Kode aset minimal 3 karakter.'),
   asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.'),
@@ -58,7 +57,8 @@ const formSchema = z.object({
   identification_of_existence: z.string().min(3, 'Identifikasi keberadaan minimal 3 karakter.'),
   location: z.string().min(3, 'Lokasi minimal 3 karakter.'),
   owner: z.string().min(3, 'Pemilik minimal 3 karakter.'),
-  // Assessment scores are now part of the form
+  
+  // Assessment scores are always part of the form, mandatory for creation
   confidentiality_score: z.coerce.number().min(1).max(3),
   integrity_score: z.coerce.number().min(1).max(3),
   availability_score: z.coerce.number().min(1).max(3),
@@ -69,8 +69,8 @@ const formSchema = z.object({
 type AssetFormValues = z.infer<typeof formSchema>;
 
 interface AssetFormProps {
-  asset: Asset | null;
-  onSave: (data: Partial<Asset & Record<string, any>>) => void;
+  asset: Partial<Asset> | null;
+  onSave: (data: Partial<Asset & Assessment>) => void;
   onCancel: () => void;
 }
 
@@ -82,34 +82,41 @@ const getClassificationValue = (score: number): AssetClassificationValue => {
 
 export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   const { user } = useSession();
+  const isEditMode = asset !== null;
 
-  const defaultValues = asset ? {
-    ...asset,
-    // When editing, we don't handle assessment scores here. This form is for creation logic.
-    confidentiality_score: 1,
-    integrity_score: 1,
-    availability_score: 1,
-    authenticity_score: 1,
-    non_repudiation_score: 1,
-  } : {
-    asset_code: '',
-    asset_name: '',
-    classification_id: 1,
-    sub_classification_id: null,
-    identification_of_existence: '',
-    location: '',
-    owner: '',
-    confidentiality_score: 1,
-    integrity_score: 1,
-    availability_score: 1,
-    authenticity_score: 1,
-    non_repudiation_score: 1,
-  };
+  const defaultValues = useMemo(() => {
+    return asset ? {
+      ...asset,
+      confidentiality_score: asset.confidentiality_score || 1,
+      integrity_score: asset.integrity_score || 1,
+      availability_score: asset.availability_score || 1,
+      authenticity_score: asset.authenticity_score || 1,
+      non_repudiation_score: asset.non_repudiation_score || 1,
+    } : {
+      asset_code: '',
+      asset_name: '',
+      classification_id: 1,
+      sub_classification_id: null,
+      identification_of_existence: '',
+      location: '',
+      owner: '',
+      confidentiality_score: 1,
+      integrity_score: 1,
+      availability_score: 1,
+      authenticity_score: 1,
+      non_repudiation_score: 1,
+    };
+  }, [asset]);
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
+
 
   const watchedScores = useWatch({
     control: form.control,
@@ -132,9 +139,15 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     const payload = {
         ...data,
         id: asset?.id || 0,
-        // asset_value is no longer sent, as it's a generated column in DB
         assessed_by: user?.id,
     };
+    
+    // In edit mode, the assessment scores are optional unless they have changed.
+    // The backend handles adding a new assessment record if scores are provided.
+    if (isEditMode) {
+        payload.notes = 'Data aset dasar dan penilaian diperbarui.';
+    }
+
     onSave(payload);
   }
 
@@ -174,7 +187,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Kategori</FormLabel>
-                <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={String(field.value)}>
+                <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value || '')}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori aset" />
@@ -194,7 +207,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sub Kategori</FormLabel>
-                <Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} defaultValue={field.value ? String(field.value) : undefined} disabled={subClassifications.length === 0}>
+                <Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} value={field.value ? String(field.value) : ''} disabled={subClassifications.length === 0}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih sub-kategori aset (opsional)" />
@@ -218,7 +231,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
             <FormItem>
               <FormLabel>Identifikasi Keberadaan</FormLabel>
               <FormControl>
-                <Input placeholder="cth. Fisik, Virtual, Personil" {...field} />
+                <Input placeholder="cth. Fisik, Virtual, Personil" {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -233,7 +246,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                 <FormItem>
                     <FormLabel>Lokasi</FormLabel>
                     <FormControl>
-                    <Input placeholder="cth. Ruang Server Lt. 1" {...field} />
+                    <Input placeholder="cth. Ruang Server Lt. 1" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
@@ -246,7 +259,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                 <FormItem>
                     <FormLabel>Pemilik</FormLabel>
                     <FormControl>
-                    <Input placeholder="cth. Divisi TI" {...field} />
+                    <Input placeholder="cth. Divisi TI" {...field} value={field.value || ''}/>
                     </FormControl>
                     <FormMessage />
                 </FormItem>
@@ -257,7 +270,10 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
         <Separator className="my-6" />
 
         <div>
-            <h3 className="text-lg font-medium mb-4 font-headline">Penilaian Awal</h3>
+            <h3 className="text-lg font-medium mb-4 font-headline">{isEditMode ? 'Perbarui Penilaian' : 'Penilaian Awal'}</h3>
+             <FormDescription className="mb-4 -mt-2">
+                {isEditMode ? 'Jika Anda mengubah skor di bawah, penilaian baru akan dibuat untuk aset ini.' : 'Lakukan penilaian awal untuk aset baru ini.'}
+            </FormDescription>
             <div className="space-y-4">
                 {criteria.map((criterion) => (
                     <FormField
@@ -267,7 +283,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                         render={({ field }) => (
                             <FormItem className="grid grid-cols-3 items-center gap-4">
                                 <FormLabel className="col-span-2">{criterion.label}</FormLabel>
-                                <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={String(field.value)}>
+                                <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value || '1')}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih nilai" />
@@ -291,7 +307,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
 
         <Card className="bg-secondary/50 mt-6">
             <CardHeader>
-                <CardTitle className="text-lg font-headline">Hasil Penilaian Awal</CardTitle>
+                <CardTitle className="text-lg font-headline">Hasil Penilaian</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-center">
                 <div>
@@ -304,7 +320,6 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                 </div>
             </CardContent>
         </Card>
-
 
         <div className="flex justify-end gap-2 pt-6">
             <Button type="button" variant="outline" onClick={onCancel}>

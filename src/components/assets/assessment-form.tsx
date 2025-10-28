@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { type Asset } from '@/lib/definitions';
+import { useState, useEffect } from 'react';
+import type { Assessment } from '@/lib/definitions';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -13,13 +13,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '../ui/textarea';
 
 const criteria = [
-  { id: 'confidentiality', label: 'Kerahasiaan (Confidentiality)' },
-  { id: 'integrity', label: 'Integritas (Integrity)' },
-  { id: 'availability', label: 'Ketersediaan (Availability)' },
-  { id: 'authenticity', label: 'Keaslian (Authenticity)' },
-  { id: 'nonRepudiation', label: 'Non-repudiation' },
+  { id: 'confidentiality_score', label: 'Kerahasiaan (Confidentiality)' },
+  { id: 'integrity_score', label: 'Integritas (Integrity)' },
+  { id: 'availability_score', label: 'Ketersediaan (Availability)' },
+  { id: 'authenticity_score', label: 'Keaslian (Authenticity)' },
+  { id: 'non_repudiation_score', label: 'Non-repudiation' },
 ];
 
 const scoreOptions = [
@@ -28,22 +29,47 @@ const scoreOptions = [
   { value: 3, label: '3 - Tinggi' },
 ];
 
-// Thresholds based on the user-provided image
 const thresholds = {
   high: 11,
   medium: 6,
 };
 
-export default function AssessmentForm({ asset }: { asset: Asset }) {
-  const [scores, setScores] = useState({
-    confidentiality: 1,
-    integrity: 1,
-    availability: 1,
-    authenticity: 1,
-    nonRepudiation: 1,
-  });
+type Scores = {
+    confidentiality_score: number;
+    integrity_score: number;
+    availability_score: number;
+    authenticity_score: number;
+    non_repudiation_score: number;
+};
 
-  const handleScoreChange = (criterionId: keyof typeof scores, value: string) => {
+type AssessmentFormProps = {
+    initialScores: Partial<Scores>;
+    onSave: (assessmentData: Partial<Assessment>) => void;
+};
+
+
+export default function AssessmentForm({ initialScores, onSave }: AssessmentFormProps) {
+  const [scores, setScores] = useState<Scores>({
+    confidentiality_score: 1,
+    integrity_score: 1,
+    availability_score: 1,
+    authenticity_score: 1,
+    non_repudiation_score: 1,
+  });
+  const [notes, setNotes] = useState('');
+
+  // Populate form with initial scores when the component receives them
+  useEffect(() => {
+    setScores({
+      confidentiality_score: initialScores.confidentiality_score || 1,
+      integrity_score: initialScores.integrity_score || 1,
+      availability_score: initialScores.availability_score || 1,
+      authenticity_score: initialScores.authenticity_score || 1,
+      non_repudiation_score: initialScores.non_repudiation_score || 1,
+    });
+  }, [initialScores]);
+
+  const handleScoreChange = (criterionId: keyof Scores, value: string) => {
     setScores((prev) => ({ ...prev, [criterionId]: parseInt(value, 10) }));
   };
 
@@ -57,8 +83,13 @@ export default function AssessmentForm({ asset }: { asset: Asset }) {
 
   const classification = getClassification(totalScore);
 
+  const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      onSave({ ...scores, notes });
+  };
+
   return (
-    <form className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
         {criteria.map((criterion) => (
           <div key={criterion.id} className="grid grid-cols-3 items-center gap-4">
@@ -66,8 +97,8 @@ export default function AssessmentForm({ asset }: { asset: Asset }) {
               {criterion.label}
             </Label>
             <Select
-              onValueChange={(value) => handleScoreChange(criterion.id as keyof typeof scores, value)}
-              defaultValue={String(scores[criterion.id as keyof typeof scores])}
+              onValueChange={(value) => handleScoreChange(criterion.id as keyof Scores, value)}
+              value={String(scores[criterion.id as keyof Scores])}
             >
               <SelectTrigger id={criterion.id} className="w-full">
                 <SelectValue placeholder="Pilih nilai" />
@@ -86,6 +117,18 @@ export default function AssessmentForm({ asset }: { asset: Asset }) {
       
       <Separator />
 
+       <div>
+        <Label htmlFor="notes">Catatan Penilaian (Opsional)</Label>
+        <Textarea
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="cth. Penilaian ulang setelah upgrade hardware."
+          className="mt-2"
+        />
+      </div>
+
+
       <Card className="bg-secondary/50">
         <CardHeader>
             <CardTitle className="text-lg font-headline">Hasil Penilaian</CardTitle>
@@ -101,7 +144,7 @@ export default function AssessmentForm({ asset }: { asset: Asset }) {
             </div>
         </CardContent>
         <CardFooter>
-            <Button className="w-full">Simpan Penilaian</Button>
+            <Button type="submit" className="w-full">Simpan Penilaian Baru</Button>
         </CardFooter>
       </Card>
 
