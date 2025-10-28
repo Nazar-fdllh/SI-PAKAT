@@ -133,7 +133,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
         ...data,
         id: asset?.id || 0,
         // Send all necessary data for backend to create Asset and Assessment
-        total_score: totalScore,
+        // total_score is removed as it's a generated column in DB
         asset_value: assetValue,
         assessed_by: user?.id,
     };

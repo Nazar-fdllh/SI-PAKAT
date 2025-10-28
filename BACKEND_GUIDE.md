@@ -482,7 +482,7 @@ exports.createAsset = async (req, res) => {
         const { 
             asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, 
             location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
-            authenticity_score, non_repudiation_score, total_score, asset_value
+            authenticity_score, non_repudiation_score, asset_value
         } = req.body;
         
         // 2. Insert ke tabel 'assets'
@@ -492,11 +492,11 @@ exports.createAsset = async (req, res) => {
         );
         const newAssetId = assetResult.insertId;
 
-        // 3. Insert ke tabel 'asset_assessments'
+        // 3. Insert ke tabel 'asset_assessments', TANPA menyertakan 'total_score'
         await connection.execute(
-            `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, assessment_date, notes) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-            [newAssetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, 'Penilaian awal saat pembuatan aset']
+            `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, asset_value, assessment_date, notes) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+            [newAssetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, asset_value, 'Penilaian awal saat pembuatan aset']
         );
         
         // 4. Commit transaksi jika semua berhasil
@@ -524,7 +524,7 @@ exports.updateAsset = async (req, res) => {
     } = req.body;
 
     // Cek apakah data penilaian dikirim
-    const isNewAssessment = total_score !== undefined;
+    const isNewAssessment = confidentiality_score !== undefined;
 
     const connection = await db.getConnection();
     try {
@@ -539,9 +539,9 @@ exports.updateAsset = async (req, res) => {
         // 2. Jika ada data penilaian baru, insert ke tabel 'asset_assessments'
         if (isNewAssessment) {
             await connection.execute(
-                `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, assessment_date, notes) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-                [assetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, total_score, asset_value, notes || 'Penilaian baru']
+                `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, asset_value, assessment_date, notes) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+                [assetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, asset_value, notes || 'Penilaian baru']
             );
         }
 
@@ -692,6 +692,7 @@ Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegras
     
 
     
+
 
 
 

@@ -217,6 +217,9 @@
     <div class="endpoint">
         <h3><span class="method post">POST</span> <span class="url">/api/assets</span></h3>
         <p class="description">Menambah aset baru beserta penilaian awalnya (hanya Admin/Manajer Aset). `asset_code` harus diisi secara manual oleh pengguna.</p>
+        <div class="note">
+            <strong>Catatan:</strong> Field <code>total_score</code> dan <code>asset_value</code> tidak perlu dikirim. Keduanya akan dihitung secara otomatis oleh backend/database berdasarkan skor-skor yang diberikan.
+        </div>
         <p class="section-title">Request Body</p>
         <pre><code>{
     "asset_code": "ASET-MANUAL-01",
@@ -231,9 +234,7 @@
     "integrity_score": 2,
     "availability_score": 1,
     "authenticity_score": 1,
-    "non_repudiation_score": 1,
-    "total_score": 6,
-    "asset_value": "Sedang"
+    "non_repudiation_score": 1
 }</code></pre>
         <p class="section-title">Contoh Response Sukses (201 Created)</p>
         <pre><code>{
@@ -250,9 +251,7 @@
     "integrity_score": 2,
     "availability_score": 1,
     "authenticity_score": 1,
-    "non_repudiation_score": 1,
-    "total_score": 6,
-    "asset_value": "Sedang"
+    "non_repudiation_score": 1
 }</code></pre>
     </div>
 
@@ -284,7 +283,6 @@
     "availability_score": 3,
     "authenticity_score": 3,
     "non_repudiation_score": 3,
-    "total_score": 15,
     "asset_value": "Tinggi",
     "notes": "Penilaian ulang setelah upgrade hardware."
 }</code></pre>
