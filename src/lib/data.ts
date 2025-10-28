@@ -55,42 +55,42 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}, toke
 
 // --- User Data ---
 export const getAllUsers = async () => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<User[]>('/api/users', {}, token);
 };
 export const createUser = async (data: Partial<User>) => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<User>('/api/users', { method: 'POST', body: JSON.stringify(data) }, token);
 };
 export const updateUser = async (id: number, data: Partial<User>) => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<User>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
 };
 export const deleteUser = async (id: number) => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' }, token);
 };
 
 
 // --- Asset Data ---
 export const getAllAssets = async () => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<Asset[]>('/api/assets', {}, token);
 };
 export const getAssetById = async (id: number | string) => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<Asset>(`/api/assets/${id}`, {}, token);
 };
 export const createAsset = async (data: Partial<Asset>) => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) }, token);
 };
 export const updateAsset = async (id: number, data: Partial<Asset>) => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
 };
 export const deleteAsset = async (id: number) => {
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<void>(`/api/assets/${id}`, { method: 'DELETE' }, token);
 };
 
@@ -115,7 +115,7 @@ export const createAssessment = (data: Partial<Assessment>) => {
 // --- Report Data ---
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
     const params = new URLSearchParams(filters);
-    const token = await getAuthToken();
+    const token = getAuthToken();
     return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, {}, token);
 };
 

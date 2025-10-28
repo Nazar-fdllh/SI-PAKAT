@@ -43,6 +43,6 @@ export async function getCurrentRole(): Promise<Role | null> {
 }
 
 // This is a server-only function to get the raw token
-export async function getAuthToken(): Promise<string | undefined> {
+export function getAuthToken(): string | undefined {
   return cookies().get('accessToken')?.value;
 }
