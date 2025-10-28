@@ -79,7 +79,7 @@ export async function configureThresholds(data: ConfigureSecurityThresholdsInput
     // Revalidate the settings path to show updated data if necessary
     revalidatePath('/settings');
     
-    return { success: true, message: result.confirmationMessage };
+    return { success: true, message: result.message };
   } catch (error) {
     console.error("Error configuring thresholds:", error);
     return { success: false, message: "Gagal mengkonfigurasi ambang batas." };
