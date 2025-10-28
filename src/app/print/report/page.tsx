@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { getReportData, initialClassifications } from '@/lib/data'
+import { getReportData, getAllClassifications } from '@/lib/data'
 import { Button } from '@/components/ui/button'
 import { Printer, Shield, ArrowLeft, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { useSearchParams, useRouter } from 'next/navigation'
-import type { Asset, AssetClassificationValue } from '@/lib/definitions'
+import type { Asset, Classification } from '@/lib/definitions'
 import { toast } from '@/hooks/use-toast'
 
 function ReportHeader({ title }: { title: string }) {
@@ -60,21 +60,27 @@ export default function ReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+  const [classifications, setClassifications] = useState<Classification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [reportTitle, setReportTitle] = useState('Laporan Aset');
 
   const assetValueFilter = searchParams.get('asset_value');
   const categoryIdFilter = searchParams.get('categoryId');
 
   useEffect(() => {
-    const fetchReport = async () => {
+    const fetchReportData = async () => {
       setIsLoading(true);
       try {
         const filters = {
           asset_value: assetValueFilter || undefined,
           categoryId: categoryIdFilter || undefined,
         };
-        const data = await getReportData(filters);
+        const [data, classificationsData] = await Promise.all([
+          getReportData(filters),
+          getAllClassifications()
+        ]);
         setFilteredAssets(data);
+        setClassifications(classificationsData);
       } catch (error) {
         console.error(error);
         toast({
@@ -87,29 +93,28 @@ export default function ReportPage() {
       }
     };
 
-    fetchReport();
+    fetchReportData();
   }, [assetValueFilter, categoryIdFilter]);
 
+  useEffect(() => {
+    if (classifications.length > 0) {
+      let title = "Laporan Aset";
+      const categoryId = categoryIdFilter && categoryIdFilter !== 'all' ? parseInt(categoryIdFilter) : null;
+      const category = categoryId ? classifications.find(c => c.id === categoryId) : null;
 
-  const getReportTitle = () => {
-    let title = "Laporan Aset";
-    const categoryId = categoryIdFilter && categoryIdFilter !== 'all' ? parseInt(categoryIdFilter) : null;
-    const category = categoryId ? initialClassifications.find(c => c.id === categoryId) : null;
+      if (assetValueFilter && assetValueFilter !== 'Semua') {
+        title += ` Bernilai ${assetValueFilter}`;
+      } else {
+        title = "Laporan Inventaris Aset Lengkap";
+      }
 
-    if (assetValueFilter && assetValueFilter !== 'Semua') {
-      title += ` Bernilai ${assetValueFilter}`;
-    } else {
-      title = "Laporan Inventaris Aset Lengkap";
+      if (category) {
+        title += ` Kategori ${category.name}`;
+      }
+      setReportTitle(title);
     }
-
-    if (category) {
-      title += ` Kategori ${category.name}`;
-    }
-    
-    return title;
-  }
+  }, [classifications, assetValueFilter, categoryIdFilter]);
   
-  const reportTitle = getReportTitle();
 
   if (isLoading) {
     return (

@@ -22,8 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Asset, AssetClassificationValue, Assessment } from '@/lib/definitions';
-import { initialClassifications, initialSubClassifications } from '@/lib/data';
+import type { Asset, AssetClassificationValue, Assessment, Classification, SubClassification } from '@/lib/definitions';
 import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useEffect, useMemo } from 'react';
@@ -69,6 +68,8 @@ type AssetFormValues = z.infer<typeof formSchema>;
 
 interface AssetFormProps {
   asset: Partial<Asset> | null;
+  classifications: Classification[];
+  subClassifications: SubClassification[];
   onSave: (data: Partial<Asset & Assessment>) => void;
   onCancel: () => void;
 }
@@ -79,30 +80,62 @@ const getClassificationValue = (score: number): AssetClassificationValue => {
     return 'Rendah';
 };
 
-export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
+export function AssetForm({ asset, classifications, subClassifications, onSave, onCancel }: AssetFormProps) {
   const { user } = useSession();
   const isEditMode = asset !== null;
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
-    // This now correctly initializes the form. Because the parent component
-    // uses a `key`, this component is re-created on each open, so defaultValues
-    // is re-evaluated with the correct `asset` prop.
     defaultValues: {
-      asset_code: asset?.asset_code ?? '',
-      asset_name: asset?.asset_name ?? '',
-      classification_id: asset?.classification_id ?? undefined,
-      sub_classification_id: asset?.sub_classification_id ?? null,
-      identification_of_existence: asset?.identification_of_existence ?? '',
-      location: asset?.location ?? '',
-      owner: asset?.owner ?? '',
-      confidentiality_score: asset?.confidentiality_score ?? 1,
-      integrity_score: asset?.integrity_score ?? 1,
-      availability_score: asset?.availability_score ?? 1,
-      authenticity_score: asset?.authenticity_score ?? 1,
-      non_repudiation_score: asset?.non_repudiation_score ?? 1,
+      asset_code: '',
+      asset_name: '',
+      classification_id: undefined,
+      sub_classification_id: null,
+      identification_of_existence: '',
+      location: '',
+      owner: '',
+      confidentiality_score: 1,
+      integrity_score: 1,
+      availability_score: 1,
+      authenticity_score: 1,
+      non_repudiation_score: 1,
     },
   });
+
+  useEffect(() => {
+    if (asset) {
+      form.reset({
+        asset_code: asset.asset_code ?? '',
+        asset_name: asset.asset_name ?? '',
+        classification_id: asset.classification_id ?? undefined,
+        sub_classification_id: asset.sub_classification_id ?? null,
+        identification_of_existence: asset.identification_of_existence ?? '',
+        location: asset.location ?? '',
+        owner: asset.owner ?? '',
+        confidentiality_score: asset.confidentiality_score ?? 1,
+        integrity_score: asset.integrity_score ?? 1,
+        availability_score: asset.availability_score ?? 1,
+        authenticity_score: asset.authenticity_score ?? 1,
+        non_repudiation_score: asset.non_repudiation_score ?? 1,
+      });
+    } else {
+      form.reset({
+        asset_code: '',
+        asset_name: '',
+        classification_id: undefined,
+        sub_classification_id: null,
+        identification_of_existence: '',
+        location: '',
+        owner: '',
+        confidentiality_score: 1,
+        integrity_score: 1,
+        availability_score: 1,
+        authenticity_score: 1,
+        non_repudiation_score: 1,
+      });
+    }
+  }, [asset, form]);
+
 
   const watchedScores = useWatch({
     control: form.control,
@@ -114,10 +147,10 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     name: "classification_id",
   });
 
-  const subClassifications = useMemo(() => {
+  const filteredSubClassifications = useMemo(() => {
     if (!watchedClassificationId) return [];
-    return initialSubClassifications.filter(sc => sc.classification_id === watchedClassificationId);
-  }, [watchedClassificationId]);
+    return subClassifications.filter(sc => sc.classification_id === watchedClassificationId);
+  }, [watchedClassificationId, subClassifications]);
 
   const totalScore = watchedScores.reduce((sum, score) => sum + (Number(score) || 0), 0);
   const assetValue = getClassificationValue(totalScore);
@@ -127,12 +160,8 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
         ...data,
         id: asset?.id || 0,
         assessed_by: user?.id,
+        notes: isEditMode ? 'Data aset dasar dan/atau penilaian diperbarui.' : 'Penilaian awal saat pembuatan aset.'
     };
-    
-    if (isEditMode) {
-        payload.notes = 'Data aset dasar dan/atau penilaian diperbarui.';
-    }
-
     onSave(payload);
   }
 
@@ -179,7 +208,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {initialClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}
+                    {classifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -192,14 +221,14 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sub Kategori</FormLabel>
-                <Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} value={field.value ? String(field.value) : ''} disabled={subClassifications.length === 0}>
+                <Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} value={field.value ? String(field.value) : ''} disabled={filteredSubClassifications.length === 0}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih sub-kategori aset (opsional)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {subClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}
+                    {filteredSubClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormDescription>Pilih kategori terlebih dahulu.</FormDescription>
@@ -316,5 +345,3 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
     </Form>
   );
 }
-
-    

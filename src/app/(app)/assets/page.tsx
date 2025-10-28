@@ -4,29 +4,37 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import AssetTable from '@/components/assets/asset-table';
-import { getAllAssets, createAsset, updateAsset, deleteAsset } from '@/lib/data';
-import type { Asset } from '@/lib/definitions';
+import { getAllAssets, createAsset, updateAsset, deleteAsset, getAllClassifications, getAllSubClassifications } from '@/lib/data';
+import type { Asset, Classification, SubClassification } from '@/lib/definitions';
 import { AssetDialog } from '@/components/assets/asset-dialog';
 import { useSession } from '@/hooks/use-session';
 import { toast } from '@/hooks/use-toast';
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [classifications, setClassifications] = useState<Classification[]>([]);
+  const [subClassifications, setSubClassifications] = useState<SubClassification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const { user, role } = useSession();
 
-  const fetchAssets = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const data = await getAllAssets();
-      setAssets(data);
+      const [assetsData, classificationsData, subClassificationsData] = await Promise.all([
+        getAllAssets(),
+        getAllClassifications(),
+        getAllSubClassifications(),
+      ]);
+      setAssets(assetsData);
+      setClassifications(classificationsData);
+      setSubClassifications(subClassificationsData);
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Gagal Memuat Aset',
+        title: 'Gagal Memuat Data',
         description: error instanceof Error ? error.message : 'Terjadi kesalahan yang tidak diketahui.',
       });
     } finally {
@@ -36,8 +44,9 @@ export default function AssetsPage() {
 
   useEffect(() => {
     if (role) {
-        fetchAssets();
+        fetchData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
   
   if (!user || !role) {
@@ -63,7 +72,7 @@ export default function AssetsPage() {
         title: 'Aset Dihapus',
         description: 'Aset telah berhasil dihapus dari sistem.',
       });
-      fetchAssets(); // Refresh data
+      fetchData(); // Refresh data
     } catch (error) {
       console.error(error);
       toast({
@@ -91,7 +100,7 @@ export default function AssetsPage() {
       }
       setDialogOpen(false);
       setSelectedAsset(null);
-      fetchAssets(); // Refresh data
+      fetchData(); // Refresh data
     } catch (error) {
       console.error(error);
       toast({
@@ -123,6 +132,7 @@ export default function AssetsPage() {
         assets={assets}
         isLoading={isLoading}
         userRole={role.name}
+        classifications={classifications}
         onEdit={handleEditAsset}
         onDelete={handleDeleteAsset}
       />
@@ -132,6 +142,8 @@ export default function AssetsPage() {
         onOpenChange={setDialogOpen}
         onSave={handleSaveAsset}
         asset={selectedAsset}
+        classifications={classifications}
+        subClassifications={subClassifications}
       />
     </div>
   );

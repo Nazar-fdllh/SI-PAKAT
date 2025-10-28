@@ -8,7 +8,7 @@ export type User = {
   id: number;
   // `username` is used by the backend API for the user's full name.
   // `name` will be used consistently on the frontend for clarity.
-  username: string;
+  username?: string; // Make optional as we primarily use 'name' on front-end
   name: string; 
   email: string;
   password?: string;
@@ -69,9 +69,3 @@ export type Assessment = {
 };
 
 export type UserRole = Role['name'];
-
-// Helper type for paginated API responses
-export type ApiCollectionResponse<T> = {
-  data: T[];
-  // any other pagination fields
-};

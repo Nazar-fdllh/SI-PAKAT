@@ -6,21 +6,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AssetForm } from './asset-form';
-import type { Asset } from '@/lib/definitions';
+import type { Asset, Classification, SubClassification } from '@/lib/definitions';
 import { ScrollArea } from '../ui/scroll-area';
 
 interface AssetDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (asset: Asset) => void;
+  onSave: (asset: Partial<Asset>) => void;
   asset: Asset | null;
+  classifications: Classification[];
+  subClassifications: SubClassification[];
 }
 
-export function AssetDialog({ isOpen, onOpenChange, onSave, asset }: AssetDialogProps) {
+export function AssetDialog({ isOpen, onOpenChange, onSave, asset, classifications, subClassifications }: AssetDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
@@ -34,11 +35,10 @@ export function AssetDialog({ isOpen, onOpenChange, onSave, asset }: AssetDialog
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] p-4">
             <AssetForm
-              // The key is crucial. It tells React to create a new instance of AssetForm
-              // whenever the asset changes (from null to an object, or from one asset to another).
-              // This forces react-hook-form to re-initialize with the correct defaultValues.
               key={asset ? asset.id : 'new'}
               asset={asset}
+              classifications={classifications}
+              subClassifications={subClassifications}
               onSave={onSave}
               onCancel={() => onOpenChange(false)}
             />

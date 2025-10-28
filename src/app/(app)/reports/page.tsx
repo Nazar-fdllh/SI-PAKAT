@@ -14,15 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { initialClassifications } from "@/lib/data";
+import { getAllClassifications } from "@/lib/data";
+import type { Classification } from "@/lib/definitions";
 
 type ReportCardProps = {
   title: string;
   description: string;
   classification: 'Tinggi' | 'Sedang' | 'Rendah' | 'Semua';
+  allClassifications: Classification[];
 };
 
-function ReportCard({ title, description, classification }: ReportCardProps) {
+function ReportCard({ title, description, classification, allClassifications }: ReportCardProps) {
   const [categoryId, setCategoryId] = useState('all');
 
   const generateLink = () => {
@@ -53,7 +55,7 @@ function ReportCard({ title, description, classification }: ReportCardProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Kategori</SelectItem>
-            {initialClassifications.map((cat) => (
+            {allClassifications.map((cat) => (
               <SelectItem key={cat.id} value={String(cat.id)}>
                 {cat.name}
               </SelectItem>
@@ -74,14 +76,32 @@ function ReportCard({ title, description, classification }: ReportCardProps) {
 export default function ReportsPage() {
   const { role } = useSession();
   const router = useRouter();
+  const [classifications, setClassifications] = useState<Classification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (role && role.name !== 'Administrator' && role.name !== 'Auditor') {
       router.push('/dashboard');
+      return;
+    }
+
+    async function fetchClassifications() {
+      try {
+        const data = await getAllClassifications();
+        setClassifications(data);
+      } catch (error) {
+        console.error("Failed to fetch classifications for reports", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (role) {
+      fetchClassifications();
     }
   }, [role, router]);
 
-  if (!role || (role.name !== 'Administrator' && role.name !== 'Auditor')) {
+  if (!role || (role.name !== 'Administrator' && role.name !== 'Auditor') || isLoading) {
     return <div className="flex justify-center items-center h-full"><p>Memuat atau mengalihkan...</p></div>;
   }
 
@@ -124,6 +144,7 @@ export default function ReportsPage() {
             title={report.title}
             description={report.description}
             classification={report.classification}
+            allClassifications={classifications}
           />
         ))}
       </div>

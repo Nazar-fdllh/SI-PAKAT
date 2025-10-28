@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAllUsers, createUser, updateUser, deleteUser } from '@/lib/data';
+import { getAllUsers, createUser, updateUser, deleteUser, getAllRoles } from '@/lib/data';
 import UserTable from '@/components/users/user-table';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { UserDialog } from '@/components/users/user-dialog';
-import type { User } from '@/lib/definitions';
+import type { User, Role } from '@/lib/definitions';
 import { useSession } from '@/hooks/use-session';
 import { toast } from '@/hooks/use-toast';
 
@@ -15,21 +15,27 @@ export default function UsersPage() {
   const router = useRouter();
   const { role } = useSession();
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const data = await getAllUsers();
-      setUsers(data);
+      // Fetch users and roles in parallel
+      const [usersData, rolesData] = await Promise.all([
+        getAllUsers(),
+        getAllRoles(),
+      ]);
+      setUsers(usersData);
+      setRoles(rolesData);
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Gagal Memuat Pengguna',
-        description: error instanceof Error ? error.message : 'Terjadi kesalahan.',
+        title: 'Gagal Memuat Data',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat pengguna dan peran.',
       });
     } finally {
       setIsLoading(false);
@@ -41,8 +47,9 @@ export default function UsersPage() {
       router.push('/dashboard');
     }
     if (role && role.name === 'Administrator') {
-      fetchUsers();
+      fetchData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, router]);
 
   if (!role) {
@@ -74,7 +81,7 @@ export default function UsersPage() {
         title: 'Pengguna Dihapus',
         description: 'Pengguna telah berhasil dihapus.'
       });
-      fetchUsers();
+      fetchData(); // Refetch data
     } catch (error) {
        toast({
         variant: 'destructive',
@@ -102,7 +109,7 @@ export default function UsersPage() {
       }
       setDialogOpen(false);
       setSelectedUser(null);
-      fetchUsers();
+      fetchData(); // Refetch data
     } catch (error) {
        toast({
         variant: 'destructive',
@@ -132,12 +139,15 @@ export default function UsersPage() {
         onEdit={handleEditUser}
         onDelete={handleDeleteUser}
       />
-      <UserDialog
-        isOpen={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSave={handleSaveUser}
-        user={selectedUser}
-      />
+      {roles.length > 0 && (
+        <UserDialog
+          isOpen={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onSave={handleSaveUser}
+          user={selectedUser}
+          roles={roles}
+        />
+      )}
     </div>
   );
 }

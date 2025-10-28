@@ -21,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { initialRoles } from '@/lib/data';
-import type { User } from '@/lib/definitions';
+import type { User, Role } from '@/lib/definitions';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter.'),
@@ -35,11 +34,12 @@ type UserFormValues = z.infer<typeof formSchema>;
 
 interface UserFormProps {
   user: User | null;
+  roles: Role[]; // Roles are now passed as a prop
   onSave: (user: Partial<User>) => void;
   onCancel: () => void;
 }
 
-export function UserForm({ user, onSave, onCancel }: UserFormProps) {
+export function UserForm({ user, roles, onSave, onCancel }: UserFormProps) {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -94,7 +94,7 @@ export function UserForm({ user, onSave, onCancel }: UserFormProps) {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" placeholder="Isi hanya jika ingin mengubah" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -106,14 +106,14 @@ export function UserForm({ user, onSave, onCancel }: UserFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Peran</FormLabel>
-              <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={String(field.value)}>
+              <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={String(field.value || '')}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih peran untuk pengguna" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {initialRoles.map((role) => (
+                  {roles.map((role) => (
                     <SelectItem key={role.id} value={String(role.id)}>
                       {role.name}
                     </SelectItem>

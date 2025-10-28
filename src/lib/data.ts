@@ -1,4 +1,4 @@
-import type { User, Asset, Assessment, Classification, SubClassification, Role, ApiCollectionResponse } from './definitions';
+import type { User, Asset, Assessment, Classification, SubClassification, Role } from './definitions';
 import { cookies } from 'next/headers';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
@@ -70,8 +70,8 @@ export const deleteUser = (id: number) => fetchFromApi<void>(`/api/users/${id}`,
 // --- Asset Data ---
 export const getAllAssets = () => fetchFromApi<Asset[]>('/api/assets');
 export const getAssetById = (id: number | string) => fetchFromApi<Asset>(`/api/assets/${id}`);
-export const createAsset = (data: Partial<Asset>) => fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) });
-export const updateAsset = (id: number, data: Partial<Asset>) => fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const createAsset = (data: Partial<Asset & { notes?: string }>) => fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) });
+export const updateAsset = (id: number, data: Partial<Asset & { notes?: string }>) => fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteAsset = (id: number) => fetchFromApi<void>(`/api/assets/${id}`, { method: 'DELETE' });
 
 
@@ -82,32 +82,9 @@ export const getReportData = async (filters: { categoryId?: string, asset_value?
 };
 
 
-// --- Static Data (can be fetched or remain static) ---
-export const initialRoles: Role[] = [
-  { id: 1, name: 'Administrator', description: 'Memiliki hak akses penuh terhadap sistem dan manajemen pengguna.' },
-  { id: 2, name: 'Manajer Aset', description: 'Bertanggung jawab atas pengelolaan data aset dan penilaian keamanan.' },
-  { id: 3, name: 'Auditor', description: 'Dapat melihat data aset dan laporan, namun tidak dapat mengubah data.' }
-];
-
-export const initialClassifications: Classification[] = [
-    { id: 1, name: 'SDM & Pihak Ketiga', description: 'Aset TIK berupa Sumber Daya Manusia dan Pihak Ketiga yang memiliki akses atau terlibat dalam TIK.' },
-    { id: 2, name: 'Sarana Pendukung', description: 'Aset TIK berupa fasilitas pendukung seperti UPS, Genset, Ruang Server.' },
-    { id: 3, name: 'Perangkat Keras', description: 'Aset TIK berupa fisik (hardware) seperti server, komputer, jaringan.' },
-    { id: 4, name: 'Perangkat Lunak', description: 'Aset TIK berupa aplikasi, sistem operasi, dan perangkat lunak lainnya.' },
-    { id: 5, name: 'Data & Informasi', description: 'Aset TIK berupa data, database, dan informasi digital.' },
-];
-
-export const initialSubClassifications: SubClassification[] = [
-    { id: 1, classification_id: 1, name: 'Management' },
-    { id: 2, classification_id: 1, name: 'Technical' },
-    { id: 3, classification_id: 2, name: 'Genset' },
-    { id: 4, classification_id: 2, name: 'CCTV' },
-    { id: 5, classification_id: 2, name: 'APAR' },
-    { id: 6, classification_id: 3, name: 'Server' },
-    { id: 7, classification_id: 4, name: 'System Utility' },
-    { id: 8, classification_id: 4, name: 'Aplikasi Website' },
-    { id: 9, classification_id: 5, name: 'Data Log' },
-    { id: 10, classification_id: 5, name: 'Prosedur' },
-    { id: 11, classification_id: 5, name: 'Dokumen' },
-    { id: 12, classification_id: 5, name: 'Formulir' },
-];
+// --- Master Data (Roles, Classifications) ---
+// Assuming these endpoints exist on your backend.
+// If they don't, you'll need to create them based on BACKEND_GUIDE.md.
+export const getAllRoles = () => fetchFromApi<Role[]>('/api/roles');
+export const getAllClassifications = () => fetchFromApi<Classification[]>('/api/classifications');
+export const getAllSubClassifications = () => fetchFromApi<SubClassification[]>('/api/sub-classifications');

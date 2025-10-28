@@ -35,8 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { type Asset, type UserRole, type AssetClassificationValue } from "@/lib/definitions"
-import { initialClassifications } from "@/lib/data"
+import { type Asset, type UserRole, type AssetClassificationValue, type Classification } from "@/lib/definitions"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import {
@@ -63,11 +62,12 @@ type AssetTableProps = {
   assets: Asset[];
   isLoading: boolean;
   userRole: UserRole | null;
+  classifications: Classification[];
   onEdit: (asset: Asset) => void;
   onDelete: (assetId: number) => void;
 };
 
-export default function AssetTable({ assets, isLoading, userRole, onEdit, onDelete }: AssetTableProps) {
+export default function AssetTable({ assets, isLoading, userRole, classifications, onEdit, onDelete }: AssetTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
@@ -261,7 +261,7 @@ export default function AssetTable({ assets, isLoading, userRole, onEdit, onDele
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Kategori</SelectItem>
-            {initialClassifications.map((category) => (
+            {classifications.map((category) => (
               <SelectItem key={category.id} value={category.name}>
                 {category.name}
               </SelectItem>
