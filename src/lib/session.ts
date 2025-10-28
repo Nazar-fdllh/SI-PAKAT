@@ -3,12 +3,17 @@
 import type { User, Role } from './definitions';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
-import { initialRoles } from './data';
+
+// This is a server-only function to get the raw token
+export async function getAuthToken(): Promise<string | undefined> {
+  const cookieStore = cookies();
+  return cookieStore.get('accessToken')?.value;
+}
+
 
 // This function now decodes the JWT to get user information
 export async function getCurrentUser(): Promise<User | undefined> {
-  const cookieStore = cookies();
-  const token = cookieStore.get('accessToken')?.value;
+  const token = await getAuthToken();
 
   if (!token) return undefined;
 
@@ -21,13 +26,23 @@ export async function getCurrentUser(): Promise<User | undefined> {
     
     const userName = (payload.name as string) || 'Pengguna';
     const userEmail = payload.email as string || `${userName.toLowerCase().replace(/ /g, '.')}@sipakat.com`;
+    const userRoleName = payload.role as 'Administrator' | 'Manajer Aset' | 'Auditor';
+
+    // Mock fetching roles, in a real app this might come from an API or a static config file
+    const roles: Role[] = [
+        { id: 1, name: 'Administrator', description: 'Super user with all access' },
+        { id: 2, name: 'Manajer Aset', description: 'Can manage assets' },
+        { id: 3, name: 'Auditor', description: 'Can view assets and generate reports' }
+    ];
+
+    const roleDetails = roles.find(r => r.name === userRoleName);
 
     return {
       id: payload.id as number,
       name: userName,
       username: userName,
       email: userEmail,
-      role_id: initialRoles.find(r => r.name === payload.role)?.id || 0,
+      role_id: roleDetails?.id || 0,
       avatarUrl: `https://i.pravatar.cc/150?u=${payload.id}`,
     };
   } catch (e) {
@@ -39,6 +54,13 @@ export async function getCurrentUser(): Promise<User | undefined> {
 export async function getCurrentRole(): Promise<Role | null> {
     const user = await getCurrentUser();
     if (!user || !user.role_id) return null;
-    const role = initialRoles.find(r => r.id === user.role_id);
+
+    // Mock fetching roles
+    const roles: Role[] = [
+        { id: 1, name: 'Administrator', description: 'Super user with all access' },
+        { id: 2, name: 'Manajer Aset', description: 'Can manage assets' },
+        { id: 3, name: 'Auditor', description: 'Can view assets and generate reports' }
+    ];
+    const role = roles.find(r => r.id === user.role_id);
     return role || null;
 }

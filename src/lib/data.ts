@@ -1,18 +1,10 @@
 import type { User, Asset, Assessment, Classification, SubClassification, Role } from './definitions';
-import { cookies } from 'next/headers';
+import { getAuthToken } from './session'; // Import from session.ts
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
-// This is a server-only function to get the raw token
-async function getAuthToken(): Promise<string | undefined> {
-  const cookieStore = cookies();
-  return cookieStore.get('accessToken')?.value;
-}
-
-
-async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = await getAuthToken();
-    
+// fetchFromApi now accepts the token directly
+async function fetchFromApi<T>(endpoint: string, token: string | undefined, options: RequestInit = {}): Promise<T> {
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -61,30 +53,66 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
 
 // --- User Data ---
-export const getAllUsers = () => fetchFromApi<User[]>('/api/users');
-export const createUser = (data: Partial<User>) => fetchFromApi<User>('/api/users', { method: 'POST', body: JSON.stringify(data) });
-export const updateUser = (id: number, data: Partial<User>) => fetchFromApi<User>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-export const deleteUser = (id: number) => fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' });
+// Each function now gets the token first
+export const getAllUsers = async () => {
+    const token = await getAuthToken();
+    return fetchFromApi<User[]>('/api/users', token);
+};
+export const createUser = async (data: Partial<User>) => {
+    const token = await getAuthToken();
+    return fetchFromApi<User>('/api/users', token, { method: 'POST', body: JSON.stringify(data) });
+};
+export const updateUser = async (id: number, data: Partial<User>) => {
+    const token = await getAuthToken();
+    return fetchFromApi<User>(`/api/users/${id}`, token, { method: 'PUT', body: JSON.stringify(data) });
+};
+export const deleteUser = async (id: number) => {
+    const token = await getAuthToken();
+    return fetchFromApi<void>(`/api/users/${id}`, token, { method: 'DELETE' });
+};
 
 
 // --- Asset Data ---
-export const getAllAssets = () => fetchFromApi<Asset[]>('/api/assets');
-export const getAssetById = (id: number | string) => fetchFromApi<Asset>(`/api/assets/${id}`);
-export const createAsset = (data: Partial<Asset & { notes?: string }>) => fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) });
-export const updateAsset = (id: number, data: Partial<Asset & { notes?: string }>) => fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-export const deleteAsset = (id: number) => fetchFromApi<void>(`/api/assets/${id}`, { method: 'DELETE' });
+export const getAllAssets = async () => {
+    const token = await getAuthToken();
+    return fetchFromApi<Asset[]>('/api/assets', token);
+};
+export const getAssetById = async (id: number | string) => {
+    const token = await getAuthToken();
+    return fetchFromApi<Asset>(`/api/assets/${id}`, token);
+};
+export const createAsset = async (data: Partial<Asset & { notes?: string }>) => {
+    const token = await getAuthToken();
+    return fetchFromApi<Asset>('/api/assets', token, { method: 'POST', body: JSON.stringify(data) });
+};
+export const updateAsset = async (id: number, data: Partial<Asset & { notes?: string }>) => {
+    const token = await getAuthToken();
+    return fetchFromApi<{ message: string }>(`/api/assets/${id}`, token, { method: 'PUT', body: JSON.stringify(data) });
+};
+export const deleteAsset = async (id: number) => {
+    const token = await getAuthToken();
+    return fetchFromApi<void>(`/api/assets/${id}`, token, { method: 'DELETE' });
+};
 
 
 // --- Report Data ---
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
+    const token = await getAuthToken();
     const params = new URLSearchParams(filters as Record<string, string>);
-    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`);
+    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, token);
 };
 
 
 // --- Master Data (Roles, Classifications) ---
-// Assuming these endpoints exist on your backend.
-// If they don't, you'll need to create them based on BACKEND_GUIDE.md.
-export const getAllRoles = () => fetchFromApi<Role[]>('/api/roles');
-export const getAllClassifications = () => fetchFromApi<Classification[]>('/api/classifications');
-export const getAllSubClassifications = () => fetchFromApi<SubClassification[]>('/api/sub-classifications');
+export const getAllRoles = async () => {
+    const token = await getAuthToken();
+    return fetchFromApi<Role[]>('/api/roles', token);
+};
+export const getAllClassifications = async () => {
+    const token = await getAuthToken();
+    return fetchFromApi<Classification[]>('/api/classifications', token);
+};
+export const getAllSubClassifications = async () => {
+    const token = await getAuthToken();
+    return fetchFromApi<SubClassification[]>('/api/sub-classifications', token);
+};
