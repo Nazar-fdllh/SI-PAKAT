@@ -7,8 +7,7 @@ import { initialRoles } from './data'; // Roles might still be needed if not in 
 
 // This function now decodes the JWT to get user information
 export async function getCurrentUser(): Promise<User | undefined> {
-  const cookieStore = cookies();
-  const token = cookieStore.get('accessToken')?.value;
+  const token = await getAuthToken();
 
   if (!token) return undefined;
 
@@ -26,13 +25,13 @@ export async function getCurrentUser(): Promise<User | undefined> {
     // The backend's "name" property is the user's full name.
     // We map it to `name` for frontend consistency.
     const userName = (payload.name as string) || 'Pengguna';
-    const userEmail = `${userName.toLowerCase().replace(/ /g, '.')}@sipakat.com`;
+    const userEmail = payload.email as string || `${userName.toLowerCase().replace(/ /g, '.')}@sipakat.com`;
 
     return {
       id: payload.id as number,
       name: userName, // Use the name from the token
       username: userName, // Backend uses `username` field for the name
-      email: userEmail, // Create dummy email for display
+      email: userEmail,
       role_id: initialRoles.find(r => r.name === payload.role)?.id || 0,
       avatarUrl: `https://i.pravatar.cc/150?u=${payload.id}`,
     };
@@ -51,6 +50,5 @@ export async function getCurrentRole(): Promise<Role | null> {
 }
 
 export async function getAuthToken(): Promise<string | undefined> {
-  const cookieStore = cookies();
-  return cookieStore.get('accessToken')?.value;
+  return cookies().get('accessToken')?.value;
 }

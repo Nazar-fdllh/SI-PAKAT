@@ -25,6 +25,7 @@ export async function login(prevState: any, formData: FormData) {
     };
   }
 
+  let result;
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
       method: 'POST',
@@ -32,20 +33,11 @@ export async function login(prevState: any, formData: FormData) {
       body: JSON.stringify(validatedFields.data),
     });
 
-    const result = await response.json();
+    result = await response.json();
 
     if (!response.ok) {
       return { message: result.message || 'Login gagal. Periksa kembali email dan password Anda.' };
     }
-
-    // Simpan token ke cookie
-    cookies().set('accessToken', result.accessToken, {
-      httpOnly: true,
-      path: '/',
-      maxAge: 60 * 60 * 24, // 1 hari, sesuaikan dengan backend
-      secure: process.env.NODE_ENV === 'production',
-    });
-
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch failed')) {
       return { message: 'Tidak dapat terhubung ke server backend. Pastikan server sudah berjalan.' };
@@ -53,6 +45,14 @@ export async function login(prevState: any, formData: FormData) {
     console.error('Login error:', error);
     return { message: 'Terjadi kesalahan yang tidak diketahui.' };
   }
+
+  // Simpan token ke cookie
+  cookies().set('accessToken', result.accessToken, {
+    httpOnly: true,
+    path: '/',
+    maxAge: 60 * 60 * 24, // 1 hari, sesuaikan dengan backend
+    secure: process.env.NODE_ENV === 'production',
+  });
 
   // Redirect should be called outside of try...catch
   // because it throws an error to stop execution and redirect.
