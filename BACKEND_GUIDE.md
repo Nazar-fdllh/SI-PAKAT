@@ -50,15 +50,17 @@ npm init -y
 npm install express mysql2 jsonwebtoken bcryptjs cors dotenv
 ```
 
-## 4. Implementasi Kode
+## 4. Implementasi Kode Berdasarkan Folder
 
 Berikut adalah contoh kode untuk setiap file dalam struktur proyek.
 
 ---
 
-### `.env`
+### **File di Root Proyek**
 
-Buat file ini di root proyek untuk menyimpan kredensial dan konfigurasi sensitif. Sesuaikan dengan pengaturan Laragon atau server MySQL Anda. **Penting**: `DB_HOST` diubah menjadi `127.0.0.1` untuk menghindari masalah koneksi IPv6.
+#### `.env`
+
+File ini menyimpan kredensial dan konfigurasi sensitif. Sesuaikan dengan pengaturan Laragon atau server MySQL Anda. **Penting**: `DB_HOST` diubah menjadi `127.0.0.1` untuk menghindari masalah koneksi IPv6.
 
 ```env
 DB_HOST=127.0.0.1
@@ -69,11 +71,9 @@ PORT=3001
 JWT_SECRET=kunci-rahasia-yang-sangat-aman
 ```
 
----
+#### `server.js` (File Utama)
 
-### `server.js` (File Utama)
-
-File ini menginisialisasi server Express, menerapkan middleware, dan menghubungkan semua rute.
+File ini menginisialisasi server Express, menerapkan middleware, dan menghubungkan semua rute. Termasuk rute sementara untuk setup admin pertama kali.
 
 ```javascript
 // server.js
@@ -144,7 +144,9 @@ app.listen(PORT, () => {
 
 ---
 
-### `/config/db.js`
+### **Folder `config`**
+
+#### `/config/db.js`
 
 Konfigurasi koneksi ke database MySQL menggunakan `mysql2/promise`.
 
@@ -176,7 +178,9 @@ module.exports = pool;
 
 ---
 
-### `/middlewares/authMiddleware.js`
+### **Folder `middlewares`**
+
+#### `/middlewares/authMiddleware.js`
 
 Middleware untuk memverifikasi token JWT dari header `Authorization`.
 
@@ -205,9 +209,7 @@ const verifyToken = (req, res, next) => {
 module.exports = { verifyToken };
 ```
 
----
-
-### `/middlewares/roleMiddleware.js`
+#### `/middlewares/roleMiddleware.js`
 
 Middleware untuk membatasi akses endpoint berdasarkan peran pengguna.
 
@@ -231,9 +233,11 @@ module.exports = { isAdmin, isAssetManager, isAuditor, checkRole };
 
 ---
 
-### `/controllers/authController.js`
+### **Folder `controllers`**
 
-Logika untuk menangani login pengguna. Password di-hash menggunakan `bcryptjs`.
+#### `/controllers/authController.js`
+
+Logika untuk menangani login pengguna, memvalidasi kredensial, dan membuat token JWT.
 
 ```javascript
 // /controllers/authController.js
@@ -286,26 +290,9 @@ exports.login = async (req, res) => {
 };
 ```
 
----
+#### `/controllers/userController.js`
 
-### `/routes/authRoutes.js`
-
-```javascript
-// /routes/authRoutes.js
-const express = require('express');
-const router = express.Router();
-const authController = require('../controllers/authController');
-
-router.post('/login', authController.login);
-
-module.exports = router;
-```
-
----
-
-### `/controllers/userController.js`
-
-Logika CRUD lengkap untuk entitas Pengguna. Semua operasi tulis dilindungi hanya untuk Admin.
+Logika CRUD (Create, Read, Update, Delete) untuk entitas Pengguna.
 
 ```javascript
 // /controllers/userController.js
@@ -386,37 +373,9 @@ exports.deleteUser = async (req, res) => {
 };
 ```
 
----
+#### `/controllers/assetController.js`
 
-### `/routes/userRoutes.js`
-
-Semua endpoint di sini memerlukan verifikasi token dan peran Administrator.
-
-```javascript
-// /routes/userRoutes.js
-const express = require('express');
-const router = express.Router();
-const userController = require('../controllers/userController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const { isAdmin } = require('../middlewares/roleMiddleware');
-
-// Terapkan middleware untuk semua rute di file ini
-router.use(verifyToken, isAdmin);
-
-router.get('/', userController.getAllUsers);
-router.post('/', userController.createUser);
-router.get('/:id', userController.getUserById);
-router.put('/:id', userController.updateUser);
-router.delete('/:id', userController.deleteUser);
-
-module.exports = router;
-```
-
----
-
-### `/controllers/assetController.js`
-
-Logika CRUD lengkap untuk Aset.
+Logika CRUD untuk Aset. `getAssetById` diperbaiki untuk menyertakan penilaian terakhir.
 
 ```javascript
 // /controllers/assetController.js
@@ -492,6 +451,7 @@ exports.createAsset = async (req, res) => {
         const newAssetId = assetResult.insertId;
 
         // 3. Insert ke tabel 'asset_assessments'
+        // Tidak lagi menyertakan `total_score` dan `asset_value`
         await connection.execute(
             `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, assessment_date, notes) 
              VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
@@ -589,34 +549,7 @@ exports.deleteAsset = async (req, res) => {
 };
 ```
 
----
-
-### `/routes/assetRoutes.js`
-
-Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tulis (POST, PUT, DELETE). Semua pengguna terautentikasi bisa membaca data.
-
-```javascript
-// /routes/assetRoutes.js
-const express = require('express');
-const router = express.Router();
-const assetController = require('../controllers/assetController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const { isAssetManager } = require('../middlewares/roleMiddleware');
-
-// Semua role terautentikasi bisa melihat aset
-router.get('/', [verifyToken], assetController.getAllAssets);
-router.get('/:id', [verifyToken], assetController.getAssetById);
-
-// Hanya Manajer Aset & Admin yang bisa melakukan operasi tulis
-router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
-router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
-router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
-
-module.exports = router;
-```
----
-
-### `/controllers/reportController.js`
+#### `/controllers/reportController.js`
 
 Logika untuk menghasilkan data laporan dengan filter dinamis.
 
@@ -668,12 +601,74 @@ exports.generateReport = async (req, res) => {
         res.status(500).json({ message: 'Gagal menghasilkan laporan', error: error.message });
     }
 };
-
 ```
 
 ---
 
-### `/routes/reportRoutes.js`
+### **Folder `routes`**
+
+#### `/routes/authRoutes.js`
+
+```javascript
+// /routes/authRoutes.js
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+
+router.post('/login', authController.login);
+
+module.exports = router;
+```
+
+#### `/routes/userRoutes.js`
+
+Semua endpoint di sini memerlukan verifikasi token dan peran Administrator.
+
+```javascript
+// /routes/userRoutes.js
+const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/userController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+const { isAdmin } = require('../middlewares/roleMiddleware');
+
+// Terapkan middleware untuk semua rute di file ini
+router.use(verifyToken, isAdmin);
+
+router.get('/', userController.getAllUsers);
+router.post('/', userController.createUser);
+router.get('/:id', userController.getUserById);
+router.put('/:id', userController.updateUser);
+router.delete('/:id', userController.deleteUser);
+
+module.exports = router;
+```
+
+#### `/routes/assetRoutes.js`
+
+Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tulis.
+
+```javascript
+// /routes/assetRoutes.js
+const express = require('express');
+const router = express.Router();
+const assetController = require('../controllers/assetController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+const { isAssetManager } = require('../middlewares/roleMiddleware');
+
+// Semua role terautentikasi bisa melihat aset
+router.get('/', [verifyToken], assetController.getAllAssets);
+router.get('/:id', [verifyToken], assetController.getAssetById);
+
+// Hanya Manajer Aset & Admin yang bisa melakukan operasi tulis
+router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
+router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
+router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
+
+module.exports = router;
+```
+
+#### `/routes/reportRoutes.js`
 
 Rute ini diproteksi, hanya Auditor dan Admin yang bisa mengakses.
 
@@ -700,21 +695,4 @@ module.exports = router;
 4.  Server backend Anda akan berjalan di `http://localhost:3001`.
 
 Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
-
-**Catatan Penting:**
-*   **Password Hashing**: Contoh di atas sudah menggunakan `bcryptjs` untuk meng-hash password saat membuat user dan membandingkannya saat login. Ini adalah praktik keamanan yang sangat penting.
-*   **Username vs Name**: Di `authController`, `username` dari database di-alias sebagai `name` untuk konsistensi dengan token JWT dan frontend.
-
 ---
-
-    
-    
-
-    
-
-
-
-
-
-
-
