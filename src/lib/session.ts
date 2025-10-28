@@ -48,8 +48,3 @@ export async function getCurrentRole(): Promise<Role | null> {
     const role = initialRoles.find(r => r.id === user.role_id);
     return role || null;
 }
-
-// This function is no longer needed and was causing issues.
-// export async function getAuthToken(): Promise<string | undefined> {
-//   return cookies().get('accessToken')?.value;
-// }
