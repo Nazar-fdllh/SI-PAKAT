@@ -7,7 +7,7 @@ import { initialRoles } from './data'; // Roles might still be needed if not in 
 
 // This function now decodes the JWT to get user information
 export async function getCurrentUser(): Promise<User | undefined> {
-  const token = await getAuthToken();
+  const token = cookies().get('accessToken')?.value;
 
   if (!token) return undefined;
 
@@ -49,6 +49,7 @@ export async function getCurrentRole(): Promise<Role | null> {
     return role || null;
 }
 
-export async function getAuthToken(): Promise<string | undefined> {
-  return cookies().get('accessToken')?.value;
-}
+// This function is no longer needed and was causing issues.
+// export async function getAuthToken(): Promise<string | undefined> {
+//   return cookies().get('accessToken')?.value;
+// }

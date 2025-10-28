@@ -1,10 +1,11 @@
 import type { User, Asset, Assessment, Classification, SubClassification, Role, ApiCollectionResponse } from './definitions';
-import { getAuthToken } from './session';
+import { cookies } from 'next/headers';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = await getAuthToken();
+    // Correctly and directly get the token here
+    const token = cookies().get('accessToken')?.value;
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
