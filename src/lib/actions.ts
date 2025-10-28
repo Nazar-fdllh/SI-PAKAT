@@ -54,8 +54,6 @@ export async function login(prevState: any, formData: FormData) {
     secure: process.env.NODE_ENV === 'production',
   });
 
-  // Redirect should be called outside of try...catch
-  // because it throws an error to stop execution and redirect.
   revalidatePath('/');
   redirect('/dashboard');
 }
@@ -79,7 +77,7 @@ export async function configureThresholds(data: ConfigureSecurityThresholdsInput
     // Revalidate the settings path to show updated data if necessary
     revalidatePath('/settings');
     
-    return { success: true, message: result.message };
+    return { success: true, message: result.confirmationMessage };
   } catch (error) {
     console.error("Error configuring thresholds:", error);
     return { success: false, message: "Gagal mengkonfigurasi ambang batas." };
