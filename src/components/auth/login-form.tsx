@@ -20,7 +20,7 @@ export function LoginForm() {
           id="email"
           name="email"
           type="email"
-          placeholder="admin@sipakat.com"
+          placeholder="Masukkan Email Anda"
           required
         />
         {state?.errors?.email && (
@@ -29,7 +29,12 @@ export function LoginForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" name="password" type="password" required />
+        <Input 
+        id="password" 
+        name="password" 
+        type="password"
+        placeholder="Masukkan Password Anda" 
+        required />
         {state?.errors?.password && (
           <p className="text-sm text-destructive">{state.errors.password}</p>
         )}
