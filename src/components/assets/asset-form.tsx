@@ -49,7 +49,6 @@ const thresholds = {
   low: 5,
 };
 
-// For creation, scores are required. For updates, they are optional.
 const formSchema = z.object({
   asset_code: z.string().min(3, 'Kode aset minimal 3 karakter.'),
   asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.'),
@@ -59,7 +58,6 @@ const formSchema = z.object({
   location: z.string().min(3, 'Lokasi minimal 3 karakter.'),
   owner: z.string().min(3, 'Pemilik minimal 3 karakter.'),
   
-  // Assessment scores are always part of the form, mandatory for creation
   confidentiality_score: z.coerce.number().min(1).max(3),
   integrity_score: z.coerce.number().min(1).max(3),
   availability_score: z.coerce.number().min(1).max(3),
@@ -87,26 +85,39 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
-    // Default values are now set inside useEffect
+    defaultValues: {
+      asset_code: '',
+      asset_name: '',
+      classification_id: undefined,
+      sub_classification_id: null,
+      identification_of_existence: '',
+      location: '',
+      owner: '',
+      confidentiality_score: 1,
+      integrity_score: 1,
+      availability_score: 1,
+      authenticity_score: 1,
+      non_repudiation_score: 1,
+    },
   });
 
   useEffect(() => {
     if (asset) {
       // Editing an existing asset, populate form with its data
+      // Use `??` to provide a fallback and prevent uncontrolled inputs
       form.reset({
-        asset_code: asset.asset_code || '',
-        asset_name: asset.asset_name || '',
-        classification_id: asset.classification_id || undefined,
-        sub_classification_id: asset.sub_classification_id || null,
-        identification_of_existence: asset.identification_of_existence || '',
-        location: asset.location || '',
-        owner: asset.owner || '',
-        // Use actual scores, with a fallback to 1 to prevent NaN
-        confidentiality_score: asset.confidentiality_score || 1,
-        integrity_score: asset.integrity_score || 1,
-        availability_score: asset.availability_score || 1,
-        authenticity_score: asset.authenticity_score || 1,
-        non_repudiation_score: asset.non_repudiation_score || 1,
+        asset_code: asset.asset_code ?? '',
+        asset_name: asset.asset_name ?? '',
+        classification_id: asset.classification_id ?? undefined,
+        sub_classification_id: asset.sub_classification_id ?? null,
+        identification_of_existence: asset.identification_of_existence ?? '',
+        location: asset.location ?? '',
+        owner: asset.owner ?? '',
+        confidentiality_score: asset.confidentiality_score ?? 1,
+        integrity_score: asset.integrity_score ?? 1,
+        availability_score: asset.availability_score ?? 1,
+        authenticity_score: asset.authenticity_score ?? 1,
+        non_repudiation_score: asset.non_repudiation_score ?? 1,
       });
     } else {
       // Adding a new asset, reset to default empty/initial values
@@ -153,7 +164,6 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
         assessed_by: user?.id,
     };
     
-    // In edit mode, the backend handles adding a new assessment record if scores are provided.
     if (isEditMode) {
         payload.notes = 'Data aset dasar dan/atau penilaian diperbarui.';
     }
