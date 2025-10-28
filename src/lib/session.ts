@@ -42,9 +42,3 @@ export async function getCurrentRole(): Promise<Role | null> {
     const role = initialRoles.find(r => r.id === user.role_id);
     return role || null;
 }
-
-// This is a server-only function to get the raw token
-export async function getAuthToken(): Promise<string | undefined> {
-  const cookieStore = cookies();
-  return cookieStore.get('accessToken')?.value;
-}

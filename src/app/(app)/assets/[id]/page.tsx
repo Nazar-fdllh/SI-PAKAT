@@ -1,6 +1,6 @@
 'use client';
 
-import { getAssetById, getAssessmentsForAsset, updateAsset } from '@/lib/data';
+import { getAssetById, updateAsset } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import AssetDetails from '@/components/assets/asset-details';
 import AssessmentForm from '@/components/assets/assessment-form';
@@ -27,6 +27,7 @@ export default function AssetDetailPage() {
     if (!id || !user) return;
     setIsLoading(true);
     try {
+      // Single API call to get asset details including the latest assessment scores.
       const assetData = await getAssetById(id);
       if (!assetData) {
         notFound();
@@ -34,26 +35,27 @@ export default function AssetDetailPage() {
       }
       setAsset(assetData);
       
-      // Since the main endpoint now returns the latest assessment, we use it.
-      // The separate history endpoint is still prepared for future use.
-      if (assetData.total_score !== undefined) {
-         const latestAssessment = {
-            id: -1, // Placeholder ID
+      // If the fetched asset data contains scores, it means there's at least one assessment.
+      // We can create a "mock" latest assessment entry for the history display from this data.
+      if (assetData.total_score !== null && assetData.total_score !== undefined) {
+         const latestAssessment: Assessment = {
+            id: -1, // Placeholder ID as this is derived data
             asset_id: assetData.id,
-            assessed_by: user.id, // Placeholder
+            assessed_by: -1, // Placeholder
             assessed_by_name: 'Penilaian Terakhir',
-            assessment_date: new Date().toISOString(), // Placeholder
-            asset_value: assetData.asset_value,
+            assessment_date: new Date().toISOString(), // This is a placeholder date
+            asset_value: assetData.asset_value || 'Rendah',
             total_score: assetData.total_score,
-            confidentiality_score: assetData.confidentiality_score,
-            integrity_score: assetData.integrity_score,
-            availability_score: assetData.availability_score,
-            authenticity_score: assetData.authenticity_score,
-            non_repudiation_score: assetData.non_repudiation_score,
+            confidentiality_score: assetData.confidentiality_score || 1,
+            integrity_score: assetData.integrity_score || 1,
+            availability_score: assetData.availability_score || 1,
+            authenticity_score: assetData.authenticity_score || 1,
+            non_repudiation_score: assetData.non_repudiation_score || 1,
         };
-        // In a real scenario with a history endpoint, you would fetch and merge
-        // const assessmentData = await getAssessmentsForAsset(parseInt(id));
-        setAssessments([latestAssessment as Assessment]);
+        // In the future, a real history endpoint would replace this.
+        setAssessments([latestAssessment]);
+      } else {
+        setAssessments([]); // No assessment data found
       }
 
     } catch (error) {
@@ -71,32 +73,26 @@ export default function AssetDetailPage() {
 
   useEffect(() => {
     fetchAssetData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
 
   const handleNewAssessment = async (assessmentData: Partial<Assessment>) => {
     if (!asset || !user) return;
 
-    const payload = {
-        // We only send the new scores and who assessed it
-        ...assessmentData,
-        assessed_by: user.id,
-        // Include base asset data that PUT endpoint might expect
-        asset_code: asset.asset_code,
-        asset_name: asset.asset_name,
-        classification_id: asset.classification_id,
-        sub_classification_id: asset.sub_classification_id,
-        identification_of_existence: asset.identification_of_existence,
-        location: asset.location,
-        owner: asset.owner,
+    // The PUT endpoint expects the full asset data along with the new scores.
+    const payload: Partial<Asset> = {
+        ...asset, // Spread existing asset data
+        ...assessmentData, // Spread new scores
+        assessed_by: user.id, // Add who is doing the assessment
     };
     
     try {
-      await updateAsset(asset.id, payload as Partial<Asset>);
+      await updateAsset(asset.id, payload);
       toast({
         title: 'Penilaian Disimpan',
         description: 'Penilaian baru untuk aset telah berhasil disimpan.',
       });
-      // Refetch all data to get the latest state
+      // Refetch all data to get the latest state and update the UI.
       fetchAssetData();
     } catch (error) {
       console.error("Failed to save new assessment:", error);
@@ -160,6 +156,7 @@ export default function AssetDetailPage() {
             <CardContent>
               {canAssess ? (
                 <AssessmentForm 
+                  // Pass the actual scores from the fetched asset to the form.
                   initialScores={{
                     confidentiality_score: asset.confidentiality_score,
                     integrity_score: asset.integrity_score,

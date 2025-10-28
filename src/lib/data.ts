@@ -1,10 +1,18 @@
 import type { User, Asset, Assessment, Classification, SubClassification, Role, ApiCollectionResponse } from './definitions';
-import { getAuthToken } from './session'; // Import the server-side token function
+import { cookies } from 'next/headers';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
-// The token is now passed as an argument
-async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}, token?: string): Promise<T> {
+// This is a server-only function to get the raw token
+async function getAuthToken(): Promise<string | undefined> {
+  const cookieStore = cookies();
+  return cookieStore.get('accessToken')?.value;
+}
+
+
+async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = await getAuthToken();
+    
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -51,67 +59,26 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}, toke
     }
 }
 
-// --- Wrapper functions that get the token on the server ---
 
 // --- User Data ---
-export const getAllUsers = async () => {
-    const token = await getAuthToken();
-    return fetchFromApi<User[]>('/api/users', {}, token);
-};
-export const createUser = async (data: Partial<User>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<User>('/api/users', { method: 'POST', body: JSON.stringify(data) }, token);
-};
-export const updateUser = async (id: number, data: Partial<User>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<User>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
-};
-export const deleteUser = async (id: number) => {
-    const token = await getAuthToken();
-    return fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' }, token);
-};
+export const getAllUsers = () => fetchFromApi<User[]>('/api/users');
+export const createUser = (data: Partial<User>) => fetchFromApi<User>('/api/users', { method: 'POST', body: JSON.stringify(data) });
+export const updateUser = (id: number, data: Partial<User>) => fetchFromApi<User>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteUser = (id: number) => fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' });
 
 
 // --- Asset Data ---
-export const getAllAssets = async () => {
-    const token = await getAuthToken();
-    return fetchFromApi<Asset[]>('/api/assets', {}, token);
-};
-export const getAssetById = async (id: number | string) => {
-    const token = await getAuthToken();
-    return fetchFromApi<Asset>(`/api/assets/${id}`, {}, token);
-};
-export const createAsset = async (data: Partial<Asset>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) }, token);
-};
-export const updateAsset = async (id: number, data: Partial<Asset>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
-};
-export const deleteAsset = async (id: number) => {
-    const token = await getAuthToken();
-    return fetchFromApi<void>(`/api/assets/${id}`, { method: 'DELETE' }, token);
-};
-
-
-// --- Assessment Data ---
-// Backend does not have a dedicated assessment history endpoint yet.
-// This function returns an empty array to reflect that.
-export const getAssessmentsForAsset = async (assetId: number): Promise<Assessment[]> => {
-    console.log(`Fetching assessments for assetId: ${assetId}. Currently returning empty array as endpoint is not implemented.`);
-    // When the backend endpoint is ready, it can be called here, for example:
-    // const token = await getAuthToken();
-    // return fetchFromApi<Assessment[]>(`/api/assets/${assetId}/assessments`, {}, token);
-    return Promise.resolve([]);
-};
+export const getAllAssets = () => fetchFromApi<Asset[]>('/api/assets');
+export const getAssetById = (id: number | string) => fetchFromApi<Asset>(`/api/assets/${id}`);
+export const createAsset = (data: Partial<Asset>) => fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) });
+export const updateAsset = (id: number, data: Partial<Asset>) => fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteAsset = (id: number) => fetchFromApi<void>(`/api/assets/${id}`, { method: 'DELETE' });
 
 
 // --- Report Data ---
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
     const params = new URLSearchParams(filters as Record<string, string>);
-    const token = await getAuthToken();
-    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, {}, token);
+    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`);
 };
 
 
