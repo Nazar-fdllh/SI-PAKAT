@@ -34,6 +34,10 @@ export function AssetDialog({ isOpen, onOpenChange, onSave, asset }: AssetDialog
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] p-4">
             <AssetForm
+              // The key is crucial. It tells React to create a new instance of AssetForm
+              // whenever the asset changes (from null to an object, or from one asset to another).
+              // This forces react-hook-form to re-initialize with the correct defaultValues.
+              key={asset ? asset.id : 'new'}
               asset={asset}
               onSave={onSave}
               onCancel={() => onOpenChange(false)}

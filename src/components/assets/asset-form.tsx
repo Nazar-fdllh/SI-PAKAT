@@ -85,59 +85,24 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
+    // This now correctly initializes the form. Because the parent component
+    // uses a `key`, this component is re-created on each open, so defaultValues
+    // is re-evaluated with the correct `asset` prop.
     defaultValues: {
-      asset_code: '',
-      asset_name: '',
-      classification_id: undefined,
-      sub_classification_id: null,
-      identification_of_existence: '',
-      location: '',
-      owner: '',
-      confidentiality_score: 1,
-      integrity_score: 1,
-      availability_score: 1,
-      authenticity_score: 1,
-      non_repudiation_score: 1,
+      asset_code: asset?.asset_code ?? '',
+      asset_name: asset?.asset_name ?? '',
+      classification_id: asset?.classification_id ?? undefined,
+      sub_classification_id: asset?.sub_classification_id ?? null,
+      identification_of_existence: asset?.identification_of_existence ?? '',
+      location: asset?.location ?? '',
+      owner: asset?.owner ?? '',
+      confidentiality_score: asset?.confidentiality_score ?? 1,
+      integrity_score: asset?.integrity_score ?? 1,
+      availability_score: asset?.availability_score ?? 1,
+      authenticity_score: asset?.authenticity_score ?? 1,
+      non_repudiation_score: asset?.non_repudiation_score ?? 1,
     },
   });
-
-  useEffect(() => {
-    if (asset) {
-      // Editing an existing asset, populate form with its data
-      // Use `??` to provide a fallback and prevent uncontrolled inputs
-      form.reset({
-        asset_code: asset.asset_code ?? '',
-        asset_name: asset.asset_name ?? '',
-        classification_id: asset.classification_id ?? undefined,
-        sub_classification_id: asset.sub_classification_id ?? null,
-        identification_of_existence: asset.identification_of_existence ?? '',
-        location: asset.location ?? '',
-        owner: asset.owner ?? '',
-        confidentiality_score: asset.confidentiality_score ?? 1,
-        integrity_score: asset.integrity_score ?? 1,
-        availability_score: asset.availability_score ?? 1,
-        authenticity_score: asset.authenticity_score ?? 1,
-        non_repudiation_score: asset.non_repudiation_score ?? 1,
-      });
-    } else {
-      // Adding a new asset, reset to default empty/initial values
-      form.reset({
-        asset_code: '',
-        asset_name: '',
-        classification_id: undefined,
-        sub_classification_id: null,
-        identification_of_existence: '',
-        location: '',
-        owner: '',
-        confidentiality_score: 1,
-        integrity_score: 1,
-        availability_score: 1,
-        authenticity_score: 1,
-        non_repudiation_score: 1,
-      });
-    }
-  }, [asset, form]);
-
 
   const watchedScores = useWatch({
     control: form.control,
