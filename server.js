@@ -9,7 +9,6 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const reportRoutes = require('./routes/reportRoutes');
-const masterDataRoutes = require('./routes/masterDataRoutes'); // Tambahkan ini
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -58,7 +57,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api', masterDataRoutes); // Tambahkan ini
 
 // Jalankan Server
 app.listen(PORT, () => {
