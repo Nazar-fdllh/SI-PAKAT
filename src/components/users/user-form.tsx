@@ -43,17 +43,17 @@ export function UserForm({ user, roles, onSave, onCancel }: UserFormProps) {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      email: '',
+      name: user?.name || user?.username || '',
+      email: user?.email || '',
       password: '',
-      role_id: undefined,
+      role_id: user?.role_id,
     },
   });
 
   useEffect(() => {
     if (user) {
       form.reset({
-        name: user.name || '',
+        name: user.name || user.username || '',
         email: user.email || '',
         password: '',
         role_id: user.role_id,
@@ -66,7 +66,7 @@ export function UserForm({ user, roles, onSave, onCancel }: UserFormProps) {
         role_id: undefined,
       });
     }
-  }, [user, form]);
+  }, [user, form.reset]);
 
 
   function onSubmit(data: UserFormValues) {

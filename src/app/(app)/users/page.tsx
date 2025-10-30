@@ -104,7 +104,7 @@ export default function UsersPage() {
       // The API expects 'username' for the name field.
       const payload: Partial<User> & { username?: string } = {
         ...userData,
-        username: userData.name, // Map frontend 'name' to backend 'username'
+        username: userData.name,
       };
       delete payload.name; // Clean up frontend-only property
 

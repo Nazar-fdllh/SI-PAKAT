@@ -39,18 +39,7 @@ Untuk menjaga kode tetap modular dan mudah dikelola, gunakan struktur folder ber
 `-- server.js               # File utama server Express
 ```
 
-## 3. Instalasi Dependensi
-
-Buat folder proyek baru, inisialisasi `npm`, dan instal dependensi yang diperlukan.
-
-```bash
-mkdir si-pakat-backend
-cd si-pakat-backend
-npm init -y
-npm install express mysql2 jsonwebtoken bcryptjs cors dotenv
-```
-
-## 4. Implementasi Kode Berdasarkan Folder
+## 3. Implementasi Kode Berdasarkan Folder
 
 Berikut adalah contoh kode untuk setiap file dalam struktur proyek.
 
@@ -303,7 +292,7 @@ const bcrypt = require('bcryptjs');
 exports.getAllUsers = async (req, res) => {
     try {
         const [users] = await db.query(
-            "SELECT u.id, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id"
+            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id"
         );
         res.json(users);
     } catch (error) {
@@ -315,7 +304,7 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
     try {
         const [rows] = await db.query(
-            "SELECT u.id, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", 
+            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", 
             [req.params.id]
         );
         if (rows.length === 0) {
