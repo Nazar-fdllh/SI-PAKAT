@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, ShieldOff } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -34,7 +34,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { type User } from "@/lib/definitions"
-import { initialRoles } from "@/lib/data"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -51,11 +50,12 @@ import { Skeleton } from "../ui/skeleton"
 type UserTableProps = {
   users: User[];
   isLoading: boolean;
+  currentUser: User | null;
   onEdit: (user: User) => void;
   onDelete: (userId: number) => void;
 };
 
-export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTableProps) {
+export default function UserTable({ users, isLoading, currentUser, onEdit, onDelete }: UserTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   
@@ -96,14 +96,16 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
     {
       id: "actions",
       cell: ({ row }) => {
-        const user = row.original
+        const user = row.original;
+        const isCurrentUser = user.id === currentUser?.id;
+
         return (
             <AlertDialog>
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isCurrentUser}>
                     <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
+                     {isCurrentUser ? <ShieldOff className="h-4 w-4 text-muted-foreground" /> : <MoreHorizontal className="h-4 w-4" />}
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { User, Role } from '@/lib/definitions';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter.'),
@@ -43,12 +43,31 @@ export function UserForm({ user, roles, onSave, onCancel }: UserFormProps) {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: user?.name || '',
-      email: user?.email || '',
+      name: '',
+      email: '',
       password: '',
-      role_id: user?.role_id || undefined,
+      role_id: undefined,
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name || '',
+        email: user.email || '',
+        password: '',
+        role_id: user.role_id,
+      });
+    } else {
+      form.reset({
+        name: '',
+        email: '',
+        password: '',
+        role_id: undefined,
+      });
+    }
+  }, [user, form]);
+
 
   function onSubmit(data: UserFormValues) {
     const payload: Partial<User> = { ...data };
@@ -106,7 +125,7 @@ export function UserForm({ user, roles, onSave, onCancel }: UserFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Peran</FormLabel>
-              <Select onValueChange={(v) => field.onChange(Number(v))} defaultValue={String(field.value || '')}>
+              <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value || '')}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih peran untuk pengguna" />

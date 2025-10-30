@@ -271,7 +271,7 @@ exports.login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, role: user.role, name: user.name },
+            { id: user.id, role: user.role, name: user.name, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: 86400 } // 24 jam
         );
@@ -303,7 +303,7 @@ const bcrypt = require('bcryptjs');
 exports.getAllUsers = async (req, res) => {
     try {
         const [users] = await db.query(
-            "SELECT u.id, u.username as name, u.email, r.name as role FROM users u JOIN roles r ON u.role_id = r.id"
+            "SELECT u.id, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id"
         );
         res.json(users);
     } catch (error) {
@@ -314,11 +314,14 @@ exports.getAllUsers = async (req, res) => {
 // Dapatkan pengguna berdasarkan ID
 exports.getUserById = async (req, res) => {
     try {
-        const [user] = await db.query("SELECT id, username as name, email, role_id FROM users WHERE id = ?", [req.params.id]);
-        if (user.length === 0) {
+        const [rows] = await db.query(
+            "SELECT u.id, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", 
+            [req.params.id]
+        );
+        if (rows.length === 0) {
             return res.status(404).json({ message: "Pengguna tidak ditemukan" });
         }
-        res.json(user[0]);
+        res.json(rows[0]);
     } catch (error) {
         res.status(500).json({ message: 'Gagal mengambil data pengguna', error: error.message });
     }
@@ -365,7 +368,15 @@ exports.updateUser = async (req, res) => {
 // Hapus pengguna
 exports.deleteUser = async (req, res) => {
     try {
-        await db.execute('DELETE FROM users WHERE id = ?', [req.params.id]);
+        // Tambahkan perlindungan agar pengguna tidak bisa menghapus diri sendiri
+        const userIdToDelete = req.params.id;
+        const currentUserId = req.userId; // Dari middleware JWT
+
+        if (Number(userIdToDelete) === Number(currentUserId)) {
+            return res.status(403).json({ message: 'Anda tidak dapat menghapus akun Anda sendiri.' });
+        }
+
+        await db.execute('DELETE FROM users WHERE id = ?', [userIdToDelete]);
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Gagal menghapus pengguna', error: error.message });

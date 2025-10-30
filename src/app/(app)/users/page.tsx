@@ -13,7 +13,7 @@ import { toast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
   const router = useRouter();
-  const { role } = useSession();
+  const { user: sessionUser, role } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,6 +75,14 @@ export default function UsersPage() {
   };
 
   const handleDeleteUser = async (userId: number) => {
+     if (sessionUser?.id === userId) {
+      toast({
+        variant: 'destructive',
+        title: 'Aksi Ditolak',
+        description: 'Anda tidak dapat menghapus akun Anda sendiri.',
+      });
+      return;
+    }
     try {
       await deleteUser(userId);
       toast({
@@ -136,6 +144,7 @@ export default function UsersPage() {
       <UserTable
         users={users}
         isLoading={isLoading}
+        currentUser={sessionUser}
         onEdit={handleEditUser}
         onDelete={handleDeleteUser}
       />
