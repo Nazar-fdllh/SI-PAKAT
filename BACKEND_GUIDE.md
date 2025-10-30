@@ -664,14 +664,23 @@ const userController = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
 
-// Terapkan middleware untuk semua rute di file ini
-router.use(verifyToken, isAdmin);
+// Terapkan middleware verifikasi token untuk semua rute
+router.use(verifyToken);
 
-router.get('/', userController.getAllUsers);
-router.post('/', userController.createUser);
+// Hanya Admin yang bisa mendapatkan daftar & membuat pengguna baru
+router.get('/', isAdmin, userController.getAllUsers);
+router.post('/', isAdmin, userController.createUser);
+
+// Semua pengguna terautentikasi dapat melihat profil (termasuk dirinya sendiri)
 router.get('/:id', userController.getUserById);
+
+// Semua pengguna terautentikasi dapat memperbarui profilnya sendiri
+// Middleware isAdmin tidak diterapkan di sini secara global
 router.put('/:id', userController.updateUser);
-router.delete('/:id', userController.deleteUser);
+
+// Hanya Admin yang bisa menghapus pengguna
+router.delete('/:id', isAdmin, userController.deleteUser);
+
 
 module.exports = router;
 ```
@@ -736,3 +745,5 @@ module.exports = router;
 
 Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
 ---
+
+    
