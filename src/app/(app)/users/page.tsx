@@ -106,6 +106,9 @@ export default function UsersPage() {
         ...userData,
         username: userData.name,
       };
+      if (userData.name) {
+        payload.username = userData.name;
+      }
       delete payload.name; // Clean up frontend-only property
 
       if (selectedUser) {

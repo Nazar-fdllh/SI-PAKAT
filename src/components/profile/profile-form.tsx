@@ -17,6 +17,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import type { User } from '@/lib/definitions';
+import { updateUser } from '@/lib/data';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter.'),
@@ -29,6 +31,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ user }: ProfileFormProps) {
+  const router = useRouter();
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,14 +39,33 @@ export function ProfileForm({ user }: ProfileFormProps) {
     },
   });
 
-  function onSubmit(data: ProfileFormValues) {
-    // In a real app, you would send this data to your API to update the user.
-    // For this static demo, we'll just show a success toast.
-    console.log('Updated profile data:', data);
-    toast({
-      title: 'Profil Diperbarui',
-      description: 'Informasi profil Anda telah berhasil disimpan.',
-    });
+  async function onSubmit(data: ProfileFormValues) {
+    try {
+      const payload: Partial<User> & { username?: string } = {
+        email: user.email, // Sertakan email agar validasi backend tidak gagal
+        role_id: user.role_id, // Sertakan role_id agar validasi backend tidak gagal
+        username: data.name, // API backend mengharapkan 'username'
+      };
+
+      await updateUser(user.id, payload);
+      
+      toast({
+        title: 'Profil Diperbarui',
+        description: 'Informasi profil Anda telah berhasil disimpan.',
+      });
+
+      // Reload the page or re-fetch data to reflect changes
+      // A simple way is to refresh the page
+      router.refresh();
+
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Memperbarui Profil',
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan tidak diketahui.',
+      });
+    }
   }
 
   return (
@@ -59,7 +81,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 <Input placeholder="Nama lengkap Anda" {...field} />
               </FormControl>
               <FormDescription>
-                Hanya nama yang dapat diubah.
+                Hanya nama yang dapat diubah melalui halaman ini.
               </FormDescription>
               <FormMessage />
             </FormItem>
