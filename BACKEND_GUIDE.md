@@ -333,10 +333,26 @@ exports.createUser = async (req, res) => {
 
 // Update pengguna
 exports.updateUser = async (req, res) => {
-    const { username, email, password, role_id } = req.body;
-    let query = 'UPDATE users SET username = ?, email = ?, role_id = ?';
-    const params = [username, email, role_id];
+    const userIdToUpdate = req.params.id;
+    const currentUserId = req.userId;
+    const currentUserRole = req.userRole;
 
+    // Cek otorisasi: pengguna bisa update diri sendiri, atau admin bisa update siapa saja
+    if (Number(userIdToUpdate) !== Number(currentUserId) && currentUserRole !== 'Administrator') {
+         return res.status(403).json({ message: 'Akses ditolak. Anda hanya bisa memperbarui profil Anda sendiri.' });
+    }
+
+    const { username, email, password, role_id } = req.body;
+    let query = 'UPDATE users SET username = ?, email = ?';
+    const params = [username, email];
+
+    // Hanya admin yang bisa mengubah role_id
+    if (currentUserRole === 'Administrator' && role_id) {
+        query += ', role_id = ?';
+        params.push(role_id);
+    }
+    
+    // Jika password diisi, hash dan update
     if (password) {
         const hashedPassword = bcrypt.hashSync(password, 8);
         query += ', password = ?';
@@ -344,7 +360,7 @@ exports.updateUser = async (req, res) => {
     }
 
     query += ' WHERE id = ?';
-    params.push(req.params.id);
+    params.push(userIdToUpdate);
 
     try {
         await db.execute(query, params);
@@ -357,10 +373,10 @@ exports.updateUser = async (req, res) => {
 // Hapus pengguna
 exports.deleteUser = async (req, res) => {
     try {
-        // Tambahkan perlindungan agar pengguna tidak bisa menghapus diri sendiri
         const userIdToDelete = req.params.id;
-        const currentUserId = req.userId; // Dari middleware JWT
+        const currentUserId = req.userId; 
 
+        // Tambahkan perlindungan agar pengguna tidak bisa menghapus diri sendiri
         if (Number(userIdToDelete) === Number(currentUserId)) {
             return res.status(403).json({ message: 'Anda tidak dapat menghapus akun Anda sendiri.' });
         }
@@ -373,7 +389,7 @@ exports.deleteUser = async (req, res) => {
 };
 ```
 
-#### `/controllers/assetController.js` (Diperbarui)
+#### `/controllers/assetController.js`
 
 Logika CRUD untuk Aset dan sekarang juga untuk mengambil data master.
 
@@ -664,28 +680,30 @@ const userController = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
 
-// Terapkan middleware verifikasi token untuk semua rute
+// Terapkan verifikasi token untuk semua rute pengguna
 router.use(verifyToken);
 
-// Hanya Admin yang bisa mendapatkan daftar & membuat pengguna baru
+// === RUTE KHUSUS ADMIN ===
+// Hanya admin yang bisa melihat semua pengguna, membuat, dan menghapus
 router.get('/', isAdmin, userController.getAllUsers);
 router.post('/', isAdmin, userController.createUser);
+router.delete('/:id', isAdmin, userController.deleteUser);
 
-// Semua pengguna terautentikasi dapat melihat profil (termasuk dirinya sendiri)
+
+// === RUTE PENGGUNA UMUM (TERAUTENTIKASI) ===
+// Pengguna bisa melihat detail profil (termasuk miliknya sendiri)
+// Admin juga bisa lewat sini
 router.get('/:id', userController.getUserById);
 
-// Semua pengguna terautentikasi dapat memperbarui profilnya sendiri
-// Middleware isAdmin tidak diterapkan di sini secara global
+// Pengguna bisa memperbarui profilnya sendiri
+// Admin juga bisa memperbarui profil siapa pun
 router.put('/:id', userController.updateUser);
-
-// Hanya Admin yang bisa menghapus pengguna
-router.delete('/:id', isAdmin, userController.deleteUser);
 
 
 module.exports = router;
 ```
 
-#### `/routes/assetRoutes.js` (Diperbarui)
+#### `/routes/assetRoutes.js`
 
 Rute ini sekarang juga menangani endpoint untuk data master.
 
@@ -745,5 +763,3 @@ module.exports = router;
 
 Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
 ---
-
-    
