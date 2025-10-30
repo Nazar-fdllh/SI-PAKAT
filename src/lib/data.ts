@@ -56,6 +56,7 @@ async function fetchFromApi<T>(endpoint: string, token: string | undefined, opti
 // Each function now gets the token first
 export const getAllUsers = async () => {
     const token = await getAuthToken();
+    // Assuming user management is under its own main route
     return fetchFromApi<User[]>('/api/users', token);
 };
 export const createUser = async (data: Partial<User>) => {
@@ -106,13 +107,13 @@ export const getReportData = async (filters: { categoryId?: string, asset_value?
 // --- Master Data (Roles, Classifications) ---
 export const getAllRoles = async () => {
     const token = await getAuthToken();
-    return fetchFromApi<Role[]>('/api/roles', token);
+    return fetchFromApi<Role[]>('/api/assets/roles', token);
 };
 export const getAllClassifications = async () => {
     const token = await getAuthToken();
-    return fetchFromApi<Classification[]>('/api/classifications', token);
+    return fetchFromApi<Classification[]>('/api/assets/classifications', token);
 };
 export const getAllSubClassifications = async () => {
     const token = await getAuthToken();
-    return fetchFromApi<SubClassification[]>('/api/sub-classifications', token);
+    return fetchFromApi<SubClassification[]>('/api/assets/sub-classifications', token);
 };

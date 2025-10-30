@@ -24,18 +24,16 @@ Untuk menjaga kode tetap modular dan mudah dikelola, gunakan struktur folder ber
 |-- /controllers
 |   |-- authController.js     # Logika untuk login
 |   |-- userController.js     # Logika CRUD untuk pengguna
-|   |-- assetController.js    # Logika CRUD untuk aset
-|   |-- reportController.js   # Logika untuk generate laporan
-|   `-- masterDataController.js # Logika untuk data master (role, klasifikasi)
+|   |-- assetController.js    # Logika CRUD untuk aset dan data master
+|   `-- reportController.js   # Logika untuk generate laporan
 |-- /middlewares
 |   |-- authMiddleware.js     # Middleware untuk verifikasi token JWT
 |   `-- roleMiddleware.js     # Middleware untuk otorisasi berbasis peran
 |-- /routes
 |   |-- authRoutes.js         # Rute untuk endpoint autentikasi
 |   |-- userRoutes.js         # Rute untuk endpoint pengguna
-|   |-- assetRoutes.js        # Rute untuk endpoint aset
-|   |-- reportRoutes.js       # Rute untuk endpoint laporan
-|   `-- masterDataRoutes.js   # Rute untuk endpoint data master
+|   |-- assetRoutes.js        # Rute untuk endpoint aset dan data master
+|   `-- reportRoutes.js       # Rute untuk endpoint laporan
 |-- .env                    # File untuk menyimpan variabel lingkungan
 |-- package.json
 `-- server.js               # File utama server Express
@@ -89,7 +87,6 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const reportRoutes = require('./routes/reportRoutes');
-const masterDataRoutes = require('./routes/masterDataRoutes'); // Tambahkan ini
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -138,7 +135,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api', masterDataRoutes); // Tambahkan ini
 
 // Jalankan Server
 app.listen(PORT, () => {
@@ -377,9 +373,9 @@ exports.deleteUser = async (req, res) => {
 };
 ```
 
-#### `/controllers/assetController.js`
+#### `/controllers/assetController.js` (Diperbarui)
 
-Logika CRUD untuk Aset. `getAssetById` diperbaiki untuk menyertakan penilaian terakhir.
+Logika CRUD untuk Aset dan sekarang juga untuk mengambil data master.
 
 ```javascript
 // /controllers/assetController.js
@@ -550,6 +546,39 @@ exports.deleteAsset = async (req, res) => {
         res.status(500).json({ message: 'Gagal menghapus aset', error: error.message });
     }
 };
+
+
+// --- Master Data Controllers ---
+
+// Dapatkan semua peran
+exports.getAllRoles = async (req, res) => {
+    try {
+        const [roles] = await db.query("SELECT * FROM roles ORDER BY id");
+        res.json(roles);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data peran', error: error.message });
+    }
+};
+
+// Dapatkan semua klasifikasi
+exports.getAllClassifications = async (req, res) => {
+    try {
+        const [classifications] = await db.query("SELECT * FROM classifications ORDER BY name");
+        res.json(classifications);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data klasifikasi', error: error.message });
+    }
+};
+
+// Dapatkan semua sub-klasifikasi
+exports.getAllSubClassifications = async (req, res) => {
+    try {
+        const [subClassifications] = await db.query("SELECT * FROM sub_classifications ORDER BY name");
+        res.json(subClassifications);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil data sub-klasifikasi', error: error.message });
+    }
+};
 ```
 
 #### `/controllers/reportController.js`
@@ -606,45 +635,6 @@ exports.generateReport = async (req, res) => {
 };
 ```
 
-#### `/controllers/masterDataController.js`
-
-Logika untuk mengambil data master yang jarang berubah seperti peran dan klasifikasi.
-
-```javascript
-// /controllers/masterDataController.js
-const db = require('../config/db');
-
-// Dapatkan semua peran
-exports.getAllRoles = async (req, res) => {
-    try {
-        const [roles] = await db.query("SELECT * FROM roles ORDER BY id");
-        res.json(roles);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data peran', error: error.message });
-    }
-};
-
-// Dapatkan semua klasifikasi
-exports.getAllClassifications = async (req, res) => {
-    try {
-        const [classifications] = await db.query("SELECT * FROM classifications ORDER BY name");
-        res.json(classifications);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data klasifikasi', error: error.message });
-    }
-};
-
-// Dapatkan semua sub-klasifikasi
-exports.getAllSubClassifications = async (req, res) => {
-    try {
-        const [subClassifications] = await db.query("SELECT * FROM sub_classifications ORDER BY name");
-        res.json(subClassifications);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data sub-klasifikasi', error: error.message });
-    }
-};
-```
-
 ---
 
 ### **Folder `routes`**
@@ -686,9 +676,9 @@ router.delete('/:id', userController.deleteUser);
 module.exports = router;
 ```
 
-#### `/routes/assetRoutes.js`
+#### `/routes/assetRoutes.js` (Diperbarui)
 
-Rute ini diproteksi, hanya Manajer Aset dan Admin yang bisa melakukan operasi tulis.
+Rute ini sekarang juga menangani endpoint untuk data master.
 
 ```javascript
 // /routes/assetRoutes.js
@@ -698,8 +688,16 @@ const assetController = require('../controllers/assetController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAssetManager } = require('../middlewares/roleMiddleware');
 
+// --- Master Data Routes ---
+// Semua role terautentikasi bisa mengambil data master
+router.get('/roles', [verifyToken], assetController.getAllRoles);
+router.get('/classifications', [verifyToken], assetController.getAllClassifications);
+router.get('/sub-classifications', [verifyToken], assetController.getAllSubClassifications);
+
+// --- Asset CRUD Routes ---
 // Semua role terautentikasi bisa melihat aset
 router.get('/', [verifyToken], assetController.getAllAssets);
+// PENTING: Rute dengan parameter ID harus diletakkan setelah rute statis
 router.get('/:id', [verifyToken], assetController.getAssetById);
 
 // Hanya Manajer Aset & Admin yang bisa melakukan operasi tulis
@@ -725,28 +723,6 @@ const { checkRole } = require('../middlewares/roleMiddleware');
 const canAccessReports = checkRole(['Administrator', 'Auditor']);
 
 router.get('/', [verifyToken, canAccessReports], reportController.generateReport);
-
-module.exports = router;
-```
-
-#### `/routes/masterDataRoutes.js`
-
-Rute-rute ini untuk mengambil data master dan memerlukan autentikasi.
-
-```javascript
-// /routes/masterDataRoutes.js
-const express = require('express');
-const router = express.Router();
-const masterDataController = require('../controllers/masterDataController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-
-// Terapkan middleware untuk semua rute di file ini, karena data ini
-// seharusnya hanya bisa diakses oleh pengguna terautentikasi.
-router.use(verifyToken);
-
-router.get('/roles', masterDataController.getAllRoles);
-router.get('/classifications', masterDataController.getAllClassifications);
-router.get('/sub-classifications', masterDataController.getAllSubClassifications);
 
 module.exports = router;
 ```
