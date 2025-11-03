@@ -97,24 +97,14 @@ app.get('/setup-admin', async (req, res) => {
         const [adminUsers] = await db.query('SELECT * FROM users WHERE email = ?', [adminEmail]);
         if (adminUsers.length > 0) {
             await db.execute('UPDATE users SET password = ? WHERE email = ?', [hashedAdminPassword, adminEmail]);
+            res.status(200).send('Password admin utama telah di-reset. Hapus rute ini dari server.js setelah selesai.');
         } else {
             await db.execute(
                 'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
                 ['Admin Utama', adminEmail, hashedAdminPassword, 1] // role_id 1 untuk Administrator
             );
+            res.status(201).send('Pengguna admin utama berhasil dibuat. Hapus rute ini dari server.js setelah selesai.');
         }
-
-        // Setup "Ghost User" untuk menangani foreign key saat user dihapus
-        const ghostEmail = 'deleted@sipakat.com';
-        const [ghostUsers] = await db.query('SELECT * FROM users WHERE email = ?', [ghostEmail]);
-        if (ghostUsers.length === 0) {
-             await db.execute(
-                'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
-                ['Pengguna Telah Dihapus', ghostEmail, 'N/A', 3] // Asumsikan role 3 (Auditor)
-            );
-        }
-
-        res.status(201).send('Setup awal (Admin dan Ghost User) berhasil. Hapus rute ini dari server.js setelah selesai.');
 
     } catch (error) {
         console.error(error);
@@ -382,29 +372,22 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     const userIdToDelete = req.params.id;
 
+    // Perlindungan: Jangan izinkan penghapusan Admin Utama (ID=1).
+    if (Number(userIdToDelete) === 1) {
+        return res.status(403).json({ message: 'Admin utama tidak dapat dihapus.' });
+    }
+        
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
 
-        // Cari "ghost user"
-        const [ghostUsers] = await connection.query("SELECT id FROM users WHERE email = 'deleted@sipakat.com' LIMIT 1");
-        if (ghostUsers.length === 0) {
-            throw new Error("Pengguna 'deleted' tidak ditemukan. Gagal melanjutkan penghapusan.");
-        }
-        const ghostUserId = ghostUsers[0].id;
-        
-        // Perlindungan: Jangan izinkan penghapusan Admin Utama (ID=1) atau Ghost User itu sendiri.
-        if (Number(userIdToDelete) === 1 || Number(userIdToDelete) === ghostUserId) {
-            return res.status(403).json({ message: 'Pengguna sistem ini tidak dapat dihapus.' });
-        }
-
-        // Re-assign penilaian ke ghost user
+        // 1. Hapus semua catatan penilaian yang terkait dengan pengguna ini.
         await connection.execute(
-            'UPDATE asset_assessments SET assessed_by = ? WHERE assessed_by = ?',
-            [ghostUserId, userIdToDelete]
+            'DELETE FROM asset_assessments WHERE assessed_by = ?',
+            [userIdToDelete]
         );
         
-        // Hapus pengguna asli
+        // 2. Setelah penilaian dihapus, hapus pengguna asli.
         await connection.execute('DELETE FROM users WHERE id = ?', [userIdToDelete]);
         
         await connection.commit();

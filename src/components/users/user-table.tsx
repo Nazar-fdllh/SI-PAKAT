@@ -97,12 +97,12 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
       id: "actions",
       cell: ({ row }) => {
         const user = row.original;
-        // A user cannot edit/delete themselves.
+        // A user cannot edit/delete themselves from this table. They should use the profile page.
+        // The main admin (ID 1) cannot be deleted.
         const isCurrentUser = user.id === currentUser?.id;
-        // System-critical users (Admin ID 1, or the ghost user) cannot be deleted/edited.
-        const isSystemUser = user.id === 1 || user.email === 'deleted@sipakat.com';
+        const isMainAdmin = user.id === 1;
 
-        const isDisabled = isCurrentUser || isSystemUser;
+        const isDisabled = isCurrentUser || isMainAdmin;
 
         return (
             <AlertDialog>
@@ -126,7 +126,7 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
                     <AlertDialogHeader>
                     <AlertDialogTitle>Anda yakin ingin menghapus pengguna ini?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus pengguna <span className="font-semibold text-foreground">{user.name}</span> ({user.email}) secara permanen dari sistem.
+                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus pengguna <span className="font-semibold text-foreground">{user.name}</span> ({user.email}) beserta semua riwayat penilaiannya secara permanen.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
