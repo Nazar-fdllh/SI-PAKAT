@@ -628,8 +628,8 @@ exports.generateReport = async (req, res) => {
             latest_aa.asset_value
         FROM assets a
         JOIN classifications c ON a.classification_id = c.id
-        -- Join untuk mendapatkan penilaian terbaru
-        LEFT JOIN (
+        -- INNER JOIN untuk memastikan hanya aset yang sudah dinilai yang masuk laporan
+        INNER JOIN (
             SELECT 
                 asset_id, 
                 asset_value,
@@ -776,3 +776,4 @@ module.exports = router;
 
 Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
 ---
+
