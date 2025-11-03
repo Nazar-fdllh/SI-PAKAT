@@ -97,15 +97,20 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
       id: "actions",
       cell: ({ row }) => {
         const user = row.original;
+        // A user cannot edit/delete themselves.
         const isCurrentUser = user.id === currentUser?.id;
+        // System-critical users (Admin ID 1, or the ghost user) cannot be deleted/edited.
+        const isSystemUser = user.id === 1 || user.email === 'deleted@sipakat.com';
+
+        const isDisabled = isCurrentUser || isSystemUser;
 
         return (
             <AlertDialog>
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isCurrentUser}>
+                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isDisabled}>
                     <span className="sr-only">Open menu</span>
-                     {isCurrentUser ? <ShieldOff className="h-4 w-4 text-muted-foreground" /> : <MoreHorizontal className="h-4 w-4" />}
+                     {isDisabled ? <ShieldOff className="h-4 w-4 text-muted-foreground" /> : <MoreHorizontal className="h-4 w-4" />}
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
