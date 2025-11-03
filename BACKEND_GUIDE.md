@@ -381,11 +381,6 @@ exports.updateUser = async (req, res) => {
 // Hapus pengguna
 exports.deleteUser = async (req, res) => {
     const userIdToDelete = req.params.id;
-    const currentUserId = req.userId;
-
-    if (Number(userIdToDelete) === Number(currentUserId)) {
-        return res.status(403).json({ message: 'Anda tidak dapat menghapus akun Anda sendiri.' });
-    }
 
     const connection = await db.getConnection();
     try {
@@ -397,6 +392,11 @@ exports.deleteUser = async (req, res) => {
             throw new Error("Pengguna 'deleted' tidak ditemukan. Gagal melanjutkan penghapusan.");
         }
         const ghostUserId = ghostUsers[0].id;
+        
+        // Perlindungan: Jangan izinkan penghapusan Admin Utama (ID=1) atau Ghost User itu sendiri.
+        if (Number(userIdToDelete) === 1 || Number(userIdToDelete) === ghostUserId) {
+            return res.status(403).json({ message: 'Pengguna sistem ini tidak dapat dihapus.' });
+        }
 
         // Re-assign penilaian ke ghost user
         await connection.execute(
