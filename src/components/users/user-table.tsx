@@ -97,20 +97,19 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
       id: "actions",
       cell: ({ row }) => {
         const user = row.original;
-        // A user cannot edit/delete themselves from this table. They should use the profile page.
-        // The main admin (ID 1) cannot be deleted.
-        const isCurrentUser = user.id === currentUser?.id;
+        // The main admin (ID 1) cannot be deleted or edited from this table to prevent system lockout.
         const isMainAdmin = user.id === 1;
-
-        const isDisabled = isCurrentUser || isMainAdmin;
+        
+        // Prevent deleting your own logged-in account from this table for safety.
+        const isCurrentUser = user.id === currentUser?.id;
 
         return (
             <AlertDialog>
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isDisabled}>
-                    <span className="sr-only">Open menu</span>
-                     {isDisabled ? <ShieldOff className="h-4 w-4 text-muted-foreground" /> : <MoreHorizontal className="h-4 w-4" />}
+                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isMainAdmin}>
+                      <span className="sr-only">Open menu</span>
+                      {isMainAdmin ? <ShieldOff className="h-4 w-4 text-muted-foreground" /> : <MoreHorizontal className="h-4 w-4" />}
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -118,7 +117,9 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
                     <DropdownMenuItem onClick={() => onEdit(user)}>Edit Pengguna</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <AlertDialogTrigger asChild>
-                        <DropdownMenuItem className="text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/40 dark:focus:text-red-400">Hapus Pengguna</DropdownMenuItem>
+                        <DropdownMenuItem disabled={isCurrentUser} className="text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/40 dark:focus:text-red-400">
+                          Hapus Pengguna
+                        </DropdownMenuItem>
                     </AlertDialogTrigger>
                 </DropdownMenuContent>
                 </DropdownMenu>
