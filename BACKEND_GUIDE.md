@@ -374,7 +374,7 @@ exports.deleteUser = async (req, res) => {
 
     // Perlindungan: Jangan izinkan penghapusan Admin Utama (ID=1).
     if (Number(userIdToDelete) === 1) {
-        return res.status(403).json({ message: 'Admin utama tidak dapat dihapus.' });
+        return res.status(403).json({ message: 'Pengguna sistem ini tidak dapat dihapus.' });
     }
         
     const connection = await db.getConnection();
@@ -636,23 +636,19 @@ exports.generateReport = async (req, res) => {
                 ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
             FROM asset_assessments
         ) latest_aa ON a.id = latest_aa.asset_id AND latest_aa.rn = 1
+        WHERE 1=1
     `;
 
     const params = [];
-    const conditions = [];
 
     if (categoryId && categoryId !== 'all') {
-        conditions.push('a.classification_id = ?');
+        query += ' AND a.classification_id = ?';
         params.push(categoryId);
     }
 
     if (asset_value && asset_value !== 'Semua') {
-        conditions.push('latest_aa.asset_value = ?');
+        query += ' AND latest_aa.asset_value = ?';
         params.push(asset_value);
-    }
-
-    if (conditions.length > 0) {
-        query += ' WHERE ' + conditions.join(' AND ');
     }
 
     try {
