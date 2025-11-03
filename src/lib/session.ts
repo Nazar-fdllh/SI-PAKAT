@@ -25,7 +25,8 @@ export async function getCurrentUser(): Promise<User | undefined> {
     const { payload } = await jwtVerify(token, secret);
     
     const userName = (payload.name as string) || 'Pengguna';
-    const userEmail = payload.email as string || `${userName.toLowerCase().replace(/ /g, '.')}@sipakat.com`;
+    // Use the email from the JWT payload directly, as it's the source of truth.
+    const userEmail = payload.email as string;
     const userRoleName = payload.role as 'Administrator' | 'Manajer Aset' | 'Auditor';
 
     // Mock fetching roles, in a real app this might come from an API or a static config file
