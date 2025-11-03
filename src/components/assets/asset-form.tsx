@@ -122,6 +122,7 @@ export function AssetForm({ asset, classifications, subClassifications, onSave, 
     } else {
       form.reset(defaultFormValues);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asset, form]);
 
 
