@@ -627,9 +627,8 @@ exports.generateReport = async (req, res) => {
             c.name as category_name,
             latest_aa.asset_value
         FROM assets a
-        JOIN classifications c ON a.classification_id = c.id
-        -- INNER JOIN untuk memastikan hanya aset yang sudah dinilai yang masuk laporan
-        INNER JOIN (
+        LEFT JOIN classifications c ON a.classification_id = c.id
+        LEFT JOIN (
             SELECT 
                 asset_id, 
                 asset_value,
