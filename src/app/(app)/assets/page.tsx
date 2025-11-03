@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import AssetTable from '@/components/assets/asset-table';
-import { getAllAssets, createAsset, updateAsset, deleteAsset, getAllClassifications, getAllSubClassifications } from '@/lib/data';
+import { getAllAssets, createAsset, updateAsset, deleteAsset, getAllClassifications, getAllSubClassifications, getAssetById } from '@/lib/data';
 import type { Asset, Classification, SubClassification } from '@/lib/definitions';
 import { AssetDialog } from '@/components/assets/asset-dialog';
 import { useSession } from '@/hooks/use-session';
@@ -60,9 +60,23 @@ export default function AssetsPage() {
     setDialogOpen(true);
   };
 
-  const handleEditAsset = (asset: Asset) => {
-    setSelectedAsset(asset);
-    setDialogOpen(true);
+  const handleEditAsset = async (asset: Asset) => {
+    try {
+      setIsLoading(true);
+      // Fetch the full asset details including the scores
+      const fullAssetData = await getAssetById(asset.id);
+      setSelectedAsset(fullAssetData);
+      setDialogOpen(true);
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: 'destructive',
+            title: 'Gagal Mengambil Detail Aset',
+            description: error instanceof Error ? error.message : 'Tidak dapat memuat data untuk diedit.',
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleDeleteAsset = async (assetId: number) => {
