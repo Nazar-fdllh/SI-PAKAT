@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -84,22 +83,24 @@ export function AssetForm({ asset, classifications, subClassifications, onSave, 
   const { user } = useSession();
   const isEditMode = asset !== null;
   
+  const defaultFormValues = {
+    asset_code: '',
+    asset_name: '',
+    classification_id: undefined,
+    sub_classification_id: null,
+    identification_of_existence: '',
+    location: '',
+    owner: '',
+    confidentiality_score: 1,
+    integrity_score: 1,
+    availability_score: 1,
+    authenticity_score: 1,
+    non_repudiation_score: 1,
+  };
+
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      asset_code: '',
-      asset_name: '',
-      classification_id: undefined,
-      sub_classification_id: null,
-      identification_of_existence: '',
-      location: '',
-      owner: '',
-      confidentiality_score: 1,
-      integrity_score: 1,
-      availability_score: 1,
-      authenticity_score: 1,
-      non_repudiation_score: 1,
-    },
+    defaultValues: defaultFormValues,
   });
 
   useEffect(() => {
@@ -119,20 +120,7 @@ export function AssetForm({ asset, classifications, subClassifications, onSave, 
         non_repudiation_score: asset.non_repudiation_score ?? 1,
       });
     } else {
-      form.reset({
-        asset_code: '',
-        asset_name: '',
-        classification_id: undefined,
-        sub_classification_id: null,
-        identification_of_existence: '',
-        location: '',
-        owner: '',
-        confidentiality_score: 1,
-        integrity_score: 1,
-        availability_score: 1,
-        authenticity_score: 1,
-        non_repudiation_score: 1,
-      });
+      form.reset(defaultFormValues);
     }
   }, [asset, form]);
 
