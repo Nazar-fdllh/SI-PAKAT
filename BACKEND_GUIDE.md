@@ -537,11 +537,23 @@ exports.updateAsset = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // 1. Update data dasar aset
-        await connection.execute(
-            'UPDATE assets SET asset_code = ?, asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?',
-            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assetId]
-        );
+        // 1. Bangun query UPDATE secara dinamis untuk data dasar aset
+        const assetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
+        const fieldsToUpdate = [];
+        const params = [];
+
+        for (const [key, value] of Object.entries(assetFields)) {
+            if (value !== undefined) {
+                fieldsToUpdate.push(`${key} = ?`);
+                params.push(value);
+            }
+        }
+        
+        if (fieldsToUpdate.length > 0) {
+            params.push(assetId);
+            const query = `UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+            await connection.execute(query, params);
+        }
 
         // 2. Jika ada data penilaian baru, insert ke tabel 'asset_assessments'
         if (isNewAssessment) {
