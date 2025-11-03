@@ -50,7 +50,7 @@ export default function UsersPage() {
       fetchData();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, router]);
+  }, [role]);
 
   if (!role) {
     return (
@@ -104,13 +104,12 @@ export default function UsersPage() {
       // The API expects 'username' for the name field.
       const payload: Partial<User> & { username?: string } = {
         ...userData,
-        username: userData.name,
       };
       if (userData.name) {
         payload.username = userData.name;
+        delete payload.name; // Clean up frontend-only property before sending
       }
-      delete payload.name; // Clean up frontend-only property
-
+      
       if (selectedUser) {
         await updateUser(selectedUser.id, payload);
         toast({ title: 'Pengguna Diperbarui' });
