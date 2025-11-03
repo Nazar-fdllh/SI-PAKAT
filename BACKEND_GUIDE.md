@@ -89,28 +89,36 @@ app.use(express.urlencoded({ extended: true }));
 // Cukup akses http://localhost:3001/setup-admin di browser Anda SATU KALI.
 app.get('/setup-admin', async (req, res) => {
     try {
-        const email = 'admin@sipakat.com';
-        const password = 'password123';
-        const hashedPassword = bcrypt.hashSync(password, 8);
+        const adminEmail = 'admin@sipakat.com';
+        const adminPassword = 'password123';
+        const hashedAdminPassword = bcrypt.hashSync(adminPassword, 8);
 
         // Periksa apakah admin sudah ada
-        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-        if (users.length > 0) {
-            // Jika sudah ada, update saja passwordnya menjadi yang sudah di-hash
-             await db.execute('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
-             return res.status(200).send('Password pengguna admin yang sudah ada telah diperbarui (di-hash). Anda sekarang bisa login.');
+        const [adminUsers] = await db.query('SELECT * FROM users WHERE email = ?', [adminEmail]);
+        if (adminUsers.length > 0) {
+            await db.execute('UPDATE users SET password = ? WHERE email = ?', [hashedAdminPassword, adminEmail]);
+        } else {
+            await db.execute(
+                'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
+                ['Admin Utama', adminEmail, hashedAdminPassword, 1] // role_id 1 untuk Administrator
+            );
         }
 
-        // Jika belum ada, buat baru
-        await db.execute(
-            'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
-            ['Admin Utama', email, hashedPassword, 1] // role_id 1 untuk Administrator
-        );
-        res.status(201).send('Pengguna admin berhasil dibuat. Silakan login dengan email: admin@sipakat.com dan password: password123. Hapus rute ini dari server.js setelah selesai.');
+        // Setup "Ghost User" untuk menangani foreign key saat user dihapus
+        const ghostEmail = 'deleted@sipakat.com';
+        const [ghostUsers] = await db.query('SELECT * FROM users WHERE email = ?', [ghostEmail]);
+        if (ghostUsers.length === 0) {
+             await db.execute(
+                'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
+                ['Pengguna Telah Dihapus', ghostEmail, 'N/A', 3] // Asumsikan role 3 (Auditor)
+            );
+        }
+
+        res.status(201).send('Setup awal (Admin dan Ghost User) berhasil. Hapus rute ini dari server.js setelah selesai.');
 
     } catch (error) {
         console.error(error);
-        res.status(500).send('Gagal membuat pengguna admin: ' + error.message);
+        res.status(500).send('Gagal melakukan setup awal: ' + error.message);
     }
 });
 
@@ -372,19 +380,41 @@ exports.updateUser = async (req, res) => {
 
 // Hapus pengguna
 exports.deleteUser = async (req, res) => {
+    const userIdToDelete = req.params.id;
+    const currentUserId = req.userId;
+
+    if (Number(userIdToDelete) === Number(currentUserId)) {
+        return res.status(403).json({ message: 'Anda tidak dapat menghapus akun Anda sendiri.' });
+    }
+
+    const connection = await db.getConnection();
     try {
-        const userIdToDelete = req.params.id;
-        const currentUserId = req.userId; 
+        await connection.beginTransaction();
 
-        // Tambahkan perlindungan agar pengguna tidak bisa menghapus diri sendiri
-        if (Number(userIdToDelete) === Number(currentUserId)) {
-            return res.status(403).json({ message: 'Anda tidak dapat menghapus akun Anda sendiri.' });
+        // Cari "ghost user"
+        const [ghostUsers] = await connection.query("SELECT id FROM users WHERE email = 'deleted@sipakat.com' LIMIT 1");
+        if (ghostUsers.length === 0) {
+            throw new Error("Pengguna 'deleted' tidak ditemukan. Gagal melanjutkan penghapusan.");
         }
+        const ghostUserId = ghostUsers[0].id;
 
-        await db.execute('DELETE FROM users WHERE id = ?', [userIdToDelete]);
+        // Re-assign penilaian ke ghost user
+        await connection.execute(
+            'UPDATE asset_assessments SET assessed_by = ? WHERE assessed_by = ?',
+            [ghostUserId, userIdToDelete]
+        );
+        
+        // Hapus pengguna asli
+        await connection.execute('DELETE FROM users WHERE id = ?', [userIdToDelete]);
+        
+        await connection.commit();
         res.status(204).send();
+
     } catch (error) {
+        await connection.rollback();
         res.status(500).json({ message: 'Gagal menghapus pengguna', error: error.message });
+    } finally {
+        connection.release();
     }
 };
 ```
