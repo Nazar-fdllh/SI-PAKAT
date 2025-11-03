@@ -4,17 +4,15 @@ import type { User, Role } from './definitions';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 
-// This is a server-only function to get the raw token
+// Ambil token dari cookie (harus async sekarang)
 export async function getAuthToken(): Promise<string | undefined> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies(); // ✅ gunakan await
   return cookieStore.get('accessToken')?.value;
 }
 
-
-// This function now decodes the JWT to get user information
+// Decode JWT untuk ambil data user
 export async function getCurrentUser(): Promise<User | undefined> {
   const token = await getAuthToken();
-
   if (!token) return undefined;
 
   try {
@@ -23,20 +21,29 @@ export async function getCurrentUser(): Promise<User | undefined> {
     );
 
     const { payload } = await jwtVerify(token, secret);
-    
-    const userName = (payload.name as string) || 'Pengguna';
-    // Use the email from the JWT payload directly, as it's the source of truth.
-    const userEmail = payload.email as string;
-    const userRoleName = payload.role as 'Administrator' | 'Manajer Aset' | 'Auditor';
 
-    // Mock fetching roles, in a real app this might come from an API or a static config file
+    const userName = (payload.name as string) || 'Pengguna';
+    const userEmail = payload.email as string;
+    const userRoleName = payload.role as
+      | 'Administrator'
+      | 'Manajer Aset'
+      | 'Auditor';
+
     const roles: Role[] = [
-        { id: 1, name: 'Administrator', description: 'Super user with all access' },
-        { id: 2, name: 'Manajer Aset', description: 'Can manage assets' },
-        { id: 3, name: 'Auditor', description: 'Can view assets and generate reports' }
+      {
+        id: 1,
+        name: 'Administrator',
+        description: 'Super user with all access',
+      },
+      { id: 2, name: 'Manajer Aset', description: 'Can manage assets' },
+      {
+        id: 3,
+        name: 'Auditor',
+        description: 'Can view assets and generate reports',
+      },
     ];
 
-    const roleDetails = roles.find(r => r.name === userRoleName);
+    const roleDetails = roles.find((r) => r.name === userRoleName);
 
     return {
       id: payload.id as number,
@@ -53,15 +60,22 @@ export async function getCurrentUser(): Promise<User | undefined> {
 }
 
 export async function getCurrentRole(): Promise<Role | null> {
-    const user = await getCurrentUser();
-    if (!user || !user.role_id) return null;
+  const user = await getCurrentUser();
+  if (!user || !user.role_id) return null;
 
-    // Mock fetching roles
-    const roles: Role[] = [
-        { id: 1, name: 'Administrator', description: 'Super user with all access' },
-        { id: 2, name: 'Manajer Aset', description: 'Can manage assets' },
-        { id: 3, name: 'Auditor', description: 'Can view assets and generate reports' }
-    ];
-    const role = roles.find(r => r.id === user.role_id);
-    return role || null;
+  const roles: Role[] = [
+    {
+      id: 1,
+      name: 'Administrator',
+      description: 'Super user with all access',
+    },
+    { id: 2, name: 'Manajer Aset', description: 'Can manage assets' },
+    {
+      id: 3,
+      name: 'Auditor',
+      description: 'Can view assets and generate reports',
+    },
+  ];
+
+  return roles.find((r) => r.id === user.role_id) || null;
 }
