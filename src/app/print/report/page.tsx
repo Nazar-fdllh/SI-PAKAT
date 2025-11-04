@@ -165,7 +165,7 @@ export default function ReportPage() {
                   <td className="px-4 py-3">{index + 1}</td>
                   <td className="px-4 py-3 font-mono">{asset.asset_code}</td>
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{asset.asset_name}</td>
-                  <td className="px-4 py-3">{asset.category_name}</td>
+                  <td className="px-4 py-3">{asset.category_name || 'Tanpa Kategori'}</td>
                   <td className="px-4 py-3">{asset.owner}</td>
                   <td className="px-4 py-3 text-right font-semibold">{asset.asset_value || 'Belum Dinilai'}</td>
                 </tr>

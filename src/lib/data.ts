@@ -100,7 +100,8 @@ export const deleteAsset = async (id: number) => {
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
     const token = await getAuthToken();
     const params = new URLSearchParams(filters as Record<string, string>);
-    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, token);
+    // Explicitly set method to GET to ensure correctness.
+    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, token, { method: 'GET' });
 };
 
 
