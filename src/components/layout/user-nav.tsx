@@ -11,10 +11,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/lib/actions';
-import { LogOut, Monitor, Moon, Sun, User as UserIcon, ChevronDown } from 'lucide-react';
+import { LogOut, Monitor, Moon, Sun, ChevronDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useSession } from '@/hooks/use-session';
-import Link from 'next/link';
 
 export function UserNav() {
     const { setTheme } = useTheme();
@@ -43,15 +42,6 @@ export function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <Link href="/profile">
-              <DropdownMenuItem>
-                <UserIcon className="mr-2 h-4 w-4" />
-                <span>Profil</span>
-              </DropdownMenuItem>
-          </Link>
-        </DropdownMenuGroup>
         <DropdownMenuSeparator />
          <DropdownMenuGroup>
           <DropdownMenuLabel>Theme</DropdownMenuLabel>

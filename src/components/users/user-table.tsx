@@ -71,15 +71,19 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={`https://i.pravatar.cc/150?u=${row.original.email}`} alt={row.original.name} />
-            <AvatarFallback>{row.original.name?.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <span className="font-medium">{row.getValue("name")}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        // Backend uses 'username' for name, frontend uses 'name'. This handles both.
+        const name = row.original.name || row.original.username || 'Pengguna';
+        return (
+            <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+                <AvatarImage src={`https://i.pravatar.cc/150?u=${row.original.email}`} alt={name} />
+                <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="font-medium">{name}</span>
+            </div>
+        );
+      },
     },
     {
       accessorKey: "email",
@@ -97,6 +101,7 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
       id: "actions",
       cell: ({ row }) => {
         const user = row.original;
+        const displayName = user.name || user.username || 'Pengguna';
         // The main admin (ID 1) cannot be deleted or edited from this table to prevent system lockout.
         const isMainAdmin = user.id === 1;
         
@@ -127,7 +132,7 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
                     <AlertDialogHeader>
                     <AlertDialogTitle>Anda yakin ingin menghapus pengguna ini?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus pengguna <span className="font-semibold text-foreground">{user.name}</span> ({user.email}) beserta semua riwayat penilaiannya secara permanen.
+                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus pengguna <span className="font-semibold text-foreground">{displayName}</span> ({user.email}) beserta semua riwayat penilaiannya secara permanen.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
