@@ -53,8 +53,8 @@ function ReportStats({ data }: { data: Asset[] }) {
         <p className="text-2xl font-bold text-yellow-800 dark:text-yellow-200">{classifications['Sedang'] || 0}</p>
       </div>
       <div className="p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-        <p className="text-sm text-blue-600 dark:text-blue-300">Belum Dinilai</p>
-        <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{classifications['Belum Dinilai'] || 0}</p>
+        <p className="text-sm text-blue-600 dark:text-blue-300">Nilai Rendah</p>
+        <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{ (classifications['Rendah'] || 0) + (classifications['Belum Dinilai'] || 0) }</p>
       </div>
     </div>
   )
