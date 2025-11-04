@@ -123,7 +123,7 @@ export function AssetForm({ asset, classifications, subClassifications, onSave, 
       form.reset(defaultFormValues);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asset, form]);
+  }, [asset, form.reset]);
 
 
   const watchedScores = useWatch({
