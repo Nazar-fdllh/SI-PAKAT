@@ -79,6 +79,7 @@ export default function ReportPage() {
           asset_value: assetValueFilter || undefined,
           categoryId: categoryIdFilter || undefined,
         };
+        // Fetch data for the report and all classifications
         const [data, classificationsData] = await Promise.all([
           getReportData(filters),
           getAllClassifications()
