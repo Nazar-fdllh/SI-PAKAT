@@ -636,7 +636,7 @@ exports.generateReport = async (req, res) => {
     let query = `
         SELECT 
             a.id, a.asset_code, a.asset_name, a.owner,
-            c.name as category_name,
+            IFNULL(c.name, 'Tanpa Kategori') as category_name,
             latest_aa.asset_value
         FROM assets a
         LEFT JOIN classifications c ON a.classification_id = c.id
