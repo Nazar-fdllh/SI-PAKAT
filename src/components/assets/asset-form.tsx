@@ -103,8 +103,12 @@ export function AssetForm({ asset, classifications, subClassifications, onSave, 
     defaultValues: defaultFormValues,
   });
 
+  // This useEffect hook is the key to solving the problem.
+  // It watches for changes to the 'asset' prop. When 'asset' changes (e.g., when opening the edit dialog),
+  // it calls `form.reset()` with the new asset data, populating all fields, including the dropdowns.
   useEffect(() => {
     if (asset) {
+      // If an asset is provided (edit mode), reset the form with its values.
       form.reset({
         asset_code: asset.asset_code ?? '',
         asset_name: asset.asset_name ?? '',
@@ -120,8 +124,10 @@ export function AssetForm({ asset, classifications, subClassifications, onSave, 
         non_repudiation_score: asset.non_repudiation_score ?? 1,
       });
     } else {
+      // If no asset is provided (add mode), reset to the default empty values.
       form.reset(defaultFormValues);
     }
+  // We depend on `asset` to trigger this effect. `form.reset` is a stable function from react-hook-form.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asset, form.reset]);
 

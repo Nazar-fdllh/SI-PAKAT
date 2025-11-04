@@ -63,7 +63,7 @@ export default function AssetsPage() {
   const handleEditAsset = async (asset: Asset) => {
     try {
       setIsLoading(true);
-      // Fetch the full asset details including the scores
+      // Fetch the full asset details including the scores to ensure the form is pre-filled correctly.
       const fullAssetData = await getAssetById(asset.id);
       setSelectedAsset(fullAssetData);
       setDialogOpen(true);
