@@ -1,6 +1,6 @@
 'use client';
 
-// FORM INI SEKARANG HANYA UNTUK MEMBUAT ASET BARU
+// FORM INI SEKARANG HANYA UNTUK MENGEDIT ASET
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
@@ -26,8 +26,11 @@ import {
 import type { Asset, AssetClassificationValue, Assessment, Classification, SubClassification } from '@/lib/definitions';
 import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/hooks/use-session';
+import { getAssetById } from '@/lib/data';
+import { Skeleton } from '../ui/skeleton';
+import { toast } from '@/hooks/use-toast';
 
 const criteria = [
   { id: 'confidentiality_score', label: 'Kerahasiaan (Confidentiality)' },
@@ -49,7 +52,7 @@ const thresholds = {
   low: 5,
 };
 
-// Skema validasi untuk form tambah baru
+// Skema validasi untuk form edit
 const formSchema = z.object({
   asset_code: z.string().min(3, 'Kode aset minimal 3 karakter.'),
   asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.'),
@@ -59,7 +62,7 @@ const formSchema = z.object({
   location: z.string().min(3, 'Lokasi minimal 3 karakter.'),
   owner: z.string().min(3, 'Pemilik minimal 3 karakter.'),
   
-  // Penilaian awal wajib diisi untuk aset baru
+  // Penilaian bersifat opsional saat edit, tapi jika diisi, harus valid
   confidentiality_score: z.coerce.number().min(1).max(3),
   integrity_score: z.coerce.number().min(1).max(3),
   availability_score: z.coerce.number().min(1).max(3),
@@ -69,7 +72,8 @@ const formSchema = z.object({
 
 type AssetFormValues = z.infer<typeof formSchema>;
 
-interface AssetFormProps {
+interface AssetEditFormProps {
+  assetId: number;
   classifications: Classification[];
   subClassifications: SubClassification[];
   onSave: (data: Partial<Asset & Assessment>) => void;
@@ -82,26 +86,58 @@ const getClassificationValue = (score: number): AssetClassificationValue => {
     return 'Rendah';
 };
 
-export function AssetForm({ classifications, subClassifications, onSave, onCancel }: AssetFormProps) {
+export default function AssetEditForm({ assetId, classifications, subClassifications, onSave, onCancel }: AssetEditFormProps) {
   const { user } = useSession();
+  const [isLoading, setIsLoading] = useState(true);
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      asset_code: '',
-      asset_name: '',
-      classification_id: undefined,
-      sub_classification_id: null,
-      identification_of_existence: '',
-      location: '',
-      owner: '',
-      confidentiality_score: 1,
-      integrity_score: 1,
-      availability_score: 1,
-      authenticity_score: 1,
-      non_repudiation_score: 1,
-    },
+    // Nilai default akan diisi oleh useEffect setelah data di-fetch
   });
+
+  // useEffect ini adalah kunci utama. Ia berjalan sekali saat komponen dimuat.
+  useEffect(() => {
+    async function fetchAndSetAssetData() {
+      setIsLoading(true);
+      try {
+        // 1. Ambil data aset lengkap dari backend
+        const assetData = await getAssetById(assetId);
+        
+        // 2. Isi form dengan data yang didapat
+        form.reset({
+          asset_code: assetData.asset_code ?? '',
+          asset_name: assetData.asset_name ?? '',
+          classification_id: assetData.classification_id,
+          sub_classification_id: assetData.sub_classification_id ?? null,
+          identification_of_existence: assetData.identification_of_existence ?? '',
+          location: assetData.location ?? '',
+          owner: assetData.owner ?? '',
+          // Gunakan skor dari penilaian terakhir sebagai nilai awal
+          confidentiality_score: assetData.confidentiality_score ?? 1,
+          integrity_score: assetData.integrity_score ?? 1,
+          availability_score: assetData.availability_score ?? 1,
+          authenticity_score: assetData.authenticity_score ?? 1,
+          non_repudiation_score: assetData.non_repudiation_score ?? 1,
+        });
+      } catch (error) {
+        console.error("Failed to fetch asset data for editing:", error);
+        toast({
+            variant: "destructive",
+            title: "Gagal Memuat Data Aset",
+            description: "Tidak dapat mengambil detail aset untuk diedit."
+        });
+        onCancel(); // Tutup dialog jika gagal memuat
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (assetId) {
+      fetchAndSetAssetData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetId, form.reset]);
+
 
   const watchedScores = useWatch({
     control: form.control,
@@ -124,10 +160,23 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
   function onSubmit(data: AssetFormValues) {
     const payload = {
         ...data,
+        id: assetId,
         assessed_by: user?.id,
-        notes: 'Penilaian awal saat pembuatan aset.'
+        notes: 'Data aset dasar dan/atau penilaian diperbarui.'
     };
     onSave(payload);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Separator />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
   }
 
   return (
@@ -249,9 +298,9 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
         <Separator className="my-6" />
 
         <div>
-            <h3 className="text-lg font-medium mb-4 font-headline">Penilaian Awal</h3>
+            <h3 className="text-lg font-medium mb-4 font-headline">Perbarui Penilaian</h3>
              <FormDescription className="mb-4 -mt-2">
-                Lakukan penilaian awal untuk aset baru ini.
+                Jika Anda mengubah skor di bawah, penilaian baru akan dibuat untuk aset ini.
             </FormDescription>
             <div className="space-y-4">
                 {criteria.map((criterion) => (

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import AssetTable from '@/components/assets/asset-table';
-import { getAllAssets, createAsset, updateAsset, deleteAsset, getAllClassifications, getAllSubClassifications, getAssetById } from '@/lib/data';
+import { getAllAssets, createAsset, updateAsset, deleteAsset, getAllClassifications, getAllSubClassifications } from '@/lib/data';
 import type { Asset, Classification, SubClassification } from '@/lib/definitions';
 import { AssetDialog } from '@/components/assets/asset-dialog';
 import { useSession } from '@/hooks/use-session';
@@ -60,23 +60,11 @@ export default function AssetsPage() {
     setDialogOpen(true);
   };
 
-  const handleEditAsset = async (asset: Asset) => {
-    try {
-      setIsLoading(true);
-      // Fetch the full asset details including the scores to ensure the form is pre-filled correctly.
-      const fullAssetData = await getAssetById(asset.id);
-      setSelectedAsset(fullAssetData);
-      setDialogOpen(true);
-    } catch (error) {
-        console.error(error);
-        toast({
-            variant: 'destructive',
-            title: 'Gagal Mengambil Detail Aset',
-            description: error instanceof Error ? error.message : 'Tidak dapat memuat data untuk diedit.',
-        });
-    } finally {
-        setIsLoading(false);
-    }
+  const handleEditAsset = (asset: Asset) => {
+    // Dengan form terpisah, kita tidak perlu fetch data lagi di sini.
+    // Cukup teruskan asset yang sudah ada (dari tabel) ke dialog.
+    setSelectedAsset(asset);
+    setDialogOpen(true);
   };
 
   const handleDeleteAsset = async (assetId: number) => {
@@ -100,12 +88,14 @@ export default function AssetsPage() {
   const handleSaveAsset = async (assetData: Partial<Asset>) => {
     try {
       if (selectedAsset) {
+        // Mode Edit
         await updateAsset(selectedAsset.id, assetData);
         toast({
           title: 'Aset Diperbarui',
           description: 'Detail aset telah berhasil diperbarui.',
         });
       } else {
+        // Mode Tambah
         await createAsset(assetData);
         toast({
           title: 'Aset Ditambahkan',

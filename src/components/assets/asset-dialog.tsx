@@ -7,8 +7,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { AssetForm } from './asset-form';
+import AssetEditForm from './asset-edit-form'; // Import form edit yang baru
 import type { Asset, Classification, SubClassification } from '@/lib/definitions';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -22,26 +22,37 @@ interface AssetDialogProps {
 }
 
 export function AssetDialog({ isOpen, onOpenChange, onSave, asset, classifications, subClassifications }: AssetDialogProps) {
+  const isEditMode = asset !== null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-headline">
-            {asset ? 'Edit Aset' : 'Tambah Aset Baru'}
+            {isEditMode ? 'Edit Aset' : 'Tambah Aset Baru'}
           </DialogTitle>
           <DialogDescription>
-            {asset ? 'Perbarui detail aset dan penilaiannya di bawah ini.' : 'Isi formulir di bawah ini untuk menambahkan aset baru dan melakukan penilaian awal.'}
+            {isEditMode ? 'Perbarui detail aset di bawah ini. Perubahan pada skor akan membuat catatan penilaian baru.' : 'Isi formulir untuk menambahkan aset baru dan melakukan penilaian awal.'}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] p-4">
-            <AssetForm
-              key={asset ? asset.id : 'new'}
-              asset={asset}
-              classifications={classifications}
-              subClassifications={subClassifications}
-              onSave={onSave}
-              onCancel={() => onOpenChange(false)}
-            />
+            {isEditMode ? (
+              <AssetEditForm
+                key={asset.id} // Key penting untuk re-render
+                assetId={asset.id}
+                classifications={classifications}
+                subClassifications={subClassifications}
+                onSave={onSave}
+                onCancel={() => onOpenChange(false)}
+              />
+            ) : (
+              <AssetForm
+                classifications={classifications}
+                subClassifications={subClassifications}
+                onSave={onSave}
+                onCancel={() => onOpenChange(false)}
+              />
+            )}
         </ScrollArea>
       </DialogContent>
     </Dialog>
