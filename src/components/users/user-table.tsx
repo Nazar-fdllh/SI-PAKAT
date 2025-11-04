@@ -31,7 +31,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { type User } from "@/lib/definitions"
 import {
@@ -75,13 +74,7 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
         // Backend uses 'username' for name, frontend uses 'name'. This handles both.
         const name = row.original.name || row.original.username || 'Pengguna';
         return (
-            <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-                <AvatarImage src={`https://i.pravatar.cc/150?u=${row.original.email}`} alt={name} />
-                <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <span className="font-medium">{name}</span>
-            </div>
+            <div className="font-medium">{name}</div>
         );
       },
     },
@@ -197,11 +190,9 @@ export default function UserTable({ users, isLoading, currentUser, onEdit, onDel
                     <TableRow key={i}>
                         <TableCell colSpan={columns.length} className="p-0">
                            <div className="flex items-center space-x-4 p-4">
-                                <Skeleton className="h-10 w-10 rounded-full"/>
-                                <div className="space-y-2">
-                                  <Skeleton className="h-4 w-[250px]" />
-                                  <Skeleton className="h-4 w-[200px]" />
-                                </div>
+                                <Skeleton className="h-4 w-[250px]" />
+                                <Skeleton className="h-4 w-[250px]" />
+                                <Skeleton className="h-4 w-[150px]" />
                             </div>
                         </TableCell>
                     </TableRow>
