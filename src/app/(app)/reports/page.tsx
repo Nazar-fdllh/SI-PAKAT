@@ -28,11 +28,10 @@ function ReportCard({ title, description, classification, allClassifications }: 
   const [categoryId, setCategoryId] = useState('all');
 
   const generateLink = () => {
-    let href = `/print/report?categoryId=${categoryId}`;
-    if (classification !== 'Semua') {
-      href += `&asset_value=${classification}`;
-    }
-    return href;
+    // Perbaikan: Selalu tambahkan parameter asset_value.
+    // Backend sudah dirancang untuk menangani nilai "Semua".
+    // Ini memperbaiki bug di mana laporan lengkap tidak memicu filter backend yang benar.
+    return `/print/report?categoryId=${categoryId}&asset_value=${classification}`;
   };
   
   return (
