@@ -32,6 +32,8 @@ export type SubClassification = {
 
 export type AssetClassificationValue = 'Tinggi' | 'Sedang' | 'Rendah';
 
+// Ini adalah gabungan dari semua kemungkinan field dari tabel aset dan tabel-tabel anaknya.
+// Ini membuat pengelolaan data di frontend menjadi lebih mudah.
 export type Asset = {
   id: number;
   asset_code: string;
@@ -43,13 +45,56 @@ export type Asset = {
   owner: string;
   category_name?: string; 
   asset_value?: AssetClassificationValue | null;
-  // These are from the latest assessment, returned by /api/assets/:id
+  
+  // Assessment fields from the latest assessment
   total_score?: number;
   confidentiality_score?: number;
   integrity_score?: number;
   availability_score?: number;
   authenticity_score?: number;
   non_repudiation_score?: number;
+
+  // Human Resource Details
+  personnel_name?: string;
+  employee_id_number?: string;
+  function?: string;
+  unit?: string;
+  position?: string;
+  contact_info?: string;
+  contract_start_date?: string; // string for form compatibility
+  contract_end_date?: string; // string for form compatibility
+
+  // Hardware Details
+  brand?: string;
+  model?: string;
+  serial_number?: string;
+  specification?: string;
+  condition?: string;
+  purchase_date?: string; // string for form compatibility
+  warranty_end_date?: string; // string for form compatibility
+
+  // Software Details
+  application_name?: string;
+  vendor?: string;
+  status?: string;
+  version?: string;
+  license_key?: string;
+  installation_date?: string; // string for form compatibility
+  expiration_date?: string; // string for form compatibility
+
+  // Data/Information Details
+  storage_format?: string;
+  validity_period?: string; // string for form compatibility
+  sensitivity_level?: string;
+  storage_location_detail?: string;
+  retention_policy?: string;
+  last_backup_date?: string; // string for form compatibility
+
+  // Supporting Facility Details
+  // 'specification' and 'condition' are already in hardware
+  last_maintenance_date?: string; // string for form compatibility
+  next_maintenance_date?: string; // string for form compatibility
+  capacity?: string;
 };
 
 export type Assessment = {

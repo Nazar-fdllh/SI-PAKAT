@@ -53,10 +53,8 @@ async function fetchFromApi<T>(endpoint: string, token: string | undefined, opti
 
 
 // --- User Data ---
-// Each function now gets the token first
 export const getAllUsers = async () => {
     const token = await getAuthToken();
-    // Assuming user management is under its own main route
     return fetchFromApi<User[]>('/api/users', token);
 };
 export const createUser = async (data: Partial<User>) => {
@@ -78,10 +76,13 @@ export const getAllAssets = async () => {
     const token = await getAuthToken();
     return fetchFromApi<Asset[]>('/api/assets', token);
 };
+
 export const getAssetById = async (id: number | string) => {
     const token = await getAuthToken();
-    return fetchFromApi<Asset>(`/api/assets/${id}`, token);
+    // Backend API untuk mengambil detail aset beserta data anaknya
+    return fetchFromApi<Asset>(`/api/assets/details/${id}`, token);
 };
+
 export const createAsset = async (data: Partial<Asset & { notes?: string }>) => {
     const token = await getAuthToken();
     return fetchFromApi<Asset>('/api/assets', token, { method: 'POST', body: JSON.stringify(data) });
@@ -100,7 +101,6 @@ export const deleteAsset = async (id: number) => {
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
     const token = await getAuthToken();
     const params = new URLSearchParams(filters as Record<string, string>);
-    // Explicitly set method to GET to ensure correctness.
     return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, token, { method: 'GET' });
 };
 
@@ -118,3 +118,4 @@ export const getAllSubClassifications = async () => {
     const token = await getAuthToken();
     return fetchFromApi<SubClassification[]>('/api/assets/sub-classifications', token);
 };
+

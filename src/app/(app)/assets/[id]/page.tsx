@@ -27,7 +27,7 @@ export default function AssetDetailPage() {
     if (!id || !user) return;
     setIsLoading(true);
     try {
-      // Single API call to get asset details including the latest assessment scores.
+      // API call to get asset details including child data and latest assessment scores.
       const assetData = await getAssetById(id);
       if (!assetData) {
         notFound();
@@ -35,15 +35,15 @@ export default function AssetDetailPage() {
       }
       setAsset(assetData);
       
-      // If the fetched asset data contains scores, it means there's at least one assessment.
-      // We can create a "mock" latest assessment entry for the history display from this data.
+      // Jika backend mengirimkan riwayat penilaian, kita bisa menampilkannya.
+      // Untuk saat ini, kita buat tiruan berdasarkan data penilaian terakhir.
       if (assetData.total_score !== null && assetData.total_score !== undefined) {
          const latestAssessment: Assessment = {
-            id: -1, // Placeholder ID as this is derived data
+            id: -1, // ID sementara
             asset_id: assetData.id,
-            assessed_by: -1, // Placeholder
+            assessed_by: -1, 
             assessed_by_name: 'Penilaian Terakhir',
-            assessment_date: new Date().toISOString(), // This is a placeholder date
+            assessment_date: new Date().toISOString(), // Tanggal sementara
             asset_value: assetData.asset_value || 'Rendah',
             total_score: assetData.total_score,
             confidentiality_score: assetData.confidentiality_score || 1,
@@ -52,10 +52,10 @@ export default function AssetDetailPage() {
             authenticity_score: assetData.authenticity_score || 1,
             non_repudiation_score: assetData.non_repudiation_score || 1,
         };
-        // In the future, a real history endpoint would replace this.
+        // Idealnya, backend akan mengirimkan array riwayat penilaian.
         setAssessments([latestAssessment]);
       } else {
-        setAssessments([]); // No assessment data found
+        setAssessments([]); // Tidak ada data penilaian
       }
 
     } catch (error) {
@@ -79,11 +79,11 @@ export default function AssetDetailPage() {
   const handleNewAssessment = async (assessmentData: Partial<Assessment>) => {
     if (!asset || !user) return;
 
-    // The PUT endpoint expects the full asset data along with the new scores.
+    // Endpoint PUT mengharapkan data aset lengkap beserta skor baru.
     const payload: Partial<Asset> = {
-        ...asset, // Spread existing asset data
-        ...assessmentData, // Spread new scores
-        assessed_by: user.id, // Add who is doing the assessment
+        ...asset, 
+        ...assessmentData,
+        assessed_by: user.id,
     };
     
     try {
@@ -92,7 +92,7 @@ export default function AssetDetailPage() {
         title: 'Penilaian Disimpan',
         description: 'Penilaian baru untuk aset telah berhasil disimpan.',
       });
-      // Refetch all data to get the latest state and update the UI.
+      // Ambil ulang data untuk mendapatkan state terbaru.
       fetchAssetData();
     } catch (error) {
       console.error("Failed to save new assessment:", error);
@@ -156,7 +156,7 @@ export default function AssetDetailPage() {
             <CardContent>
               {canAssess ? (
                 <AssessmentForm 
-                  // Pass the actual scores from the fetched asset to the form.
+                  // Kirim skor aktual dari aset yang diambil ke formulir.
                   initialScores={{
                     confidentiality_score: asset.confidentiality_score,
                     integrity_score: asset.integrity_score,
