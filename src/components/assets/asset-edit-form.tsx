@@ -86,6 +86,7 @@ const formSchema = z.object({
   vendor: z.string().optional(),
   status: z.string().optional(),
   version: z.string().optional(),
+  capacity: z.string().optional(),
 });
 
 
@@ -150,6 +151,7 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
           vendor: assetData.vendor ?? '',
           status: assetData.status ?? '',
           version: assetData.version ?? '',
+          capacity: assetData.capacity ?? '',
         });
       } catch (error) {
         console.error("Failed to fetch asset data for editing:", error);
@@ -230,6 +232,14 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
              <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
+      case 5: // Sarana Pendukung
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
+            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+          </div>
+        );
       default:
         return null;
     }
@@ -265,13 +275,13 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
         </div>
 
         {/* --- Bagian Field Dinamis Berdasarkan Kategori --- */}
-        {watchedClassificationId && (
+        {watchedClassificationId ? (
           <>
             <Separator className="my-6" />
             <h3 className="text-lg font-medium font-headline">Detail Spesifik Aset</h3>
             <DynamicFields classificationId={watchedClassificationId} />
           </>
-        )}
+        ) : null}
         
         <Separator className="my-6" />
 
@@ -319,5 +329,3 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
     </Form>
   );
 }
-
-    

@@ -10,7 +10,7 @@ type DetailItemProps = {
 };
 
 function DetailItem({ label, value }: DetailItemProps) {
-  if (!value) return null;
+  if (!value && typeof value !== 'number') return null;
 
   return (
     <div className="flex justify-between items-start text-sm">
@@ -83,6 +83,17 @@ export default function AssetDetails({ asset }: { asset: Asset }) {
           <DetailItem label="Status Lisensi" value={asset.status} />
           <DetailItem label="Tgl. Instalasi" value={formatDate(asset.installation_date)} />
           <DetailItem label="Lisensi Habis" value={formatDate(asset.expiration_date)} />
+        </>
+      )}
+      
+      {asset.classification_id === 5 && ( // Sarana Pendukung
+         <>
+          <h4 className="font-semibold text-base pt-4 mt-4 border-t">Detail Sarana Pendukung</h4>
+          <DetailItem label="Kondisi" value={asset.condition} />
+          <DetailItem label="Kapasitas" value={asset.capacity} />
+          <DetailItem label="Tgl. Perawatan Terakhir" value={formatDate(asset.last_maintenance_date)} />
+          <DetailItem label="Jadwal Perawatan Berikutnya" value={formatDate(asset.next_maintenance_date)} />
+          <DetailItem label="Spesifikasi" value={asset.specification} />
         </>
       )}
     </div>
