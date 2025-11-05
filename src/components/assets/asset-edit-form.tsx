@@ -28,7 +28,7 @@ import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/hooks/use-session';
-import { getAssetById } from '@/lib/data';
+import { getAssetWithDetailsById } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
@@ -119,7 +119,7 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
     async function fetchAndSetAssetData() {
       setIsLoading(true);
       try {
-        const assetData = await getAssetById(assetId);
+        const assetData = await getAssetWithDetailsById(assetId);
         
         // Mengisi form dengan data dari backend
         form.reset({

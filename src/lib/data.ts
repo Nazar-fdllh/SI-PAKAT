@@ -79,7 +79,13 @@ export const getAllAssets = async () => {
 
 export const getAssetById = async (id: number | string) => {
     const token = await getAuthToken();
-    // Backend API untuk mengambil detail aset beserta data anaknya
+    // Simple endpoint for table/list views
+    return fetchFromApi<Asset>(`/api/assets/${id}`, token);
+};
+
+export const getAssetWithDetailsById = async (id: number | string) => {
+    const token = await getAuthToken();
+    // Endpoint to get asset with its child table details
     return fetchFromApi<Asset>(`/api/assets/details/${id}`, token);
 };
 
@@ -118,4 +124,5 @@ export const getAllSubClassifications = async () => {
     const token = await getAuthToken();
     return fetchFromApi<SubClassification[]>('/api/assets/sub-classifications', token);
 };
+
 
