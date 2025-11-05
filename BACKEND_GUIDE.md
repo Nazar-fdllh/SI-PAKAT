@@ -855,4 +855,3 @@ module.exports = router;
 
 Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
 ---
-
