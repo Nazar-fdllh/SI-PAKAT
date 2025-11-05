@@ -474,7 +474,7 @@ exports.getAllAssets = async (req, res) => {
             LEFT JOIN classifications c ON a.classification_id = c.id
         `);
         res.json(assets);
-    } catch (error) => {
+    } catch (error) {
         res.status(500).json({ 
             message: 'Gagal mengambil data aset', 
             error: error.message 
@@ -739,55 +739,6 @@ exports.getAllSubClassifications = async (req, res) => {
         res.json(subClassifications);
     } catch (error) {
         res.status(500).json({ message: 'Gagal mengambil data sub-klasifikasi', error: error.message });
-    }
-};
-```
-
-#### `/controllers/reportController.js`
-
-Logika untuk menghasilkan data laporan dengan filter dinamis.
-
-```javascript
-// /controllers/reportController.js
-const db = require('../config/db');
-
-exports.generateReport = async (req, res) => {
-    const { categoryId, asset_value } = req.query;
-
-    let query = `
-        SELECT 
-            a.id, a.asset_code, a.asset_name, a.owner,
-            IFNULL(c.name, 'Tanpa Kategori') as category_name,
-            latest_aa.asset_value
-        FROM assets a
-        LEFT JOIN classifications c ON a.classification_id = c.id
-        LEFT JOIN (
-            SELECT 
-                asset_id, 
-                asset_value,
-                ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
-            FROM asset_assessments
-        ) latest_aa ON a.id = latest_aa.asset_id AND latest_aa.rn = 1
-        WHERE 1=1
-    `;
-
-    const params = [];
-
-    if (categoryId && categoryId !== 'all') {
-        query += ' AND a.classification_id = ?';
-        params.push(categoryId);
-    }
-
-    if (asset_value && asset_value !== 'Semua') {
-        query += ' AND latest_aa.asset_value = ?';
-        params.push(asset_value);
-    }
-
-    try {
-        const [results] = await db.query(query, params);
-        res.json(results);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal menghasilkan laporan', error: error.message });
     }
 };
 ```
