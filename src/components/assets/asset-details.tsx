@@ -86,7 +86,7 @@ export default function AssetDetails({ asset }: { asset: Asset }) {
         </>
       )}
       
-      {asset.classification_id === 5 && ( // Sarana Pendukung
+      {asset.classification_id === 2 && ( // Sarana Pendukung
          <>
           <h4 className="font-semibold text-base pt-4 mt-4 border-t">Detail Sarana Pendukung</h4>
           <DetailItem label="Kondisi" value={asset.condition} />

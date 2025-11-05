@@ -232,7 +232,7 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
              <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
-      case 5: // Sarana Pendukung
+      case 2: // Sarana Pendukung
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
