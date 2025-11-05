@@ -410,6 +410,51 @@ Logika CRUD untuk Aset dan sekarang juga untuk mengambil data master.
 // /controllers/assetController.js
 const db = require('../config/db');
 
+// Helper function to safely handle undefined values for SQL queries
+const safe = (v) => v === undefined ? null : v;
+
+// Helper function to manage child table data
+const manageChildAsset = async (connection, classificationId, assetId, data) => {
+    const childTables = {
+        1: 'human_resource_details',
+        2: 'data_information_details',
+        3: 'hardware_details',
+        4: 'software_details',
+        5: 'supporting_facility_details',
+    };
+    
+    const tableName = childTables[classificationId];
+    if (!tableName) return;
+
+    const [existing] = await connection.query(`SELECT asset_id FROM ${tableName} WHERE asset_id = ?`, [assetId]);
+
+    const childFields = Object.keys(data).filter(key => 
+        ![
+            'asset_code', 'asset_name', 'classification_id', 'sub_classification_id', 'identification_of_existence',
+            'location', 'owner', 'assessed_by', 'confidentiality_score', 'integrity_score', 'availability_score',
+            'authenticity_score', 'non_repudiation_score', 'notes'
+        ].includes(key)
+    );
+
+    const childData = childFields.reduce((obj, key) => ({ ...obj, [key]: safe(data[key]) }), {});
+
+    if (Object.keys(childData).length === 0) return;
+
+    if (existing.length > 0) {
+        // Update
+        const fieldsToUpdate = Object.keys(childData).map(key => `${key} = ?`).join(', ');
+        const params = [...Object.values(childData), assetId];
+        await connection.execute(`UPDATE ${tableName} SET ${fieldsToUpdate} WHERE asset_id = ?`, params);
+    } else {
+        // Insert
+        childData.asset_id = assetId;
+        const fields = Object.keys(childData).join(', ');
+        const placeholders = Object.keys(childData).map(() => '?').join(', ');
+        await connection.execute(`INSERT INTO ${tableName} (${fields}) VALUES (${placeholders})`, Object.values(childData));
+    }
+};
+
+
 // ========================= GET ALL ASSETS =========================
 exports.getAllAssets = async (req, res) => {
     try {
@@ -480,9 +525,6 @@ exports.createAsset = async (req, res) => {
             location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
             authenticity_score, non_repudiation_score
         } = req.body;
-        
-        // Pastikan tidak ada undefined
-        const safe = (v) => v === undefined ? null : v;
 
         // 1. Insert ke tabel assets
         const [assetResult] = await connection.execute(
@@ -509,6 +551,9 @@ exports.createAsset = async (req, res) => {
                 'Penilaian awal saat pembuatan aset'
             ]
         );
+        
+        // 3. Insert ke tabel detail anak
+        await manageChildAsset(connection, classification_id, newAssetId, req.body);
 
         await connection.commit();
 
@@ -560,8 +605,6 @@ exports.updateAsset = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        const safe = (v) => v === undefined ? null : v;
-
         // --- Update data aset utama ---
         const assetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
         const fieldsToUpdate = [];
@@ -590,6 +633,12 @@ exports.updateAsset = async (req, res) => {
             const query = `UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
             await connection.execute(query, params);
         }
+        
+        // --- Update data detail anak ---
+        if (classification_id) {
+            await manageChildAsset(connection, classification_id, assetId, req.body);
+        }
+
 
         // --- Tambahkan penilaian baru jika skor dikirim ---
         const hasNewAssessment = (
@@ -633,16 +682,34 @@ exports.updateAsset = async (req, res) => {
 
 // ========================= DELETE ASSET =========================
 exports.deleteAsset = async (req, res) => {
+    const assetId = req.params.id;
+    const connection = await db.getConnection();
     try {
-        await db.execute('DELETE FROM assets WHERE id = ?', [req.params.id]);
+        await connection.beginTransaction();
+
+        // Hapus dari semua tabel anak yang mungkin
+        await connection.execute('DELETE FROM hardware_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM software_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM data_information_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM human_resource_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM supporting_facility_details WHERE asset_id = ?', [assetId]);
+        
+        // Hapus dari tabel aset utama (ON DELETE CASCADE akan menangani penilaian)
+        await connection.execute('DELETE FROM assets WHERE id = ?', [assetId]);
+
+        await connection.commit();
         res.status(204).send();
     } catch (error) {
+        await connection.rollback();
         res.status(500).json({ 
             message: 'Gagal menghapus aset', 
             error: error.message 
         });
+    } finally {
+        connection.release();
     }
 };
+
 
 // ========================= MASTER DATA =========================
 exports.getAllRoles = async (req, res) => {
