@@ -91,7 +91,7 @@ export type Asset = {
   last_backup_date?: string; // string for form compatibility
 
   // Supporting Facility Details
-  // 'specification' and 'condition' are already in hardware
+  // 'specification' and 'condition' are already defined above
   last_maintenance_date?: string; // string for form compatibility
   next_maintenance_date?: string; // string for form compatibility
   capacity?: string;

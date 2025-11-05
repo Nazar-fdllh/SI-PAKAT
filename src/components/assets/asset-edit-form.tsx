@@ -87,6 +87,8 @@ const formSchema = z.object({
   status: z.string().optional(),
   version: z.string().optional(),
   capacity: z.string().optional(),
+  last_maintenance_date: z.string().optional(),
+  next_maintenance_date: z.string().optional(),
 });
 
 
@@ -152,6 +154,8 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
           status: assetData.status ?? '',
           version: assetData.version ?? '',
           capacity: assetData.capacity ?? '',
+          last_maintenance_date: assetData.last_maintenance_date ?? '',
+          next_maintenance_date: assetData.next_maintenance_date ?? '',
         });
       } catch (error) {
         console.error("Failed to fetch asset data for editing:", error);
@@ -237,6 +241,8 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="last_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Tgl. Perawatan Terakhir</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="next_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Jadwal Perawatan Berikutnya</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );

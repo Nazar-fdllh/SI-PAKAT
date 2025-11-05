@@ -83,6 +83,8 @@ const formSchema = z.object({
   status: z.string().optional(),
   version: z.string().optional(),
   capacity: z.string().optional(),
+  last_maintenance_date: z.string().optional(),
+  next_maintenance_date: z.string().optional(),
 });
 
 type AssetFormValues = z.infer<typeof formSchema>;
@@ -184,6 +186,8 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="last_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Tgl. Perawatan Terakhir</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="next_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Jadwal Perawatan Berikutnya</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
