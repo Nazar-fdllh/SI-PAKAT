@@ -82,9 +82,10 @@ const formSchema = z.object({
   serial_number: z.string().optional(),
   specification: z.string().optional(),
   condition: z.string().optional(),
-  application_name: zstring().optional(),
+  application_name: z.string().optional(),
   vendor: z.string().optional(),
   status: z.string().optional(),
+  version: z.string().optional(),
 });
 
 
@@ -148,6 +149,7 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
           application_name: assetData.application_name ?? '',
           vendor: assetData.vendor ?? '',
           status: assetData.status ?? '',
+          version: assetData.version ?? '',
         });
       } catch (error) {
         console.error("Failed to fetch asset data for editing:", error);
@@ -203,29 +205,29 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
       case 1: // SDM & Pihak Ketiga
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="personnel_name" render={({ field }) => ( <FormItem><FormLabel>Nama Personil</FormLabel><FormControl><Input placeholder="Nama Lengkap" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="employee_id_number" render={({ field }) => ( <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="function" render={({ field }) => ( <FormItem><FormLabel>Fungsi</FormLabel><FormControl><Input placeholder="cth. Manajemen Strategis" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="position" render={({ field }) => ( <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth. Kepala Bidang" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="personnel_name" render={({ field }) => ( <FormItem><FormLabel>Nama Personil</FormLabel><FormControl><Input placeholder="Nama Lengkap" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="employee_id_number" render={({ field }) => ( <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="function" render={({ field }) => ( <FormItem><FormLabel>Fungsi</FormLabel><FormControl><Input placeholder="cth. Manajemen Strategis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="position" render={({ field }) => ( <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth. Kepala Bidang" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 3: // Perangkat Keras
         return (
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-             <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Merek</FormLabel><FormControl><Input placeholder="cth. Dell, HP" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="cth. Latitude 5420" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="serial_number" render={({ field }) => ( <FormItem><FormLabel>Nomor Seri</FormLabel><FormControl><Input placeholder="Nomor unik perangkat" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baru, Bekas, Baik" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Merek</FormLabel><FormControl><Input placeholder="cth. Dell, HP" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="cth. Latitude 5420" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="serial_number" render={({ field }) => ( <FormItem><FormLabel>Nomor Seri</FormLabel><FormControl><Input placeholder="Nomor unik perangkat" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baru, Bekas, Baik" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
            </div>
         );
       case 4: // Perangkat Lunak
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-             <FormField control={form.control} name="application_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aplikasi</FormLabel><FormControl><Input placeholder="cth. SI-PAKAT" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="vendor" render={({ field }) => ( <FormItem><FormLabel>Vendor/Pembuat</FormLabel><FormControl><Input placeholder="cth. Diskominfo" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Versi</FormLabel><FormControl><Input placeholder="cth. 1.0.0" {...field} /></FormControl><FormMessage /></FormMessage> )} />
-             <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="application_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aplikasi</FormLabel><FormControl><Input placeholder="cth. SI-PAKAT" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="vendor" render={({ field }) => ( <FormItem><FormLabel>Vendor/Pembuat</FormLabel><FormControl><Input placeholder="cth. Diskominfo" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Versi</FormLabel><FormControl><Input placeholder="cth. 1.0.0" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       default:
@@ -317,3 +319,5 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
     </Form>
   );
 }
+
+    

@@ -81,6 +81,7 @@ const formSchema = z.object({
   application_name: z.string().optional(),
   vendor: z.string().optional(),
   status: z.string().optional(),
+  version: z.string().optional(),
 });
 
 type AssetFormValues = z.infer<typeof formSchema>;
@@ -254,3 +255,5 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
     </Form>
   );
 }
+
+    
