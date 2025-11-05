@@ -410,24 +410,31 @@ Logika CRUD untuk Aset dan sekarang juga untuk mengambil data master.
 // /controllers/assetController.js
 const db = require('../config/db');
 
-// Mendapatkan semua aset dengan join untuk nama kategori dan nilai terbaru
+// ========================= GET ALL ASSETS =========================
 exports.getAllAssets = async (req, res) => {
     try {
         const [assets] = await db.query(`
             SELECT 
                 a.*, 
                 c.name as category_name,
-                (SELECT aa.asset_value FROM asset_assessments aa WHERE aa.asset_id = a.id ORDER BY aa.assessment_date DESC LIMIT 1) as asset_value
+                (SELECT aa.asset_value 
+                 FROM asset_assessments aa 
+                 WHERE aa.asset_id = a.id 
+                 ORDER BY aa.assessment_date DESC 
+                 LIMIT 1) as asset_value
             FROM assets a
             LEFT JOIN classifications c ON a.classification_id = c.id
         `);
         res.json(assets);
     } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
+        res.status(500).json({ 
+            message: 'Gagal mengambil data aset', 
+            error: error.message 
+        });
     }
 };
 
-// Mendapatkan satu aset berdasarkan ID beserta penilaian terakhirnya
+// ========================= GET ASSET BY ID =========================
 exports.getAssetById = async (req, res) => {
     try {
         const [asset] = await db.query(`
@@ -455,41 +462,57 @@ exports.getAssetById = async (req, res) => {
         }
         res.json(asset[0]);
     } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data aset', error: error.message });
+        res.status(500).json({ 
+            message: 'Gagal mengambil data aset', 
+            error: error.message 
+        });
     }
 };
 
-// Menambah aset baru dengan penilaian awal (dalam transaksi)
+// ========================= CREATE ASSET =========================
 exports.createAsset = async (req, res) => {
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
 
-        // 1. Ambil data dari body
         const { 
             asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, 
             location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
             authenticity_score, non_repudiation_score
         } = req.body;
         
-        // 2. Insert ke tabel 'assets'
+        // Pastikan tidak ada undefined
+        const safe = (v) => v === undefined ? null : v;
+
+        // 1. Insert ke tabel assets
         const [assetResult] = await connection.execute(
-            'INSERT INTO assets (asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner]
+            `INSERT INTO assets (
+                asset_code, asset_name, classification_id, sub_classification_id, 
+                identification_of_existence, location, owner
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+                safe(asset_code), safe(asset_name), safe(classification_id), safe(sub_classification_id),
+                safe(identification_of_existence), safe(location), safe(owner)
+            ]
         );
         const newAssetId = assetResult.insertId;
 
-        // 3. Insert ke tabel 'asset_assessments'
+        // 2. Insert ke tabel penilaian
         await connection.execute(
-            `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, assessment_date, notes) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-            [newAssetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, 'Penilaian awal saat pembuatan aset']
+            `INSERT INTO asset_assessments (
+                asset_id, assessed_by, confidentiality_score, integrity_score, availability_score,
+                authenticity_score, non_repudiation_score, assessment_date, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+            [
+                newAssetId, safe(assessed_by), safe(confidentiality_score), safe(integrity_score),
+                safe(availability_score), safe(authenticity_score), safe(non_repudiation_score),
+                'Penilaian awal saat pembuatan aset'
+            ]
         );
-        
-        // 4. Commit transaksi jika semua berhasil
+
         await connection.commit();
 
-        // 5. Ambil kembali data yang baru dibuat beserta nilai kalkulasinya
+        // Ambil kembali data yang baru dibuat
         const [newAsset] = await connection.query(`
             SELECT 
                 a.*, 
@@ -515,13 +538,16 @@ exports.createAsset = async (req, res) => {
     } catch (error) {
         await connection.rollback();
         console.error("Create Asset Error:", error);
-        res.status(500).json({ message: 'Gagal menambah aset dan penilaiannya', error: error.message });
+        res.status(500).json({ 
+            message: 'Gagal menambah aset dan penilaiannya', 
+            error: error.message 
+        });
     } finally {
         connection.release();
     }
 };
 
-// Memperbarui aset dan opsional menambahkan penilaian baru
+// ========================= UPDATE ASSET =========================
 exports.updateAsset = async (req, res) => {
     const assetId = req.params.id;
     const { 
@@ -530,14 +556,13 @@ exports.updateAsset = async (req, res) => {
         authenticity_score, non_repudiation_score, notes
     } = req.body;
 
-    // Cek apakah data penilaian dikirim
-    const isNewAssessment = confidentiality_score !== undefined;
-
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
 
-        // 1. Bangun query UPDATE secara dinamis untuk data dasar aset
+        const safe = (v) => v === undefined ? null : v;
+
+        // --- Update data aset utama ---
         const assetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
         const fieldsToUpdate = [];
         const params = [];
@@ -545,53 +570,81 @@ exports.updateAsset = async (req, res) => {
         for (const [key, value] of Object.entries(assetFields)) {
             if (value !== undefined) {
                 fieldsToUpdate.push(`${key} = ?`);
-                params.push(value);
+                params.push(safe(value));
             }
         }
-        
+
         if (fieldsToUpdate.length > 0) {
+            // Validasi klasifikasi
+            if (classification_id !== undefined && classification_id !== null) {
+                const [checkClass] = await connection.query(
+                    "SELECT id FROM classifications WHERE id = ?",
+                    [classification_id]
+                );
+                if (checkClass.length === 0) {
+                    throw new Error(`Klasifikasi dengan id=${classification_id} tidak ditemukan`);
+                }
+            }
+
             params.push(assetId);
             const query = `UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
             await connection.execute(query, params);
         }
 
-        // 2. Jika ada data penilaian baru, insert ke tabel 'asset_assessments'
-        if (isNewAssessment) {
+        // --- Tambahkan penilaian baru jika skor dikirim ---
+        const hasNewAssessment = (
+            confidentiality_score !== undefined ||
+            integrity_score !== undefined ||
+            availability_score !== undefined ||
+            authenticity_score !== undefined ||
+            non_repudiation_score !== undefined
+        );
+
+        if (hasNewAssessment) {
             await connection.execute(
-                `INSERT INTO asset_assessments (asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, assessment_date, notes) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-                [assetId, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, notes || 'Penilaian baru']
+                `INSERT INTO asset_assessments (
+                    asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, 
+                    authenticity_score, non_repudiation_score, assessment_date, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+                [
+                    assetId, safe(assessed_by), safe(confidentiality_score), safe(integrity_score),
+                    safe(availability_score), safe(authenticity_score), safe(non_repudiation_score),
+                    safe(notes) || 'Penilaian baru'
+                ]
             );
         }
 
         await connection.commit();
-        res.json({ message: 'Aset berhasil diperbarui' + (isNewAssessment ? ' dan penilaian baru telah ditambahkan.' : '.') });
+        res.json({ 
+            message: 'Aset berhasil diperbarui' + (hasNewAssessment ? ' dan penilaian baru ditambahkan.' : '.') 
+        });
 
     } catch (error) {
         await connection.rollback();
         console.error("Update Asset Error:", error);
-        res.status(500).json({ message: 'Gagal memperbarui aset', error: error.message });
+        res.status(500).json({ 
+            message: 'Gagal memperbarui aset', 
+            error: error.message 
+        });
     } finally {
         connection.release();
     }
 };
 
-// Menghapus aset
+// ========================= DELETE ASSET =========================
 exports.deleteAsset = async (req, res) => {
     try {
-        // Karena ada foreign key constraint (ON DELETE CASCADE),
-        // menghapus aset akan otomatis menghapus penilaian terkait.
         await db.execute('DELETE FROM assets WHERE id = ?', [req.params.id]);
         res.status(204).send();
     } catch (error) {
-        res.status(500).json({ message: 'Gagal menghapus aset', error: error.message });
+        res.status(500).json({ 
+            message: 'Gagal menghapus aset', 
+            error: error.message 
+        });
     }
 };
 
-
-// --- Master Data Controllers ---
-
-// Dapatkan semua peran
+// ========================= MASTER DATA =========================
 exports.getAllRoles = async (req, res) => {
     try {
         const [roles] = await db.query("SELECT * FROM roles ORDER BY id");
@@ -601,7 +654,6 @@ exports.getAllRoles = async (req, res) => {
     }
 };
 
-// Dapatkan semua klasifikasi
 exports.getAllClassifications = async (req, res) => {
     try {
         const [classifications] = await db.query("SELECT * FROM classifications ORDER BY name");
@@ -611,7 +663,6 @@ exports.getAllClassifications = async (req, res) => {
     }
 };
 
-// Dapatkan semua sub-klasifikasi
 exports.getAllSubClassifications = async (req, res) => {
     try {
         const [subClassifications] = await db.query("SELECT * FROM sub_classifications ORDER BY name");
