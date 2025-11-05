@@ -684,32 +684,21 @@ exports.updateAsset = async (req, res) => {
 };
 
 // ========================= DELETE ASSET =========================
+// PENYEDERHANAAN: Sekarang hanya menghapus dari tabel 'assets'.
+// Tabel anak akan terhapus secara otomatis oleh ON DELETE CASCADE.
 exports.deleteAsset = async (req, res) => {
     const assetId = req.params.id;
-    const connection = await db.getConnection();
     try {
-        await connection.beginTransaction();
-
-        // Hapus dari semua tabel anak yang mungkin
-        await connection.execute('DELETE FROM hardware_details WHERE asset_id = ?', [assetId]);
-        await connection.execute('DELETE FROM software_details WHERE asset_id = ?', [assetId]);
-        await connection.execute('DELETE FROM data_information_details WHERE asset_id = ?', [assetId]);
-        await connection.execute('DELETE FROM human_resource_details WHERE asset_id = ?', [assetId]);
-        await connection.execute('DELETE FROM supporting_facility_details WHERE asset_id = ?', [assetId]);
-        
-        // Hapus dari tabel aset utama (ON DELETE CASCADE akan menangani penilaian)
-        await connection.execute('DELETE FROM assets WHERE id = ?', [assetId]);
-
-        await connection.commit();
+        const [result] = await db.execute('DELETE FROM assets WHERE id = ?', [assetId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Aset tidak ditemukan." });
+        }
         res.status(204).send();
     } catch (error) {
-        await connection.rollback();
         res.status(500).json({ 
             message: 'Gagal menghapus aset', 
             error: error.message 
         });
-    } finally {
-        connection.release();
     }
 };
 
@@ -855,3 +844,66 @@ module.exports = router;
 
 Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
 ---
+
+## 6. SINKRONISASI DATABASE OTOMATIS (PENTING!)
+
+Untuk memastikan integritas data antara tabel `assets` dan tabel anaknya (`hardware_details`, `software_details`, dll.), sangat disarankan untuk menggunakan fitur `ON DELETE CASCADE` dari MySQL. Ini akan secara otomatis menghapus data anak ketika data induknya dihapus.
+
+**Jalankan Perintah SQL Berikut SATU KALI di Database Anda:**
+
+Anda bisa menjalankan ini melalui phpMyAdmin, HeidiSQL, atau command line MySQL. Perintah ini akan menghapus constraint lama (jika ada) dan menambahkan yang baru dengan `ON DELETE CASCADE`.
+
+```sql
+-- Pastikan Anda memilih database yang benar
+-- USE si_pakat_db;
+
+-- Untuk tabel human_resource_details
+ALTER TABLE human_resource_details
+DROP FOREIGN KEY IF EXISTS human_resource_details_ibfk_1;
+ALTER TABLE human_resource_details
+ADD CONSTRAINT fk_human_resource_asset
+FOREIGN KEY (asset_id) REFERENCES assets(id)
+ON DELETE CASCADE;
+
+-- Untuk tabel data_information_details
+ALTER TABLE data_information_details
+DROP FOREIGN KEY IF EXISTS data_information_details_ibfk_1;
+ALTER TABLE data_information_details
+ADD CONSTRAINT fk_data_info_asset
+FOREIGN KEY (asset_id) REFERENCES assets(id)
+ON DELETE CASCADE;
+
+-- Untuk tabel hardware_details
+ALTER TABLE hardware_details
+DROP FOREIGN KEY IF EXISTS hardware_details_ibfk_1;
+ALTER TABLE hardware_details
+ADD CONSTRAINT fk_hardware_asset
+FOREIGN KEY (asset_id) REFERENCES assets(id)
+ON DELETE CASCADE;
+
+-- Untuk tabel software_details
+ALTER TABLE software_details
+DROP FOREIGN KEY IF EXISTS software_details_ibfk_1;
+ALTER TABLE software_details
+ADD CONSTRAINT fk_software_asset
+FOREIGN KEY (asset_id) REFERENCES assets(id)
+ON DELETE CASCADE;
+
+-- Untuk tabel supporting_facility_details
+ALTER TABLE supporting_facility_details
+DROP FOREIGN KEY IF EXISTS supporting_facility_details_ibfk_1;
+ALTER TABLE supporting_facility_details
+ADD CONSTRAINT fk_supporting_facility_asset
+FOREIGN KEY (asset_id) REFERENCES assets(id)
+ON DELETE CASCADE;
+
+-- Untuk tabel asset_assessments (penting juga)
+ALTER TABLE asset_assessments
+DROP FOREIGN KEY IF EXISTS asset_assessments_ibfk_1;
+ALTER TABLE asset_assessments
+ADD CONSTRAINT fk_assessment_asset
+FOREIGN KEY (asset_id) REFERENCES assets(id)
+ON DELETE CASCADE;
+```
+
+Dengan menjalankan perintah di atas, Anda tidak perlu lagi menghapus data anak secara manual di kode backend. Database akan menanganinya secara otomatis, yang lebih aman dan efisien. Kode di `assetController.js` telah disederhanakan untuk mengandalkan perilaku ini.
