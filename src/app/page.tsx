@@ -37,7 +37,7 @@ export default function LandingPage() {
       <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50 border-b">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <Shield className="h-6 w-6 text-primary" />
-          <span className="ml-2 text-lg font-bold font-headline text-primary">SI-PAKAT Digital</span>
+          <span className="ml-2 text-lg font-bold font-headline text-primary">SI-PAKAT</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Link
@@ -69,10 +69,10 @@ export default function LandingPage() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-headline text-primary">
-                    Sistem Cerdas untuk Keamanan Aset TIK Anda
+                    Sistem Cerdas untuk Keamanan Aset TIK
                   </h1>
                   <p className="max-w-[600px] text-foreground/80 md:text-xl">
-                    SI-PAKAT (Sistem Informasi Pengelolaan Keamanan Aset TIK) membantu Anda mengelola, menilai, dan melindungi aset digital paling berharga dengan efisien.
+                    SI-PAKAT (Sistem Informasi Pengelolaan Keamanan Aset TIK) membantu mengelola, menilai, dan melindungi aset digital paling berharga dengan efisien.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">

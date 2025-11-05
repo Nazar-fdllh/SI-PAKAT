@@ -11,7 +11,7 @@ const sourceCodePro = Source_Code_Pro({ subsets: ['latin'], variable: '--font-co
 
 
 export const metadata: Metadata = {
-  title: 'SI-PAKAT Digital',
+  title: 'SI-PAKAT',
   description: 'Sistem Informasi Pengelolaan Keamanan Aset TIK',
 };
 

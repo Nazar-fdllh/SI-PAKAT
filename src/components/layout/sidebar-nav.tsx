@@ -69,7 +69,6 @@ export function SidebarNav() {
               <h2 className="text-base font-semibold font-headline text-sidebar-foreground">
                 SI-PAKAT
               </h2>
-               <p className="text-xs text-sidebar-foreground/80">Digital</p>
             </div>
           </div>
       </SidebarHeader>

@@ -10,7 +10,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Link href="/" className="flex items-center justify-center mb-6 text-primary">
           <Shield className="h-8 w-8" />
-          <span className="ml-2 text-2xl font-bold font-headline">SI-PAKAT Digital</span>
+          <span className="ml-2 text-2xl font-bold font-headline">SI-PAKAT</span>
         </Link>
         <Card>
           <CardHeader className="text-center">
