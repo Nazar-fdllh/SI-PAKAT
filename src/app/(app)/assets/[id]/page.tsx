@@ -1,6 +1,6 @@
 'use client';
 
-import { getAssetWithDetailsById, updateAsset } from '@/lib/data';
+import { getAssetById, updateAsset } from '@/lib/data';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import AssetDetails from '@/components/assets/asset-details';
 import AssessmentForm from '@/components/assets/assessment-form';
@@ -27,8 +27,8 @@ export default function AssetDetailPage() {
     if (!id || !user) return;
     setIsLoading(true);
     try {
-      // API call to get asset details including child data and latest assessment scores.
-      const assetData = await getAssetWithDetailsById(id);
+      // Use the simplified getAssetById function with the getDetails flag
+      const assetData = await getAssetById(id, true);
       if (!assetData) {
         notFound();
         return;

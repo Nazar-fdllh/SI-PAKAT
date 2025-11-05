@@ -32,7 +32,7 @@ async function fetchFromApi<T>(endpoint: string, token: string | undefined, opti
                     errorMessage = errorJson.message;
                 }
             } catch (e) {
-                // Not a JSON response
+                // Not a JSON response, the body is likely HTML or plain text
             }
             throw new Error(errorMessage);
         }
@@ -77,16 +77,10 @@ export const getAllAssets = async () => {
     return fetchFromApi<Asset[]>('/api/assets', token);
 };
 
-export const getAssetById = async (id: number | string) => {
+export const getAssetById = async (id: number | string, getDetails: boolean = false) => {
     const token = await getAuthToken();
-    // Simple endpoint for table/list views
-    return fetchFromApi<Asset>(`/api/assets/${id}`, token);
-};
-
-export const getAssetWithDetailsById = async (id: number | string) => {
-    const token = await getAuthToken();
-    // Endpoint to get asset with its child table details
-    return fetchFromApi<Asset>(`/api/assets/details/${id}`, token);
+    const endpoint = getDetails ? `/api/assets/details/${id}` : `/api/assets/${id}`;
+    return fetchFromApi<Asset>(endpoint, token);
 };
 
 export const createAsset = async (data: Partial<Asset & { notes?: string }>) => {
@@ -124,5 +118,3 @@ export const getAllSubClassifications = async () => {
     const token = await getAuthToken();
     return fetchFromApi<SubClassification[]>('/api/assets/sub-classifications', token);
 };
-
-

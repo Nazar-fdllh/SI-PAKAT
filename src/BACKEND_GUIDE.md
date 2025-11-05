@@ -875,7 +875,8 @@ router.get('/sub-classifications', [verifyToken], assetController.getAllSubClass
 // --- Asset CRUD Routes ---
 // Semua role terautentikasi bisa melihat aset
 router.get('/', [verifyToken], assetController.getAllAssets);
-// PENTING: Rute dengan parameter ID harus diletakkan setelah rute statis
+
+// PENTING: Rute yang lebih spesifik harus diletakkan SEBELUM rute yang lebih umum.
 router.get('/details/:id', [verifyToken], assetController.getAssetWithDetailsById); 
 router.get('/:id', [verifyToken], assetController.getAssetById);
 

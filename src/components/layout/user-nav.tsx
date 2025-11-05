@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,8 +15,9 @@ import { logout } from '@/lib/actions';
 import { LogOut, Monitor, Moon, Sun, ChevronDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useSession } from '@/hooks/use-session';
+import { Skeleton } from '../ui/skeleton';
 
-export function UserNav() {
+function UserNavComponent() {
     const { setTheme } = useTheme();
     const { user } = useSession();
 
@@ -70,4 +72,19 @@ export function UserNav() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+// Wrapper to prevent hydration mismatch
+export function UserNav() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return <Skeleton className="h-9 w-24" />; // Placeholder during SSR
+  }
+
+  return <UserNavComponent />;
 }
