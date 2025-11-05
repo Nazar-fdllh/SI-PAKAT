@@ -415,42 +415,45 @@ const safe = (v) => v === undefined ? null : v;
 
 // Helper function to manage child table data
 const manageChildAsset = async (connection, classificationId, assetId, data) => {
-    const childTables = {
-        1: 'human_resource_details',
-        2: 'data_information_details',
-        3: 'hardware_details',
-        4: 'software_details',
-        5: 'supporting_facility_details',
+    const childTableMap = {
+        1: { name: 'human_resource_details', fields: ['personnel_name', 'employee_id_number', 'function', 'unit', 'position', 'contact_info', 'contract_start_date', 'contract_end_date'] },
+        2: { name: 'data_information_details', fields: ['storage_format', 'validity_period', 'sensitivity_level', 'storage_location_detail', 'retention_policy', 'last_backup_date'] },
+        3: { name: 'hardware_details', fields: ['brand', 'model', 'serial_number', 'specification', 'condition', 'purchase_date', 'warranty_end_date'] },
+        4: { name: 'software_details', fields: ['application_name', 'vendor', 'status', 'version', 'license_key', 'installation_date', 'expiration_date'] },
+        5: { name: 'supporting_facility_details', fields: ['specification', 'condition', 'last_maintenance_date', 'next_maintenance_date', 'capacity'] },
     };
+
+    const tableInfo = childTableMap[classificationId];
+    if (!tableInfo) return; // Exit if classification has no child table
+
+    const { name: tableName, fields: validFields } = tableInfo;
+
+    // Extract only the relevant fields for the child table from the request body
+    const childData = {};
+    for (const field of validFields) {
+        if (data[field] !== undefined) {
+            childData[field] = data[field];
+        }
+    }
     
-    const tableName = childTables[classificationId];
-    if (!tableName) return;
-
-    const [existing] = await connection.query(`SELECT asset_id FROM ${tableName} WHERE asset_id = ?`, [assetId]);
-
-    const childFields = Object.keys(data).filter(key => 
-        ![
-            'asset_code', 'asset_name', 'classification_id', 'sub_classification_id', 'identification_of_existence',
-            'location', 'owner', 'assessed_by', 'confidentiality_score', 'integrity_score', 'availability_score',
-            'authenticity_score', 'non_repudiation_score', 'notes'
-        ].includes(key)
-    );
-
-    const childData = childFields.reduce((obj, key) => ({ ...obj, [key]: safe(data[key]) }), {});
-
+    // If no child data is present in the request body, do nothing
     if (Object.keys(childData).length === 0) return;
 
+    // Check if a record already exists for this asset
+    const [existing] = await connection.query(`SELECT asset_id FROM ${tableName} WHERE asset_id = ?`, [assetId]);
+
     if (existing.length > 0) {
-        // Update
+        // Update existing record
         const fieldsToUpdate = Object.keys(childData).map(key => `${key} = ?`).join(', ');
-        const params = [...Object.values(childData), assetId];
+        const params = [...Object.values(childData).map(safe), assetId];
         await connection.execute(`UPDATE ${tableName} SET ${fieldsToUpdate} WHERE asset_id = ?`, params);
     } else {
-        // Insert
-        childData.asset_id = assetId;
+        // Insert new record
+        childData.asset_id = assetId; // Add the foreign key
         const fields = Object.keys(childData).join(', ');
         const placeholders = Object.keys(childData).map(() => '?').join(', ');
-        await connection.execute(`INSERT INTO ${tableName} (${fields}) VALUES (${placeholders})`, Object.values(childData));
+        const params = Object.values(childData).map(safe);
+        await connection.execute(`INSERT INTO ${tableName} (${fields}) VALUES (${placeholders})`, params);
     }
 };
 
@@ -471,7 +474,7 @@ exports.getAllAssets = async (req, res) => {
             LEFT JOIN classifications c ON a.classification_id = c.id
         `);
         res.json(assets);
-    } catch (error) {
+    } catch (error) => {
         res.status(500).json({ 
             message: 'Gagal mengambil data aset', 
             error: error.message 
