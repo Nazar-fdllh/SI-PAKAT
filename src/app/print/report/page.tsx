@@ -16,7 +16,7 @@ function ReportHeader({ title }: { title: string }) {
       <div className="flex items-center gap-3">
         <Shield className="w-10 h-10 text-primary-dark dark:text-primary-light" />
         <div>
-          <h1 className="text-2xl font-bold font-headline text-gray-800 dark:text-gray-100">SI-PAKAT Digital</h1>
+          <h1 className="text-2xl font-bold font-headline text-gray-800 dark:text-gray-100">SI-PAKAT</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">Sistem Informasi Pengelolaan Keamanan Aset TIK</p>
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function ReportPage() {
           </table>
         </div>
         <footer className="mt-8 pt-4 border-t text-center text-xs text-gray-500 dark:text-gray-400">
-          <p>Laporan ini dihasilkan oleh sistem SI-PAKAT Digital.</p>
+          <p>Laporan ini dihasilkan oleh sistem SI-PAKAT.</p>
         </footer>
       </div>
     </div>
