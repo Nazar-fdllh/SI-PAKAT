@@ -415,63 +415,48 @@ const safe = (v) => (v === undefined || v === '' ? null : v);
 
 // Helper function to manage child table data
 const manageChildAsset = async (connection, classificationId, assetId, data) => {
-  const childTableMap = {
-    1: {
-      name: 'human_resource_details',
-      fields: ['personnel_name', 'employee_id_number', 'function', 'unit', 'position', 'contact_info', 'contract_start_date', 'contract_end_date'],
-    },
-    2: {
-      name: 'data_information_details',
-      fields: ['storage_format', 'validity_period', 'sensitivity_level', 'storage_location_detail', 'retention_policy', 'last_backup_date'],
-    },
-    3: {
-      name: 'hardware_details',
-      fields: ['brand', 'model', 'serial_number', 'specification', 'condition', 'purchase_date', 'warranty_end_date'],
-    },
-    4: {
-      name: 'software_details',
-      fields: ['application_name', 'vendor', 'status', 'version', 'license_key', 'installation_date', 'expiration_date'],
-    },
-    5: {
-      name: 'supporting_facility_details',
-      fields: ['specification', 'condition', 'last_maintenance_date', 'next_maintenance_date', 'capacity'],
-    },
-  };
+    const childTableMap = {
+        1: { name: 'human_resource_details', fields: ['personnel_name', 'employee_id_number', 'function', 'position'] },
+        2: { name: 'supporting_facility_details', fields: ['specification', 'condition', 'last_maintenance_date', 'next_maintenance_date', 'capacity'] },
+        3: { name: 'hardware_details', fields: ['brand', 'model', 'serial_number', 'specification', 'condition', 'purchase_date', 'warranty_end_date'] },
+        4: { name: 'software_details', fields: ['application_name', 'vendor', 'status', 'version', 'license_key', 'installation_date', 'expiration_date'] },
+        5: { name: 'data_information_details', fields: ['storage_format', 'validity_period', 'sensitivity_level', 'storage_location_detail', 'retention_policy', 'last_backup_date'] },
+    };
 
-  const tableInfo = childTableMap[classificationId];
-  if (!tableInfo) return; // Exit if classification has no child table
+    const tableInfo = childTableMap[classificationId];
+    if (!tableInfo) return;
 
-  const { name: tableName, fields: validFields } = tableInfo;
+    const { name: tableName, fields: validFields } = tableInfo;
 
-  // Extract only the relevant fields for the child table from the request body
-  const childData = {};
-  for (const field of validFields) {
-    if (data[field] !== undefined) {
-      childData[field] = data[field];
+    const childData = {};
+    for (const field of validFields) {
+        if (data[field] !== undefined) {
+            childData[field] = data[field];
+        }
     }
-  }
+    
+    // **FIX**: Only proceed if there's actual data for the child table.
+    if (Object.keys(childData).length === 0) return;
 
-  // If no child data is present in the request body, do nothing
-  if (Object.keys(childData).length === 0) return;
+    const [existing] = await connection.query(`SELECT asset_id FROM ${tableName} WHERE asset_id = ?`, [assetId]);
 
-  // Check if a record already exists for this asset
-  const [existing] = await connection.query(`SELECT asset_id FROM ${tableName} WHERE asset_id = ?`, [assetId]);
-
-  if (existing.length > 0) {
-    // Update existing record
-    // Escape field names with backticks to avoid SQL keyword conflicts
-    const fieldsToUpdate = Object.keys(childData).map(key => `\`${key}\` = ?`).join(', ');
-    const params = [...Object.values(childData).map(safe), assetId];
-    await connection.execute(`UPDATE ${tableName} SET ${fieldsToUpdate} WHERE asset_id = ?`, params);
-  } else {
-    // Insert new record
-    childData.asset_id = assetId; // Add the foreign key
-    // Escape field names with backticks
-    const fields = Object.keys(childData).map(key => `\`${key}\``).join(', ');
-    const placeholders = Object.keys(childData).map(() => '?').join(', ');
-    const params = Object.values(childData).map(safe);
-    await connection.execute(`INSERT INTO ${tableName} (${fields}) VALUES (${placeholders})`, params);
-  }
+    if (existing.length > 0) {
+        // Update: Only if there are fields to update
+        const fieldsToUpdate = Object.keys(childData).filter(key => childData[key] !== null && childData[key] !== '').map(key => `\`${key}\` = ?`).join(', ');
+        
+        if (fieldsToUpdate) {
+            const params = Object.values(childData).filter(val => val !== null && val !== '').map(safe);
+            params.push(assetId);
+            await connection.execute(`UPDATE ${tableName} SET ${fieldsToUpdate} WHERE asset_id = ?`, params);
+        }
+    } else {
+        // Insert: Only if required data is present
+        childData.asset_id = assetId;
+        const fields = Object.keys(childData).map(key => `\`${key}\``).join(', ');
+        const placeholders = Object.keys(childData).map(() => '?').join(', ');
+        const params = Object.values(childData).map(safe);
+        await connection.execute(`INSERT INTO ${tableName} (${fields}) VALUES (${placeholders})`, params);
+    }
 };
 
 
@@ -552,10 +537,10 @@ exports.getAssetWithDetailsById = async (req, res) => {
         
         const childTableMap = {
             1: { name: 'human_resource_details', alias: 'hrd', fields: 'hrd.*' },
-            2: { name: 'data_information_details', alias: 'did', fields: 'did.*' },
+            2: { name: 'supporting_facility_details', alias: 'sfd', fields: 'sfd.*' },
             3: { name: 'hardware_details', alias: 'hd', fields: 'hd.*' },
             4: { name: 'software_details', alias: 'sd', fields: 'sd.*' },
-            5: { name: 'supporting_facility_details', alias: 'sfd', fields: 'sfd.*' },
+            5: { name: 'data_information_details', alias: 'did', fields: 'did.*' },
         };
         
         const tableInfo = childTableMap[classificationId];
@@ -754,11 +739,10 @@ exports.updateAsset = async (req, res) => {
 };
 
 // ========================= DELETE ASSET =========================
-// PENYEDERHANAAN: Sekarang hanya menghapus dari tabel 'assets'.
-// Tabel anak akan terhapus secara otomatis oleh ON DELETE CASCADE.
 exports.deleteAsset = async (req, res) => {
     const assetId = req.params.id;
     try {
+        // Dengan ON DELETE CASCADE, kita hanya perlu menghapus dari tabel 'assets'.
         const [result] = await db.execute('DELETE FROM assets WHERE id = ?', [assetId]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Aset tidak ditemukan." });
