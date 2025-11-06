@@ -77,18 +77,28 @@ const formSchema = z.object({
   employee_id_number: z.string().optional(),
   function: z.string().optional(),
   position: z.string().optional(),
+
   brand: z.string().optional(),
   model: z.string().optional(),
   serial_number: z.string().optional(),
   specification: z.string().optional(),
   condition: z.string().optional(),
+
   application_name: z.string().optional(),
   vendor: z.string().optional(),
   status: z.string().optional(),
   version: z.string().optional(),
+
   capacity: z.string().optional(),
   last_maintenance_date: z.string().optional(),
   next_maintenance_date: z.string().optional(),
+  
+  storage_format: z.string().optional(),
+  validity_period: z.string().optional(),
+  sensitivity_level: z.string().optional(),
+  storage_location_detail: z.string().optional(),
+  retention_policy: z.string().optional(),
+  last_backup_date: z.string().optional(),
 });
 
 
@@ -156,6 +166,12 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
           capacity: assetData.capacity ?? '',
           last_maintenance_date: assetData.last_maintenance_date ?? '',
           next_maintenance_date: assetData.next_maintenance_date ?? '',
+          storage_format: assetData.storage_format ?? '',
+          validity_period: assetData.validity_period ?? '',
+          sensitivity_level: assetData.sensitivity_level ?? '',
+          storage_location_detail: assetData.storage_location_detail ?? '',
+          retention_policy: assetData.retention_policy ?? '',
+          last_backup_date: assetData.last_backup_date ?? '',
         });
       } catch (error) {
         console.error("Failed to fetch asset data for editing:", error);
@@ -244,6 +260,17 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
             <FormField control={form.control} name="last_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Tgl. Perawatan Terakhir</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="next_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Jadwal Perawatan Berikutnya</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+          </div>
+        );
+      case 5: // Data & Informasi
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
+            <FormField control={form.control} name="storage_format" render={({ field }) => ( <FormItem><FormLabel>Format Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Digital, Cetak" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="sensitivity_level" render={({ field }) => ( <FormItem><FormLabel>Tingkat Sensitivitas</FormLabel><FormControl><Input placeholder="cth. Rahasia, Internal, Publik" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="storage_location_detail" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Detail Lokasi Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Folder X di Server Y" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="validity_period" render={({ field }) => ( <FormItem><FormLabel>Masa Berlaku</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="last_backup_date" render={({ field }) => ( <FormItem><FormLabel>Tanggal Backup Terakhir</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="retention_policy" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Kebijakan Retensi</FormLabel><FormControl><Textarea placeholder="Jelaskan kebijakan retensi data..." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       default:

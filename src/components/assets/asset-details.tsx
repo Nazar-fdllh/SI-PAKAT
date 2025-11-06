@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { format, isValid, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Textarea } from "../ui/textarea";
 
 type DetailItemProps = {
   label: string;
@@ -61,7 +62,7 @@ export default function AssetDetails({ asset }: { asset: Asset }) {
         </>
       )}
 
-       {asset.classification_id === 3 && ( // Perangkat Keras
+      {asset.classification_id === 3 && ( // Perangkat Keras
         <>
           <h4 className="font-semibold text-base pt-4 mt-4 border-t">Detail Perangkat Keras</h4>
           <DetailItem label="Merek" value={asset.brand} />
@@ -94,6 +95,23 @@ export default function AssetDetails({ asset }: { asset: Asset }) {
           <DetailItem label="Tgl. Perawatan Terakhir" value={formatDate(asset.last_maintenance_date)} />
           <DetailItem label="Jadwal Perawatan Berikutnya" value={formatDate(asset.next_maintenance_date)} />
           <DetailItem label="Spesifikasi" value={asset.specification} />
+        </>
+      )}
+
+      {asset.classification_id === 5 && ( // Data & Informasi
+         <>
+          <h4 className="font-semibold text-base pt-4 mt-4 border-t">Detail Data & Informasi</h4>
+          <DetailItem label="Format Penyimpanan" value={asset.storage_format} />
+          <DetailItem label="Tingkat Sensitivitas" value={asset.sensitivity_level} />
+          <DetailItem label="Detail Lokasi Penyimpanan" value={asset.storage_location_detail} />
+          <DetailItem label="Masa Berlaku" value={formatDate(asset.validity_period)} />
+          <DetailItem label="Tanggal Backup Terakhir" value={formatDate(asset.last_backup_date)} />
+          {asset.retention_policy && (
+            <div className="space-y-2 pt-2 text-sm">
+                <p className="text-muted-foreground">Kebijakan Retensi</p>
+                <Textarea value={asset.retention_policy} readOnly className="h-24 resize-none" />
+            </div>
+          )}
         </>
       )}
     </div>
