@@ -19,6 +19,7 @@ Untuk menghindari hardcoding URL `http://localhost:3001` di banyak tempat, kita 
     ```
     NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
     JWT_SECRET=kunci-rahasia-yang-sangat-aman
+    NEXT_PUBLIC_RECAPTCHA_SITE_KEY=6LeoywksAAAAADOEISND8FRAYSWRtEuk1C0fkTLF
     ```
     **Penting**: `JWT_SECRET` harus sama persis dengan yang ada di file `.env` backend Anda.
 3.  Kode di `src/lib/data.ts` dan `src/lib/actions.ts` telah diubah untuk menggunakan `process.env.NEXT_PUBLIC_API_BASE_URL`. Saat Anda men-deploy aplikasi ke production, Anda hanya perlu mengubah nilai variabel ini di pengaturan hosting Anda.
@@ -226,3 +227,4 @@ Gunakan daftar ini untuk memverifikasi bahwa semua bagian telah terintegrasi den
     -   [ ] Jika token tidak valid atau kedaluwarsa, pengguna secara otomatis diarahkan ke halaman login.
 
 ---
+```

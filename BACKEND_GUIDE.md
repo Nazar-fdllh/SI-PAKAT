@@ -66,8 +66,8 @@ DB_NAME=si_pakat_db
 PORT=3001
 JWT_SECRET=kunci-rahasia-yang-sangat-aman
 
-# Kunci Rahasia Google reCAPTCHA v2
-RECAPTCHA_SECRET_KEY=MASUKKAN_KUNCI_RAHASIA_ANDA_DISINI
+# Kunci Rahasia Google reCAPTCHA v2 (SECRET KEY)
+RECAPTCHA_SECRET_KEY=6LeoywksAAAAALOZNU1hHVSaZmPSXy5wQ1ar8smO
 
 # Konfigurasi Email untuk Reset Password
 # Catatan: Anda bisa menggunakan domain email Anda sendiri (cth: admin@sipakat.com).
