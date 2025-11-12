@@ -15,6 +15,12 @@ Dokumen ini berisi panduan lengkap untuk membuat backend RESTful API menggunakan
 - **nodemailer**: Untuk mengirim email (fitur reset password).
 - **axios**: Untuk verifikasi CAPTCHA sisi server.
 
+### Instalasi Dependensi Backend
+Sebelum memulai, pastikan Anda telah menginisialisasi proyek Node.js (`npm init -y`) dan menginstal semua dependensi yang diperlukan. Jalankan perintah berikut di terminal, di dalam direktori backend Anda:
+```bash
+npm install express mysql2 jsonwebtoken bcryptjs cors dotenv nodemailer axios
+```
+
 ## 2. Struktur Folder Proyek
 
 ```
@@ -562,7 +568,7 @@ const manageChildAsset = async (connection, classificationId, assetId, data) => 
     
     // **FIX**: Hanya lanjutkan jika ada data aktual untuk tabel anak.
     // Ini mencegah error "column cannot be null" saat mengedit aset dari kategori lain.
-    if (Object.keys(childData).filter(key => childData[key]).length === 0) return;
+    if (Object.keys(childData).filter(key => childData[key] !== undefined && childData[key] !== '' && childData[key] !== null).length === 0) return;
 
     const [existing] = await connection.query(`SELECT asset_id FROM ${tableName} WHERE asset_id = ?`, [assetId]);
 
@@ -946,3 +952,4 @@ module.exports = router;
 ---
 ## 4. Sinkronisasi Database Otomatis (Penting!)
 Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCADE` ke *foreign key* tabel-tabel anak. Ini akan membuat penghapusan data menjadi otomatis dan aman, ditangani langsung oleh database. Jika belum, lihat panduan sebelumnya untuk perintah SQL yang diperlukan.
+
