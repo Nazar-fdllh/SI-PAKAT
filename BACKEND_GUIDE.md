@@ -70,6 +70,9 @@ JWT_SECRET=kunci-rahasia-yang-sangat-aman
 RECAPTCHA_SECRET_KEY=MASUKKAN_KUNCI_RAHASIA_ANDA_DISINI
 
 # Konfigurasi Email untuk Reset Password
+# Catatan: Anda bisa menggunakan domain email Anda sendiri (cth: admin@sipakat.com).
+# Pastikan EMAIL_HOST, PORT, USER, dan PASS sesuai dengan pengaturan SMTP dari penyedia email Anda.
+# Contoh di bawah adalah untuk akun Gmail standar.
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=email-anda@gmail.com
