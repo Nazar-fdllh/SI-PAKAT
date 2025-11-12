@@ -12,6 +12,7 @@ import { revalidatePath } from 'next/cache';
 const loginSchema = z.object({
   email: z.string().email('Email tidak valid.'),
   password: z.string().min(1, 'Password tidak boleh kosong.'),
+  'g-recaptcha-response': z.string().min(1, 'CAPTCHA diperlukan.'),
 });
 
 export async function login(prevState: any, formData: FormData) {
@@ -32,6 +33,7 @@ export async function login(prevState: any, formData: FormData) {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Kirim semua data yang tervalidasi, termasuk token captcha
         body: JSON.stringify(validatedFields.data),
       }
     );
