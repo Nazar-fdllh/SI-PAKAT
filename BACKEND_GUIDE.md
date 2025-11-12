@@ -621,10 +621,13 @@ exports.getAllAssets = async (req, res) => {
             SELECT 
                 a.id, a.asset_code, a.asset_name, a.classification_id, a.sub_classification_id, 
                 a.identification_of_existence, a.location, a.owner, c.name AS category_name,
-                av.asset_value
+                aa.asset_value
             FROM assets a
             LEFT JOIN classifications c ON a.classification_id = c.id
-            LEFT JOIN asset_values av ON a.id = av.asset_id;
+            LEFT JOIN (
+                SELECT asset_id, asset_value, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
+                FROM asset_assessments
+            ) aa ON a.id = aa.asset_id AND aa.rn = 1;
         `;
         const [assets] = await db.query(query);
         res.json(assets);
@@ -639,17 +642,15 @@ exports.getAssetById = async (req, res) => {
         const { id } = req.params;
         const query = `
             SELECT 
-                a.*, c.name as category_name, av.asset_value, aa.total_score,
+                a.*, c.name as category_name, aa.asset_value, aa.total_score,
                 aa.confidentiality_score, aa.integrity_score, aa.availability_score, 
                 aa.authenticity_score, aa.non_repudiation_score
             FROM assets a
             LEFT JOIN classifications c ON a.classification_id = c.id
             LEFT JOIN (
-                SELECT * FROM asset_assessments
-                ORDER BY assessment_date DESC
-                LIMIT 1
-            ) aa ON a.id = aa.asset_id
-            LEFT JOIN asset_values av ON a.id = av.asset_id
+                SELECT *, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
+                FROM asset_assessments
+            ) aa ON a.id = aa.asset_id AND aa.rn = 1
             WHERE a.id = ?;
         `;
         const [assets] = await db.query(query, [id]);
@@ -661,6 +662,7 @@ exports.getAssetById = async (req, res) => {
         res.status(500).json({ message: 'Gagal mengambil detail aset', error: error.message });
     }
 };
+
 
 // ========================= GET ASSET WITH DETAILS BY ID =========================
 exports.getAssetWithDetailsById = async (req, res) => {
@@ -823,10 +825,15 @@ exports.getReport = async (req, res) => {
     const { categoryId, asset_value } = req.query;
 
     let query = `
-        SELECT a.id, a.asset_code, a.asset_name, a.owner, c.name AS category_name, av.asset_value
+        SELECT 
+            a.id, a.asset_code, a.asset_name, a.owner, c.name AS category_name,
+            aa.asset_value
         FROM assets a
         LEFT JOIN classifications c ON a.classification_id = c.id
-        LEFT JOIN asset_values av ON a.id = av.asset_id
+        LEFT JOIN (
+            SELECT asset_id, asset_value, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
+            FROM asset_assessments
+        ) aa ON a.id = aa.asset_id AND aa.rn = 1
         WHERE 1=1
     `;
     const params = [];
@@ -837,7 +844,7 @@ exports.getReport = async (req, res) => {
     }
 
     if (asset_value && asset_value !== 'Semua') {
-        query += ' AND av.asset_value = ?';
+        query += ' AND aa.asset_value = ?';
         params.push(asset_value);
     }
 
