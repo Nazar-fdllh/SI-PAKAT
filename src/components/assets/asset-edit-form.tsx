@@ -1,7 +1,5 @@
 'use client';
 
-// FORM INI SEKARANG HANYA UNTUK MENGEDIT ASET
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -33,6 +31,7 @@ import { Skeleton } from '../ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 
+const textOnlyRegex = /^[A-Za-z\s]+$/;
 
 const criteria = [
   { id: 'confidentiality_score', label: 'Kerahasiaan (Confidentiality)' },
@@ -54,16 +53,15 @@ const thresholds = {
   low: 5,
 };
 
-// Skema Zod yang diperbarui untuk menyertakan field anak yang bersifat opsional
 const formSchema = z.object({
   // Base Asset
   asset_code: z.string().min(3, 'Kode aset minimal 3 karakter.'),
-  asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.'),
+  asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.').regex(textOnlyRegex, 'Nama aset hanya boleh berisi huruf dan spasi.'),
   classification_id: z.coerce.number({required_error: 'Klasifikasi harus dipilih.'}),
   sub_classification_id: z.coerce.number().optional().nullable(),
-  identification_of_existence: z.string().min(3, 'Identifikasi keberadaan minimal 3 karakter.'),
+  identification_of_existence: z.string().min(3, 'Identifikasi keberadaan minimal 3 karakter.').regex(textOnlyRegex, 'Hanya boleh berisi huruf dan spasi.'),
   location: z.string().min(3, 'Lokasi minimal 3 karakter.'),
-  owner: z.string().min(3, 'Pemilik minimal 3 karakter.'),
+  owner: z.string().min(3, 'Pemilik minimal 3 karakter.').regex(textOnlyRegex, 'Pemilik hanya boleh berisi huruf dan spasi.'),
   
   // Assessment
   confidentiality_score: z.coerce.number().min(1).max(3),
@@ -72,11 +70,11 @@ const formSchema = z.object({
   authenticity_score: z.coerce.number().min(1).max(3),
   non_repudiation_score: z.coerce.number().min(1).max(3),
 
-  // Child table fields (semua opsional)
-  personnel_name: z.string().optional(),
+  // Child table fields
+  personnel_name: z.string().regex(textOnlyRegex, 'Nama personil hanya boleh berisi huruf dan spasi.').optional().or(z.literal('')),
   employee_id_number: z.string().optional(),
-  function: z.string().optional(),
-  position: z.string().optional(),
+  function: z.string().regex(textOnlyRegex, 'Fungsi hanya boleh berisi huruf dan spasi.').optional().or(z.literal('')),
+  position: z.string().regex(textOnlyRegex, 'Posisi hanya boleh berisi huruf dan spasi.').optional().or(z.literal('')),
 
   brand: z.string().optional(),
   model: z.string().optional(),
@@ -101,7 +99,6 @@ const formSchema = z.object({
   last_backup_date: z.string().optional(),
 });
 
-
 type AssetFormValues = z.infer<typeof formSchema>;
 
 interface AssetEditFormProps {
@@ -124,17 +121,14 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
-    // Nilai default akan diisi oleh useEffect setelah data di-fetch
   });
 
-  // useEffect ini adalah kunci utama. Ia berjalan sekali saat komponen dimuat.
   useEffect(() => {
     async function fetchAndSetAssetData() {
       setIsLoading(true);
       try {
         const assetData = await getAssetById(assetId, true);
         
-        // Mengisi form dengan data dari backend
         form.reset({
           asset_code: assetData.asset_code ?? '',
           asset_name: assetData.asset_name ?? '',
@@ -143,13 +137,11 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
           identification_of_existence: assetData.identification_of_existence ?? '',
           location: assetData.location ?? '',
           owner: assetData.owner ?? '',
-          // Skor dari penilaian terakhir
           confidentiality_score: assetData.confidentiality_score ?? 1,
           integrity_score: assetData.integrity_score ?? 1,
           availability_score: assetData.availability_score ?? 1,
           authenticity_score: assetData.authenticity_score ?? 1,
           non_repudiation_score: assetData.non_repudiation_score ?? 1,
-          // Data detail anak
           personnel_name: assetData.personnel_name ?? '',
           employee_id_number: assetData.employee_id_number ?? '',
           function: assetData.function ?? '',
@@ -180,7 +172,7 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
             title: "Gagal Memuat Data Aset",
             description: "Tidak dapat mengambil detail aset untuk diedit."
         });
-        onCancel(); // Tutup dialog jika gagal memuat
+        onCancel();
       } finally {
         setIsLoading(false);
       }
@@ -221,7 +213,6 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
     onSave(payload);
   }
 
-  // Komponen untuk field dinamis
   const DynamicFields = ({ classificationId }: { classificationId: number }) => {
     switch (classificationId) {
       case 1: // SDM & Pihak Ketiga
@@ -231,6 +222,16 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
             <FormField control={form.control} name="employee_id_number" render={({ field }) => ( <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="function" render={({ field }) => ( <FormItem><FormLabel>Fungsi</FormLabel><FormControl><Input placeholder="cth. Manajemen Strategis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="position" render={({ field }) => ( <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth. Kepala Bidang" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+          </div>
+        );
+      case 2: // Sarana Pendukung
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
+            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="last_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Tgl. Perawatan Terakhir</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="next_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Jadwal Perawatan Berikutnya</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 3: // Perangkat Keras
@@ -250,16 +251,6 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
              <FormField control={form.control} name="vendor" render={({ field }) => ( <FormItem><FormLabel>Vendor/Pembuat</FormLabel><FormControl><Input placeholder="cth. Diskominfo" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
              <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Versi</FormLabel><FormControl><Input placeholder="cth. 1.0.0" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
              <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-          </div>
-        );
-      case 2: // Sarana Pendukung
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="last_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Tgl. Perawatan Terakhir</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="next_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Jadwal Perawatan Berikutnya</FormLabel><FormControl><Input type="date" {...field} value={field.value?.split('T')[0] || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 5: // Data & Informasi
@@ -296,7 +287,7 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
         {/* --- Bagian Data Aset Dasar --- */}
         <h3 className="text-lg font-medium font-headline">Detail Aset Dasar</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <FormField control={form.control} name="asset_code" render={({ field }) => ( <FormItem><FormLabel>Kode Aset</FormLabel><FormControl><Input placeholder="cth. ASET-001" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+           <FormField control={form.control} name="asset_code" render={({ field }) => ( <FormItem><FormLabel>Kode Aset</FormLabel><FormControl><Input placeholder="cth. ASET-001" {...field} readOnly /></FormControl><FormMessage /></FormItem> )}/>
            <FormField control={form.control} name="asset_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aset</FormLabel><FormControl><Input placeholder="cth. Server Database Utama" {...field} /></FormControl><FormMessage /></FormItem> )}/>
            <FormField control={form.control} name="classification_id" render={({ field }) => ( <FormItem><FormLabel>Kategori</FormLabel><Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value || '')}><FormControl><SelectTrigger><SelectValue placeholder="Pilih kategori aset" /></SelectTrigger></FormControl><SelectContent>{classifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
            <FormField control={form.control} name="sub_classification_id" render={({ field }) => ( <FormItem><FormLabel>Sub Kategori</FormLabel><Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} value={field.value ? String(field.value) : ''} disabled={filteredSubClassifications.length === 0}><FormControl><SelectTrigger><SelectValue placeholder="Pilih sub-kategori (opsional)" /></SelectTrigger></FormControl><SelectContent>{filteredSubClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
@@ -307,7 +298,6 @@ export default function AssetEditForm({ assetId, classifications, subClassificat
             <FormField control={form.control} name="owner" render={({ field }) => ( <FormItem><FormLabel>Pemilik</FormLabel><FormControl><Input placeholder="cth. Divisi TI" {...field} value={field.value || ''}/></FormControl><FormMessage /></FormItem> )}/>
         </div>
 
-        {/* --- Bagian Field Dinamis Berdasarkan Kategori --- */}
         {watchedClassificationId ? (
           <>
             <Separator className="my-6" />

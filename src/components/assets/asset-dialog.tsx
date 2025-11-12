@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { AssetForm } from './asset-form';
-import AssetEditForm from './asset-edit-form'; // Import form edit yang baru
+import AssetEditForm from './asset-edit-form';
 import type { Asset, Classification, SubClassification } from '@/lib/definitions';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -19,9 +19,10 @@ interface AssetDialogProps {
   asset: Asset | null;
   classifications: Classification[];
   subClassifications: SubClassification[];
+  nextAssetCode?: string;
 }
 
-export function AssetDialog({ isOpen, onOpenChange, onSave, asset, classifications, subClassifications }: AssetDialogProps) {
+export function AssetDialog({ isOpen, onOpenChange, onSave, asset, classifications, subClassifications, nextAssetCode }: AssetDialogProps) {
   const isEditMode = asset !== null;
 
   return (
@@ -51,6 +52,7 @@ export function AssetDialog({ isOpen, onOpenChange, onSave, asset, classificatio
                 subClassifications={subClassifications}
                 onSave={onSave}
                 onCancel={() => onOpenChange(false)}
+                nextAssetCode={nextAssetCode}
               />
             )}
         </ScrollArea>

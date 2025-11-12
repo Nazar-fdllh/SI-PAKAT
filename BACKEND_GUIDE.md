@@ -12,44 +12,43 @@ Dokumen ini berisi panduan lengkap untuk membuat backend RESTful API menggunakan
 - **bcryptjs**: Untuk hashing (enkripsi) password.
 - **cors**: Middleware untuk mengaktifkan Cross-Origin Resource Sharing.
 - **dotenv**: Untuk mengelola variabel lingkungan dari file `.env`.
+- **nodemailer**: Untuk mengirim email (fitur reset password).
+- **axios**: Untuk verifikasi CAPTCHA.
 
 ## 2. Struktur Folder Proyek
-
-Untuk menjaga kode tetap modular dan mudah dikelola, gunakan struktur folder berikut:
 
 ```
 /si-pakat-backend
 |-- /config
-|   |-- db.js               # Konfigurasi koneksi database
+|   |-- db.js
 |-- /controllers
-|   |-- authController.js     # Logika untuk login
-|   |-- userController.js     # Logika CRUD untuk pengguna
-|   |-- assetController.js    # Logika CRUD untuk aset dan data master
-|   `-- reportController.js   # Logika untuk generate laporan
+|   |-- authController.js
+|   |-- userController.js
+|   |-- assetController.js
+|   `-- reportController.js
 |-- /middlewares
-|   |-- authMiddleware.js     # Middleware untuk verifikasi token JWT
-|   `-- roleMiddleware.js     # Middleware untuk otorisasi berbasis peran
+|   |-- authMiddleware.js
+|   |-- roleMiddleware.js
+|   |-- activityLogger.js
+|   |-- captchaMiddleware.js  # BARU
+|   `-- validationMiddleware.js # BARU
 |-- /routes
-|   |-- authRoutes.js         # Rute untuk endpoint autentikasi
-|   |-- userRoutes.js         # Rute untuk endpoint pengguna
-|   |-- assetRoutes.js        # Rute untuk endpoint aset dan data master
-|   `-- reportRoutes.js       # Rute untuk endpoint laporan
-|-- .env                    # File untuk menyimpan variabel lingkungan
+|   |-- authRoutes.js
+|   |-- userRoutes.js
+|   |-- assetRoutes.js
+|   `-- reportRoutes.js
+|-- .env
 |-- package.json
-`-- server.js               # File utama server Express
+`-- server.js
 ```
 
-## 3. Implementasi Kode Berdasarkan Folder
-
-Berikut adalah contoh kode untuk setiap file dalam struktur proyek.
+## 3. Implementasi Kode
 
 ---
 
 ### **File di Root Proyek**
 
 #### `.env`
-
-File ini menyimpan kredensial dan konfigurasi sensitif. Sesuaikan dengan pengaturan Laragon atau server MySQL Anda. **Penting**: `DB_HOST` diubah menjadi `127.0.0.1` untuk menghindari masalah koneksi IPv6.
 
 ```env
 DB_HOST=127.0.0.1
@@ -58,181 +57,92 @@ DB_PASSWORD=
 DB_NAME=si_pakat_db
 PORT=3001
 JWT_SECRET=kunci-rahasia-yang-sangat-aman
-```
 
-#### `server.js` (File Utama)
+# Kunci Rahasia Google reCAPTCHA v2
+RECAPTCHA_SECRET_KEY=MASUKKAN_KUNCI_RAHASIA_ANDA_DISINI
 
-File ini menginisialisasi server Express, menerapkan middleware, dan menghubungkan semua rute. Termasuk rute sementara untuk setup admin pertama kali.
-
-```javascript
-// server.js
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const db = require('./config/db');
-const bcrypt = require('bcryptjs');
-
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const assetRoutes = require('./routes/assetRoutes');
-const reportRoutes = require('./routes/reportRoutes');
-
-const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Rute sementara untuk setup admin pertama kali
-// Cukup akses http://localhost:3001/setup-admin di browser Anda SATU KALI.
-app.get('/setup-admin', async (req, res) => {
-    try {
-        const adminEmail = 'admin@sipakat.com';
-        const adminPassword = 'password123';
-        const hashedAdminPassword = bcrypt.hashSync(adminPassword, 8);
-
-        // Periksa apakah admin sudah ada
-        const [adminUsers] = await db.query('SELECT * FROM users WHERE email = ?', [adminEmail]);
-        if (adminUsers.length > 0) {
-            await db.execute('UPDATE users SET password = ? WHERE email = ?', [hashedAdminPassword, adminEmail]);
-            res.status(200).send('Password admin utama telah di-reset. Hapus rute ini dari server.js setelah selesai.');
-        } else {
-            await db.execute(
-                'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
-                ['Admin Utama', adminEmail, hashedAdminPassword, 1] // role_id 1 untuk Administrator
-            );
-            res.status(201).send('Pengguna admin utama berhasil dibuat. Hapus rute ini dari server.js setelah selesai.');
-        }
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Gagal melakukan setup awal: ' + error.message);
-    }
-});
-
-
-// Routes
-app.get('/', (req, res) => {
-    res.send('API SI-PAKAT Berjalan...');
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/assets', assetRoutes);
-app.use('/api/reports', reportRoutes);
-
-// Jalankan Server
-app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
-});
-```
-
----
-
-### **Folder `config`**
-
-#### `/config/db.js`
-
-Konfigurasi koneksi ke database MySQL menggunakan `mysql2/promise`.
-
-```javascript
-// /config/db.js
-const mysql = require('mysql2/promise');
-
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
-
-pool.getConnection()
-    .then(connection => {
-        console.log('Berhasil terhubung ke database MySQL.');
-        connection.release();
-    })
-    .catch(err => {
-        console.error('Gagal terhubung ke database:', err);
-    });
-
-module.exports = pool;
+# Konfigurasi Email untuk Reset Password
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=email-anda@gmail.com
+EMAIL_PASS=password-aplikasi-anda
 ```
 
 ---
 
 ### **Folder `middlewares`**
 
-#### `/middlewares/authMiddleware.js`
-
-Middleware untuk memverifikasi token JWT dari header `Authorization`.
+#### `/middlewares/captchaMiddleware.js` (BARU)
 
 ```javascript
-// /middlewares/authMiddleware.js
-const jwt = require('jsonwebtoken');
+const axios = require('axios');
 
-const verifyToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer <TOKEN>"
+exports.verifyCaptcha = async (req, res, next) => {
+    const token = req.body['g-recaptcha-response'];
 
+    // Untuk pengembangan, token dummy bisa dilewati
+    if (process.env.NODE_ENV !== 'production' && token === 'DUMMY_TOKEN_FOR_DEVELOPMENT') {
+        return next();
+    }
+    
     if (!token) {
-        return res.status(403).send({ message: "Token tidak disediakan." });
+        return res.status(400).json({ message: "Verifikasi CAPTCHA diperlukan." });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).send({ message: "Tidak diotorisasi! Token tidak valid." });
-        }
-        req.userId = decoded.id;
-        req.userRole = decoded.role;
-        next();
-    });
-};
+    try {
+        const response = await axios.post(
+            `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`
+        );
 
-module.exports = { verifyToken };
+        if (response.data.success) {
+            next();
+        } else {
+            return res.status(400).json({ message: "Verifikasi CAPTCHA gagal." });
+        }
+    } catch (error) {
+        console.error("CAPTCHA verification error:", error);
+        return res.status(500).json({ message: "Error saat memverifikasi CAPTCHA." });
+    }
+};
 ```
 
-#### `/middlewares/roleMiddleware.js`
-
-Middleware untuk membatasi akses endpoint berdasarkan peran pengguna.
+#### `/middlewares/validationMiddleware.js` (BARU)
 
 ```javascript
-// /middlewares/roleMiddleware.js
-const checkRole = (roles) => {
+const textOnlyRegex = /^[A-Za-z\s]+$/;
+
+exports.validateTextOnly = (fields) => {
     return (req, res, next) => {
-        if (!req.userRole || !roles.includes(req.userRole)) {
-            return res.status(403).send({ message: "Akses ditolak. Peran tidak memadai." });
+        for (const field of fields) {
+            if (req.body[field] && !textOnlyRegex.test(req.body[field])) {
+                return res.status(400).json({
+                    message: `Input tidak valid. Field '${field}' hanya boleh berisi huruf dan spasi.`
+                });
+            }
         }
         next();
     };
 };
-
-const isAdmin = checkRole(['Administrator']);
-const isAssetManager = checkRole(['Administrator', 'Manajer Aset']);
-const isAuditor = checkRole(['Administrator', 'Auditor']);
-
-module.exports = { isAdmin, isAssetManager, isAuditor, checkRole };
 ```
 
 ---
 
 ### **Folder `controllers`**
 
-#### `/controllers/authController.js`
+#### `/controllers/authController.js` (Update)
 
-Logika untuk menangani login pengguna, memvalidasi kredensial, dan membuat token JWT.
+Tambahkan fungsi `forgotPassword` dan `resetPassword`.
 
 ```javascript
 // /controllers/authController.js
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
-exports.login = async (req, res) => {
+// Fungsi login yang sudah ada
+exports.login = async (req, res, next) => { // Tambahkan 'next' untuk chaining middleware
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -250,18 +160,22 @@ exports.login = async (req, res) => {
         }
 
         const user = rows[0];
-
         const passwordIsValid = bcrypt.compareSync(password, user.password);
 
         if (!passwordIsValid) {
             return res.status(401).json({ message: "Password salah." });
         }
 
+        await db.execute('UPDATE users SET last_login_at = NOW() WHERE id = ?', [user.id]);
+
         const token = jwt.sign(
             { id: user.id, role: user.role, name: user.name, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: 86400 } // 24 jam
         );
+        
+        // Simpan data user ke request untuk logger
+        req.userId = user.id;
 
         res.status(200).json({
             id: user.id,
@@ -270,488 +184,152 @@ exports.login = async (req, res) => {
             role: user.role,
             accessToken: token
         });
+        
+        // Panggil next() agar activityLogger bisa berjalan
+        next();
 
     } catch (error) {
         res.status(500).json({ message: "Error server internal.", error: error.message });
     }
 };
-```
 
-#### `/controllers/userController.js`
+// Konfigurasi Nodemailer
+const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT || '587'),
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+});
 
-Logika CRUD (Create, Read, Update, Delete) untuk entitas Pengguna.
-
-```javascript
-// /controllers/userController.js
-const db = require('../config/db');
-const bcrypt = require('bcryptjs');
-
-// Dapatkan semua pengguna
-exports.getAllUsers = async (req, res) => {
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
     try {
-        const [users] = await db.query(
-            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id"
-        );
-        res.json(users);
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.status(200).json({ message: "Jika email Anda terdaftar, Anda akan menerima link reset password." });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        await db.execute('INSERT INTO password_resets (email, token) VALUES (?, ?)', [email, token]);
+
+        const resetLink = `http://localhost:9002/reset-password?token=${token}`;
+
+        await transporter.sendMail({
+            from: `"SI-PAKAT Admin" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: "Reset Password Akun SI-PAKAT",
+            html: `<p>Klik link ini untuk mereset password Anda: <a href="${resetLink}">${resetLink}</a>. Link ini kedaluwarsa dalam 1 jam.</p>`,
+        });
+
+        res.status(200).json({ message: "Link reset password telah dikirim ke email Anda." });
+
     } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data pengguna', error: error.message });
+        console.error("Forgot Password Error:", error);
+        res.status(500).json({ message: "Gagal mengirim email reset." });
     }
 };
 
-// Dapatkan pengguna berdasarkan ID
-exports.getUserById = async (req, res) => {
+exports.resetPassword = async (req, res, next) => {
+    const { token, password } = req.body;
     try {
         const [rows] = await db.query(
-            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", 
-            [req.params.id]
+            'SELECT * FROM password_resets WHERE token = ? AND created_at > NOW() - INTERVAL 1 HOUR',
+            [token]
         );
+
         if (rows.length === 0) {
-            return res.status(404).json({ message: "Pengguna tidak ditemukan" });
+            return res.status(400).json({ message: "Token tidak valid atau telah kedaluwarsa." });
         }
-        res.json(rows[0]);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data pengguna', error: error.message });
-    }
-};
 
-// Buat pengguna baru
-exports.createUser = async (req, res) => {
-    const { username, email, password, role_id } = req.body;
-    try {
+        const resetRequest = rows[0];
+        const [userRows] = await db.query('SELECT id FROM users WHERE email = ?', [resetRequest.email]);
+        if (userRows.length === 0) {
+             return res.status(404).json({ message: "Pengguna tidak ditemukan." });
+        }
+        
+        req.userId = userRows[0].id; // Set userId untuk logger
         const hashedPassword = bcrypt.hashSync(password, 8);
-        const [result] = await db.execute(
-            'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
-            [username, email, hashedPassword, role_id]
-        );
-        res.status(201).json({ id: result.insertId, username, email, role_id });
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal menambah pengguna', error: error.message });
-    }
-};
 
-// Update pengguna
-exports.updateUser = async (req, res) => {
-    const userIdToUpdate = req.params.id;
-    const currentUserId = req.userId;
-    const currentUserRole = req.userRole;
+        await db.execute('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, resetRequest.email]);
+        await db.execute('DELETE FROM password_resets WHERE token = ?', [token]);
 
-    // Cek otorisasi: pengguna bisa update diri sendiri, atau admin bisa update siapa saja
-    if (Number(userIdToUpdate) !== Number(currentUserId) && currentUserRole !== 'Administrator') {
-         return res.status(403).json({ message: 'Akses ditolak. Anda hanya bisa memperbarui profil Anda sendiri.' });
-    }
-
-    const { username, email, password, role_id } = req.body;
-    let query = 'UPDATE users SET username = ?, email = ?';
-    const params = [username, email];
-
-    // Hanya admin yang bisa mengubah role_id
-    if (currentUserRole === 'Administrator' && role_id) {
-        query += ', role_id = ?';
-        params.push(role_id);
-    }
-    
-    // Jika password diisi, hash dan update
-    if (password) {
-        const hashedPassword = bcrypt.hashSync(password, 8);
-        query += ', password = ?';
-        params.push(hashedPassword);
-    }
-
-    query += ' WHERE id = ?';
-    params.push(userIdToUpdate);
-
-    try {
-        await db.execute(query, params);
-        res.json({ message: 'Pengguna berhasil diperbarui' });
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal memperbarui pengguna', error: error.message });
-    }
-};
-
-// Hapus pengguna
-exports.deleteUser = async (req, res) => {
-    const userIdToDelete = req.params.id;
-
-    // Perlindungan: Jangan izinkan penghapusan Admin Utama (ID=1).
-    if (Number(userIdToDelete) === 1) {
-        return res.status(403).json({ message: 'Pengguna sistem ini tidak dapat dihapus.' });
-    }
-        
-    const connection = await db.getConnection();
-    try {
-        await connection.beginTransaction();
-
-        // 1. Hapus semua catatan penilaian yang terkait dengan pengguna ini.
-        await connection.execute(
-            'DELETE FROM asset_assessments WHERE assessed_by = ?',
-            [userIdToDelete]
-        );
-        
-        // 2. Setelah penilaian dihapus, hapus pengguna asli.
-        await connection.execute('DELETE FROM users WHERE id = ?', [userIdToDelete]);
-        
-        await connection.commit();
-        res.status(204).send();
+        res.status(200).json({ message: "Password Anda telah berhasil direset. Silakan login." });
+        next();
 
     } catch (error) {
-        await connection.rollback();
-        res.status(500).json({ message: 'Gagal menghapus pengguna', error: error.message });
-    } finally {
-        connection.release();
+        console.error("Reset Password Error:", error);
+        res.status(500).json({ message: "Gagal mereset password." });
     }
 };
 ```
 
-#### `/controllers/assetController.js`
+#### `/controllers/assetController.js` (Update)
 
-Logika CRUD untuk Aset dan sekarang juga untuk mengambil data master.
+Tambahkan fungsi `getNextAssetCode`.
 
 ```javascript
 // /controllers/assetController.js
 const db = require('../config/db');
 
-// Helper function to safely handle undefined values for SQL queries
-const safe = (v) => v === undefined ? null : v;
+// ... fungsi-fungsi lainnya (getAllAssets, getAssetById, dll) ...
 
-// Helper function to manage child table data
-const manageChildAsset = async (connection, classificationId, assetId, data) => {
-    const childTableMap = {
-        1: { name: 'human_resource_details', fields: ['personnel_name', 'employee_id_number', 'function', 'unit', 'position', 'contact_info', 'contract_start_date', 'contract_end_date'] },
-        2: { name: 'data_information_details', fields: ['storage_format', 'validity_period', 'sensitivity_level', 'storage_location_detail', 'retention_policy', 'last_backup_date'] },
-        3: { name: 'hardware_details', fields: ['brand', 'model', 'serial_number', 'specification', 'condition', 'purchase_date', 'warranty_end_date'] },
-        4: { name: 'software_details', fields: ['application_name', 'vendor', 'status', 'version', 'license_key', 'installation_date', 'expiration_date'] },
-        5: { name: 'supporting_facility_details', fields: ['specification', 'condition', 'last_maintenance_date', 'next_maintenance_date', 'capacity'] },
-    };
-
-    const tableInfo = childTableMap[classificationId];
-    if (!tableInfo) return; // Exit if classification has no child table
-
-    const { name: tableName, fields: validFields } = tableInfo;
-
-    // Extract only the relevant fields for the child table from the request body
-    const childData = {};
-    for (const field of validFields) {
-        if (data[field] !== undefined) {
-            childData[field] = data[field];
-        }
-    }
-    
-    // If no child data is present in the request body, do nothing
-    if (Object.keys(childData).length === 0) return;
-
-    // Check if a record already exists for this asset
-    const [existing] = await connection.query(`SELECT asset_id FROM ${tableName} WHERE asset_id = ?`, [assetId]);
-
-    if (existing.length > 0) {
-        // Update existing record
-        const fieldsToUpdate = Object.keys(childData).map(key => `${key} = ?`).join(', ');
-        const params = [...Object.values(childData).map(safe), assetId];
-        await connection.execute(`UPDATE ${tableName} SET ${fieldsToUpdate} WHERE asset_id = ?`, params);
-    } else {
-        // Insert new record
-        childData.asset_id = assetId; // Add the foreign key
-        const fields = Object.keys(childData).join(', ');
-        const placeholders = Object.keys(childData).map(() => '?').join(', ');
-        const params = Object.values(childData).map(safe);
-        await connection.execute(`INSERT INTO ${tableName} (${fields}) VALUES (${placeholders})`, params);
-    }
-};
-
-
-// ========================= GET ALL ASSETS =========================
-exports.getAllAssets = async (req, res) => {
+// ========================= GET NEXT ASSET CODE =========================
+exports.getNextAssetCode = async (req, res) => {
     try {
-        const [assets] = await db.query(`
-            SELECT 
-                a.*, 
-                c.name as category_name,
-                (SELECT aa.asset_value 
-                 FROM asset_assessments aa 
-                 WHERE aa.asset_id = a.id 
-                 ORDER BY aa.assessment_date DESC 
-                 LIMIT 1) as asset_value
-            FROM assets a
-            LEFT JOIN classifications c ON a.classification_id = c.id
-        `);
-        res.json(assets);
-    } catch (error) {
-        res.status(500).json({ 
-            message: 'Gagal mengambil data aset', 
-            error: error.message 
-        });
-    }
-};
-
-// ========================= GET ASSET BY ID =========================
-exports.getAssetById = async (req, res) => {
-    try {
-        const [asset] = await db.query(`
-            SELECT 
-                a.*, 
-                c.name as category_name,
-                aa.asset_value,
-                aa.total_score,
-                aa.confidentiality_score,
-                aa.integrity_score,
-                aa.availability_score,
-                aa.authenticity_score,
-                aa.non_repudiation_score
-            FROM assets a
-            LEFT JOIN classifications c ON a.classification_id = c.id
-            LEFT JOIN (
-                SELECT *, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
-                FROM asset_assessments
-            ) aa ON a.id = aa.asset_id AND aa.rn = 1
-            WHERE a.id = ?
-        `, [req.params.id]);
-
-        if (asset.length === 0) {
-            return res.status(404).json({ message: 'Aset tidak ditemukan' });
-        }
-        res.json(asset[0]);
-    } catch (error) {
-        res.status(500).json({ 
-            message: 'Gagal mengambil data aset', 
-            error: error.message 
-        });
-    }
-};
-
-// ========================= CREATE ASSET =========================
-exports.createAsset = async (req, res) => {
-    const connection = await db.getConnection();
-    try {
-        await connection.beginTransaction();
-
-        const { 
-            asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, 
-            location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
-            authenticity_score, non_repudiation_score
-        } = req.body;
-
-        // 1. Insert ke tabel assets
-        const [assetResult] = await connection.execute(
-            `INSERT INTO assets (
-                asset_code, asset_name, classification_id, sub_classification_id, 
-                identification_of_existence, location, owner
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [
-                safe(asset_code), safe(asset_name), safe(classification_id), safe(sub_classification_id),
-                safe(identification_of_existence), safe(location), safe(owner)
-            ]
-        );
-        const newAssetId = assetResult.insertId;
-
-        // 2. Insert ke tabel penilaian
-        await connection.execute(
-            `INSERT INTO asset_assessments (
-                asset_id, assessed_by, confidentiality_score, integrity_score, availability_score,
-                authenticity_score, non_repudiation_score, assessment_date, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-            [
-                newAssetId, safe(assessed_by), safe(confidentiality_score), safe(integrity_score),
-                safe(availability_score), safe(authenticity_score), safe(non_repudiation_score),
-                'Penilaian awal saat pembuatan aset'
-            ]
-        );
+        const [rows] = await db.query("SELECT asset_code FROM assets ORDER BY id DESC LIMIT 1");
         
-        // 3. Insert ke tabel detail anak
-        await manageChildAsset(connection, classification_id, newAssetId, req.body);
-
-        await connection.commit();
-
-        // Ambil kembali data yang baru dibuat
-        const [newAsset] = await connection.query(`
-            SELECT 
-                a.*, 
-                c.name as category_name,
-                aa.asset_value,
-                aa.total_score,
-                aa.confidentiality_score,
-                aa.integrity_score,
-                aa.availability_score,
-                aa.authenticity_score,
-                aa.non_repudiation_score
-            FROM assets a
-            LEFT JOIN classifications c ON a.classification_id = c.id
-            LEFT JOIN (
-                SELECT *, ROW_NUMBER() OVER(PARTITION BY asset_id ORDER BY assessment_date DESC) as rn
-                FROM asset_assessments
-            ) aa ON a.id = aa.asset_id AND aa.rn = 1
-            WHERE a.id = ?
-        `, [newAssetId]);
-
-        res.status(201).json(newAsset[0]);
-
-    } catch (error) {
-        await connection.rollback();
-        console.error("Create Asset Error:", error);
-        res.status(500).json({ 
-            message: 'Gagal menambah aset dan penilaiannya', 
-            error: error.message 
-        });
-    } finally {
-        connection.release();
-    }
-};
-
-// ========================= UPDATE ASSET =========================
-exports.updateAsset = async (req, res) => {
-    const assetId = req.params.id;
-    const { 
-        asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, 
-        location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, 
-        authenticity_score, non_repudiation_score, notes
-    } = req.body;
-
-    const connection = await db.getConnection();
-    try {
-        await connection.beginTransaction();
-
-        // --- Update data aset utama ---
-        const assetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
-        const fieldsToUpdate = [];
-        const params = [];
-
-        for (const [key, value] of Object.entries(assetFields)) {
-            if (value !== undefined) {
-                fieldsToUpdate.push(`${key} = ?`);
-                params.push(safe(value));
-            }
-        }
-
-        if (fieldsToUpdate.length > 0) {
-            // Validasi klasifikasi
-            if (classification_id !== undefined && classification_id !== null) {
-                const [checkClass] = await connection.query(
-                    "SELECT id FROM classifications WHERE id = ?",
-                    [classification_id]
-                );
-                if (checkClass.length === 0) {
-                    throw new Error(`Klasifikasi dengan id=${classification_id} tidak ditemukan`);
-                }
-            }
-
-            params.push(assetId);
-            const query = `UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
-            await connection.execute(query, params);
+        let nextCode = "AST-0001"; // Default jika belum ada aset
+        if (rows.length > 0) {
+            const lastCode = rows[0].asset_code;
+            const parts = lastCode.split('-');
+            const lastNumber = parseInt(parts[1], 10);
+            const nextNumber = lastNumber + 1;
+            nextCode = `AST-${String(nextNumber).padStart(4, '0')}`;
         }
         
-        // --- Update data detail anak ---
-        if (classification_id) {
-            await manageChildAsset(connection, classification_id, assetId, req.body);
-        }
-
-
-        // --- Tambahkan penilaian baru jika skor dikirim ---
-        const hasNewAssessment = (
-            confidentiality_score !== undefined ||
-            integrity_score !== undefined ||
-            availability_score !== undefined ||
-            authenticity_score !== undefined ||
-            non_repudiation_score !== undefined
-        );
-
-        if (hasNewAssessment) {
-            await connection.execute(
-                `INSERT INTO asset_assessments (
-                    asset_id, assessed_by, confidentiality_score, integrity_score, availability_score, 
-                    authenticity_score, non_repudiation_score, assessment_date, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
-                [
-                    assetId, safe(assessed_by), safe(confidentiality_score), safe(integrity_score),
-                    safe(availability_score), safe(authenticity_score), safe(non_repudiation_score),
-                    safe(notes) || 'Penilaian baru'
-                ]
-            );
-        }
-
-        await connection.commit();
-        res.json({ 
-            message: 'Aset berhasil diperbarui' + (hasNewAssessment ? ' dan penilaian baru ditambahkan.' : '.') 
-        });
+        res.json({ next_code: nextCode });
 
     } catch (error) {
-        await connection.rollback();
-        console.error("Update Asset Error:", error);
         res.status(500).json({ 
-            message: 'Gagal memperbarui aset', 
-            error: error.message 
-        });
-    } finally {
-        connection.release();
-    }
-};
-
-// ========================= DELETE ASSET =========================
-// PENYEDERHANAAN: Sekarang hanya menghapus dari tabel 'assets'.
-// Tabel anak akan terhapus secara otomatis oleh ON DELETE CASCADE.
-exports.deleteAsset = async (req, res) => {
-    const assetId = req.params.id;
-    try {
-        const [result] = await db.execute('DELETE FROM assets WHERE id = ?', [assetId]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Aset tidak ditemukan." });
-        }
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ 
-            message: 'Gagal menghapus aset', 
+            message: 'Gagal membuat kode aset baru', 
             error: error.message 
         });
     }
 };
 
-
-// ========================= MASTER DATA =========================
-exports.getAllRoles = async (req, res) => {
-    try {
-        const [roles] = await db.query("SELECT * FROM roles ORDER BY id");
-        res.json(roles);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data peran', error: error.message });
-    }
-};
-
-exports.getAllClassifications = async (req, res) => {
-    try {
-        const [classifications] = await db.query("SELECT * FROM classifications ORDER BY name");
-        res.json(classifications);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data klasifikasi', error: error.message });
-    }
-};
-
-exports.getAllSubClassifications = async (req, res) => {
-    try {
-        const [subClassifications] = await db.query("SELECT * FROM sub_classifications ORDER BY name");
-        res.json(subClassifications);
-    } catch (error) {
-        res.status(500).json({ message: 'Gagal mengambil data sub-klasifikasi', error: error.message });
-    }
-};
+// ... sisa controller ...
 ```
 
 ---
 
 ### **Folder `routes`**
 
-#### `/routes/authRoutes.js`
+#### `/routes/authRoutes.js` (Update)
 
 ```javascript
 // /routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { logActivity } = require('../middlewares/activityLogger');
+const { verifyCaptcha } = require('../middlewares/captchaMiddleware');
 
-router.post('/login', authController.login);
+// Terapkan verifikasi CAPTCHA pada endpoint login
+router.post('/login', verifyCaptcha, authController.login, logActivity('Login'));
+
+// Rute untuk lupa dan reset password
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword, logActivity('Reset Password'));
 
 module.exports = router;
 ```
 
-#### `/routes/userRoutes.js`
+#### `/routes/userRoutes.js` (Update)
 
-Semua endpoint di sini memerlukan verifikasi token dan peran Administrator.
+Terapkan `validateTextOnly`.
 
 ```javascript
 // /routes/userRoutes.js
@@ -760,33 +338,26 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
+const { logActivity } = require('../middlewares/activityLogger');
+const { validateTextOnly } = require('../middlewares/validationMiddleware');
 
-// Terapkan verifikasi token untuk semua rute pengguna
 router.use(verifyToken);
 
-// === RUTE KHUSUS ADMIN ===
-// Hanya admin yang bisa melihat semua pengguna, membuat, dan menghapus
+// Terapkan validasi untuk field 'username'
+const userValidation = validateTextOnly(['username']);
+
 router.get('/', isAdmin, userController.getAllUsers);
-router.post('/', isAdmin, userController.createUser);
-router.delete('/:id', isAdmin, userController.deleteUser);
-
-
-// === RUTE PENGGUNA UMUM (TERAUTENTIKASI) ===
-// Pengguna bisa melihat detail profil (termasuk miliknya sendiri)
-// Admin juga bisa lewat sini
+router.post('/', isAdmin, userValidation, logActivity('Membuat Pengguna Baru'), userController.createUser);
+router.delete('/:id', isAdmin, logActivity('Menghapus Pengguna'), userController.deleteUser);
 router.get('/:id', userController.getUserById);
-
-// Pengguna bisa memperbarui profilnya sendiri
-// Admin juga bisa memperbarui profil siapa pun
-router.put('/:id', userController.updateUser);
-
+router.put('/:id', userValidation, logActivity('Memperbarui Profil'), userController.updateUser);
 
 module.exports = router;
 ```
 
-#### `/routes/assetRoutes.js`
+#### `/routes/assetRoutes.js` (Update)
 
-Rute ini sekarang juga menangani endpoint untuk data master.
+Tambahkan rute `GET /next-code` dan terapkan validasi teks.
 
 ```javascript
 // /routes/assetRoutes.js
@@ -795,115 +366,31 @@ const router = express.Router();
 const assetController = require('../controllers/assetController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAssetManager } = require('../middlewares/roleMiddleware');
+const { logActivity } = require('../middlewares/activityLogger');
+const { validateTextOnly } = require('../middlewares/validationMiddleware');
+
+const assetValidation = validateTextOnly([
+    'asset_name', 'identification_of_existence', 'owner',
+    'personnel_name', 'function', 'position'
+]);
 
 // --- Master Data Routes ---
-// Semua role terautentikasi bisa mengambil data master
 router.get('/roles', [verifyToken], assetController.getAllRoles);
 router.get('/classifications', [verifyToken], assetController.getAllClassifications);
 router.get('/sub-classifications', [verifyToken], assetController.getAllSubClassifications);
 
 // --- Asset CRUD Routes ---
-// Semua role terautentikasi bisa melihat aset
 router.get('/', [verifyToken], assetController.getAllAssets);
-// PENTING: Rute dengan parameter ID harus diletakkan setelah rute statis
+
+// Rute baru untuk mendapatkan kode aset berikutnya
+router.get('/next-code', [verifyToken, isAssetManager], assetController.getNextAssetCode);
+
+router.get('/details/:id', [verifyToken], assetController.getAssetWithDetailsById); 
 router.get('/:id', [verifyToken], assetController.getAssetById);
 
-// Hanya Manajer Aset & Admin yang bisa melakukan operasi tulis
-router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
-router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
-router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
+router.post('/', [verifyToken, isAssetManager, assetValidation, logActivity('Membuat Aset Baru')], assetController.createAsset);
+router.put('/:id', [verifyToken, isAssetManager, assetValidation, logActivity('Memperbarui Aset')], assetController.updateAsset);
+router.delete('/:id', [verifyToken, isAssetManager, logActivity('Menghapus Aset')], assetController.deleteAsset);
 
 module.exports = router;
 ```
-
-#### `/routes/reportRoutes.js`
-
-Rute ini diproteksi, hanya Auditor dan Admin yang bisa mengakses.
-
-```javascript
-// /routes/reportRoutes.js
-const express = require('express');
-const router = express.Router();
-const reportController = require('../controllers/reportController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const { checkRole } = require('../middlewares/roleMiddleware');
-
-const canAccessReports = checkRole(['Administrator', 'Auditor']);
-
-router.get('/', [verifyToken, canAccessReports], reportController.generateReport);
-
-module.exports = router;
-```
-
-## 5. Menjalankan Backend
-
-1.  Pastikan service Apache dan MySQL di Laragon sudah berjalan.
-2.  Buka terminal di dalam folder `si-pakat-backend`.
-3.  Jalankan perintah: `node server.js`
-4.  Server backend Anda akan berjalan di `http://localhost:3001`.
-
-Anda sekarang bisa menguji setiap endpoint menggunakan Postman atau mengintegrasikannya dengan frontend Next.js Anda.
----
-
-## 6. SINKRONISASI DATABASE OTOMATIS (PENTING!)
-
-Untuk memastikan integritas data antara tabel `assets` dan tabel anaknya (`hardware_details`, `software_details`, dll.), sangat disarankan untuk menggunakan fitur `ON DELETE CASCADE` dari MySQL. Ini akan secara otomatis menghapus data anak ketika data induknya dihapus.
-
-**Jalankan Perintah SQL Berikut SATU KALI di Database Anda:**
-
-Anda bisa menjalankan ini melalui phpMyAdmin, HeidiSQL, atau command line MySQL. Perintah ini akan menghapus constraint lama (jika ada) dan menambahkan yang baru dengan `ON DELETE CASCADE`.
-
-```sql
--- Pastikan Anda memilih database yang benar
--- USE si_pakat_db;
-
--- Untuk tabel human_resource_details
-ALTER TABLE human_resource_details
-DROP FOREIGN KEY IF EXISTS human_resource_details_ibfk_1;
-ALTER TABLE human_resource_details
-ADD CONSTRAINT fk_human_resource_asset
-FOREIGN KEY (asset_id) REFERENCES assets(id)
-ON DELETE CASCADE;
-
--- Untuk tabel data_information_details
-ALTER TABLE data_information_details
-DROP FOREIGN KEY IF EXISTS data_information_details_ibfk_1;
-ALTER TABLE data_information_details
-ADD CONSTRAINT fk_data_info_asset
-FOREIGN KEY (asset_id) REFERENCES assets(id)
-ON DELETE CASCADE;
-
--- Untuk tabel hardware_details
-ALTER TABLE hardware_details
-DROP FOREIGN KEY IF EXISTS hardware_details_ibfk_1;
-ALTER TABLE hardware_details
-ADD CONSTRAINT fk_hardware_asset
-FOREIGN KEY (asset_id) REFERENCES assets(id)
-ON DELETE CASCADE;
-
--- Untuk tabel software_details
-ALTER TABLE software_details
-DROP FOREIGN KEY IF EXISTS software_details_ibfk_1;
-ALTER TABLE software_details
-ADD CONSTRAINT fk_software_asset
-FOREIGN KEY (asset_id) REFERENCES assets(id)
-ON DELETE CASCADE;
-
--- Untuk tabel supporting_facility_details
-ALTER TABLE supporting_facility_details
-DROP FOREIGN KEY IF EXISTS supporting_facility_details_ibfk_1;
-ALTER TABLE supporting_facility_details
-ADD CONSTRAINT fk_supporting_facility_asset
-FOREIGN KEY (asset_id) REFERENCES assets(id)
-ON DELETE CASCADE;
-
--- Untuk tabel asset_assessments (penting juga)
-ALTER TABLE asset_assessments
-DROP FOREIGN KEY IF EXISTS asset_assessments_ibfk_1;
-ALTER TABLE asset_assessments
-ADD CONSTRAINT fk_assessment_asset
-FOREIGN KEY (asset_id) REFERENCES assets(id)
-ON DELETE CASCADE;
-```
-
-Dengan menjalankan perintah di atas, Anda tidak perlu lagi menghapus data anak secara manual di kode backend. Database akan menanganinya secara otomatis, yang lebih aman dan efisien. Kode di `assetController.js` telah disederhanakan untuk mengandalkan perilaku ini.

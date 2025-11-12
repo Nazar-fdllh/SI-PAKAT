@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import AssetTable from '@/components/assets/asset-table';
-import { getAllAssets, createAsset, updateAsset, deleteAsset, getAllClassifications, getAllSubClassifications } from '@/lib/data';
+import { getAllAssets, createAsset, updateAsset, deleteAsset, getAllClassifications, getAllSubClassifications, getNextAssetCode } from '@/lib/data';
 import type { Asset, Classification, SubClassification } from '@/lib/definitions';
 import { AssetDialog } from '@/components/assets/asset-dialog';
 import { useSession } from '@/hooks/use-session';
@@ -17,6 +17,7 @@ export default function AssetsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [nextAssetCode, setNextAssetCodeState] = useState<string>('');
   const { user, role } = useSession();
 
   const fetchData = async () => {
@@ -55,14 +56,23 @@ export default function AssetsPage() {
 
   const canManage = role.name === 'Administrator' || role.name === 'Manajer Aset';
 
-  const handleAddAsset = () => {
+  const handleAddAsset = async () => {
     setSelectedAsset(null);
-    setDialogOpen(true);
+    try {
+      // Ambil kode aset berikutnya saat dialog tambah dibuka
+      const data = await getNextAssetCode();
+      setNextAssetCodeState(data.next_code);
+      setDialogOpen(true);
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Gagal Mendapatkan Kode Aset',
+        description: 'Tidak dapat menghasilkan kode aset baru dari server.',
+      });
+    }
   };
 
   const handleEditAsset = (asset: Asset) => {
-    // Dengan form terpisah, kita tidak perlu fetch data lagi di sini.
-    // Cukup teruskan asset yang sudah ada (dari tabel) ke dialog.
     setSelectedAsset(asset);
     setDialogOpen(true);
   };
@@ -148,6 +158,7 @@ export default function AssetsPage() {
         asset={selectedAsset}
         classifications={classifications}
         subClassifications={subClassifications}
+        nextAssetCode={nextAssetCode}
       />
     </div>
   );

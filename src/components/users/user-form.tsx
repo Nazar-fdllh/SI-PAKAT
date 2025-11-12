@@ -23,8 +23,10 @@ import {
 import type { User, Role } from '@/lib/definitions';
 import { useEffect } from 'react';
 
+const textOnlyRegex = /^[A-Za-z\s]+$/;
+
 const formSchema = z.object({
-  name: z.string().min(3, 'Nama minimal 3 karakter.'),
+  name: z.string().min(3, 'Nama minimal 3 karakter.').regex(textOnlyRegex, 'Nama hanya boleh berisi huruf dan spasi.'),
   email: z.string().email('Email tidak valid.'),
   password: z.string().optional(),
   role_id: z.coerce.number({ required_error: 'Peran harus dipilih.' }),
@@ -34,7 +36,7 @@ type UserFormValues = z.infer<typeof formSchema>;
 
 interface UserFormProps {
   user: User | null;
-  roles: Role[]; // Roles are now passed as a prop
+  roles: Role[];
   onSave: (user: Partial<User>) => void;
   onCancel: () => void;
 }
@@ -66,7 +68,7 @@ export function UserForm({ user, roles, onSave, onCancel }: UserFormProps) {
         role_id: undefined,
       });
     }
-  }, [user, form.reset]);
+  }, [user, form]);
 
 
   function onSubmit(data: UserFormValues) {

@@ -3,6 +3,7 @@ import { Shield, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { LoginForm } from '@/components/auth/login-form';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 export default function LoginPage() {
   return (
@@ -19,6 +20,14 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <LoginForm />
+             <Separator className="my-4" />
+             <div className="text-center text-sm">
+              <Link href="/forgot-password" passHref>
+                <Button variant="link" className="px-0 font-normal">
+                  Lupa password?
+                </Button>
+              </Link>
+            </div>
           </CardContent>
           <CardFooter>
             <p className="text-xs text-muted-foreground text-center w-full">

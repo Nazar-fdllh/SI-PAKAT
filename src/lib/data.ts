@@ -1,10 +1,10 @@
 import type { User, Asset, Assessment, Classification, SubClassification, Role } from './definitions';
-import { getAuthToken } from './session'; // Import from session.ts
+import { getAuthToken } from './session';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
-// fetchFromApi now accepts the token directly
-async function fetchFromApi<T>(endpoint: string, token: string | undefined, options: RequestInit = {}): Promise<T> {
+async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = await getAuthToken();
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -21,27 +21,18 @@ async function fetchFromApi<T>(endpoint: string, token: string | undefined, opti
             cache: 'no-store',
         });
 
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error(`API Error: ${response.status} ${response.statusText} on ${endpoint}. Body: ${errorBody}`);
-            
-            let errorMessage = `Gagal mengambil data dari server. Status: ${response.status}`;
-            try {
-                const errorJson = JSON.parse(errorBody);
-                if (errorJson.message) {
-                    errorMessage = errorJson.message;
-                }
-            } catch (e) {
-                // Not a JSON response, the body is likely HTML or plain text
-            }
-            throw new Error(errorMessage);
-        }
-
         if (response.status === 204) {
             return null as T;
         }
 
-        return await response.json();
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error(`API Error: ${response.status} on ${endpoint}. Body:`, result);
+            throw new Error(result.message || `Gagal mengambil data dari server. Status: ${response.status}`);
+        }
+
+        return result;
     } catch (error) {
         if (error instanceof TypeError && error.message.includes('fetch failed')) {
              console.error(`Network Error: Could not connect to API at ${API_BASE_URL}${endpoint}. Is the backend server running?`);
@@ -51,70 +42,42 @@ async function fetchFromApi<T>(endpoint: string, token: string | undefined, opti
     }
 }
 
+// --- Auth Data ---
+export const forgotPassword = async (data: { email: string }) => {
+    return fetchFromApi<{ message: string }>('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify(data) });
+};
+export const resetPassword = async (data: { token: string, password: string }) => {
+    return fetchFromApi<{ message: string }>('/api/auth/reset-password', { method: 'POST', body: JSON.stringify(data) });
+};
+
 
 // --- User Data ---
-export const getAllUsers = async () => {
-    const token = await getAuthToken();
-    return fetchFromApi<User[]>('/api/users', token);
-};
-export const createUser = async (data: Partial<User>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<User>('/api/users', token, { method: 'POST', body: JSON.stringify(data) });
-};
-export const updateUser = async (id: number, data: Partial<User>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<User>(`/api/users/${id}`, token, { method: 'PUT', body: JSON.stringify(data) });
-};
-export const deleteUser = async (id: number) => {
-    const token = await getAuthToken();
-    return fetchFromApi<void>(`/api/users/${id}`, token, { method: 'DELETE' });
-};
+export const getAllUsers = async () => fetchFromApi<User[]>('/api/users');
+export const createUser = async (data: Partial<User>) => fetchFromApi<User>('/api/users', { method: 'POST', body: JSON.stringify(data) });
+export const updateUser = async (id: number, data: Partial<User>) => fetchFromApi<User>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteUser = async (id: number) => fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' });
 
 
 // --- Asset Data ---
-export const getAllAssets = async () => {
-    const token = await getAuthToken();
-    return fetchFromApi<Asset[]>('/api/assets', token);
-};
-
+export const getAllAssets = async () => fetchFromApi<Asset[]>('/api/assets');
+export const getNextAssetCode = async () => fetchFromApi<{ next_code: string }>('/api/assets/next-code');
 export const getAssetById = async (id: number | string, getDetails: boolean = false) => {
-    const token = await getAuthToken();
     const endpoint = getDetails ? `/api/assets/details/${id}` : `/api/assets/${id}`;
-    return fetchFromApi<Asset>(endpoint, token);
+    return fetchFromApi<Asset>(endpoint);
 };
-
-export const createAsset = async (data: Partial<Asset & { notes?: string }>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<Asset>('/api/assets', token, { method: 'POST', body: JSON.stringify(data) });
-};
-export const updateAsset = async (id: number, data: Partial<Asset & { notes?: string }>) => {
-    const token = await getAuthToken();
-    return fetchFromApi<{ message: string }>(`/api/assets/${id}`, token, { method: 'PUT', body: JSON.stringify(data) });
-};
-export const deleteAsset = async (id: number) => {
-    const token = await getAuthToken();
-    return fetchFromApi<void>(`/api/assets/${id}`, token, { method: 'DELETE' });
-};
+export const createAsset = async (data: Partial<Asset & { notes?: string }>) => fetchFromApi<Asset>('/api/assets', { method: 'POST', body: JSON.stringify(data) });
+export const updateAsset = async (id: number, data: Partial<Asset & { notes?: string }>) => fetchFromApi<{ message: string }>(`/api/assets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteAsset = async (id: number) => fetchFromApi<void>(`/api/assets/${id}`, { method: 'DELETE' });
 
 
 // --- Report Data ---
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
-    const token = await getAuthToken();
     const params = new URLSearchParams(filters as Record<string, string>);
-    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, token, { method: 'GET' });
+    return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, { method: 'GET' });
 };
 
 
 // --- Master Data (Roles, Classifications) ---
-export const getAllRoles = async () => {
-    const token = await getAuthToken();
-    return fetchFromApi<Role[]>('/api/assets/roles', token);
-};
-export const getAllClassifications = async () => {
-    const token = await getAuthToken();
-    return fetchFromApi<Classification[]>('/api/assets/classifications', token);
-};
-export const getAllSubClassifications = async () => {
-    const token = await getAuthToken();
-    return fetchFromApi<SubClassification[]>('/api/assets/sub-classifications', token);
-};
+export const getAllRoles = async () => fetchFromApi<Role[]>('/api/assets/roles');
+export const getAllClassifications = async () => fetchFromApi<Classification[]>('/api/assets/classifications');
+export const getAllSubClassifications = async () => fetchFromApi<SubClassification[]>('/api/assets/sub-classifications');
