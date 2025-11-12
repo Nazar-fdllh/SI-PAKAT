@@ -40,7 +40,7 @@ export function SidebarNav() {
       href: '/reports',
       label: 'Pelaporan',
       icon: <FileText />,
-      roles: ['Administrator', 'Auditor'],
+      roles: ['Administrator', 'Auditor', 'Manajer Aset'],
     },
     {
       href: '/users',

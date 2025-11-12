@@ -78,8 +78,10 @@ export default function ReportsPage() {
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const allowedRoles = ['Administrator', 'Auditor', 'Manajer Aset'];
+
   useEffect(() => {
-    if (role && role.name !== 'Administrator' && role.name !== 'Auditor') {
+    if (role && !allowedRoles.includes(role.name)) {
       router.push('/dashboard');
       return;
     }
@@ -100,7 +102,7 @@ export default function ReportsPage() {
     }
   }, [role, router]);
 
-  if (!role || (role.name !== 'Administrator' && role.name !== 'Auditor') || isLoading) {
+  if (!role || !allowedRoles.includes(role.name) || isLoading) {
     return <div className="flex justify-center items-center h-full"><p>Memuat atau mengalihkan...</p></div>;
   }
 

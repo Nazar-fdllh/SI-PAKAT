@@ -934,9 +934,11 @@ const express = require('express');
 const router = express.Router();
 const reportController = require('../controllers/reportController');
 const { verifyToken } = require('../middlewares/authMiddleware');
-const { isAuditor } = require('../middlewares/roleMiddleware');
+const { checkRole } = require('../middlewares/roleMiddleware');
 
-router.get('/', [verifyToken, isAuditor], reportController.getReport);
+const canAccessReports = checkRole(['Administrator', 'Auditor', 'Manajer Aset']);
+
+router.get('/', [verifyToken, canAccessReports], reportController.getReport);
 
 module.exports = router;
 ```
@@ -944,4 +946,3 @@ module.exports = router;
 ---
 ## 4. Sinkronisasi Database Otomatis (Penting!)
 Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCADE` ke *foreign key* tabel-tabel anak. Ini akan membuat penghapusan data menjadi otomatis dan aman, ditangani langsung oleh database. Jika belum, lihat panduan sebelumnya untuk perintah SQL yang diperlukan.
-```
