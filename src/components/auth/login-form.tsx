@@ -40,7 +40,7 @@ const ReCAPTCHA = ({
       <p className="text-xs text-muted-foreground text-center">
         [reCAPTCHA v2 Checkbox Placeholder]
         <br />
-        To implement, use 'react-google-recaptcha'.
+        To implement, use 'react-google-recaptcha' and add your Site Key to .env.local
       </p>
     </div>
   );
@@ -109,16 +109,16 @@ export function LoginForm() {
         NOTE: To enable reCAPTCHA:
         1. Install 'react-google-recaptcha' and its types: 
            `npm install react-google-recaptcha @types/react-google-recaptcha`
-        2. Uncomment the component below and the script in `layout.tsx`.
-        3. Provide your Site Key from Google reCAPTCHA admin console.
+        2. Provide your Site Key from Google reCAPTCHA admin console in .env.local
+           NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_site_key_here
       */}
-      {/* <ReCAPTCHA
+      <ReCAPTCHA
         reCaptchaRef={reCaptchaRef}
-        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || 'dummy-site-key'}
         onChange={handleCaptchaChange}
         onErrored={() => toast({ variant: "destructive", title: "CAPTCHA Load Error" })}
         onExpired={() => toast({ variant: "destructive", title: "CAPTCHA Expired" })}
-      /> */}
+      />
 
       {state?.message && (
         <Alert variant="destructive">
