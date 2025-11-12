@@ -28,7 +28,8 @@ Untuk menjaga kode tetap modular dan mudah dikelola, gunakan struktur folder ber
 |   `-- reportController.js   # Logika untuk generate laporan
 |-- /middlewares
 |   |-- authMiddleware.js     # Middleware untuk verifikasi token JWT
-|   `-- roleMiddleware.js     # Middleware untuk otorisasi berbasis peran
+|   |-- roleMiddleware.js     # Middleware untuk otorisasi berbasis peran
+|   `-- activityLogger.js   # Middleware untuk mencatat aktivitas (BARU)
 |-- /routes
 |   |-- authRoutes.js         # Rute untuk endpoint autentikasi
 |   |-- userRoutes.js         # Rute untuk endpoint pengguna
@@ -257,6 +258,10 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: "Password salah." });
         }
 
+        // --- BARU: Update last_login_at ---
+        await db.execute('UPDATE users SET last_login_at = NOW() WHERE id = ?', [user.id]);
+        // ------------------------------------
+
         const token = jwt.sign(
             { id: user.id, role: user.role, name: user.name, email: user.email },
             process.env.JWT_SECRET,
@@ -290,7 +295,7 @@ const bcrypt = require('bcryptjs');
 exports.getAllUsers = async (req, res) => {
     try {
         const [users] = await db.query(
-            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id"
+            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role, u.last_login_at FROM users u JOIN roles r ON u.role_id = r.id"
         );
         res.json(users);
     } catch (error) {
@@ -302,7 +307,7 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
     try {
         const [rows] = await db.query(
-            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", 
+            "SELECT u.id, u.username, u.username as name, u.email, u.role_id, r.name as role, u.last_login_at FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", 
             [req.params.id]
         );
         if (rows.length === 0) {
@@ -797,8 +802,9 @@ exports.getAllSubClassifications = async (req, res) => {
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { logActivity } = require('../middlewares/activityLogger');
 
-router.post('/login', authController.login);
+router.post('/login', authController.login, logActivity('Login'));
 
 module.exports = router;
 ```
@@ -814,6 +820,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
+const { logActivity } = require('../middlewares/activityLogger');
 
 // Terapkan verifikasi token untuk semua rute pengguna
 router.use(verifyToken);
@@ -821,8 +828,8 @@ router.use(verifyToken);
 // === RUTE KHUSUS ADMIN ===
 // Hanya admin yang bisa melihat semua pengguna, membuat, dan menghapus
 router.get('/', isAdmin, userController.getAllUsers);
-router.post('/', isAdmin, userController.createUser);
-router.delete('/:id', isAdmin, userController.deleteUser);
+router.post('/', isAdmin, logActivity('Membuat Pengguna Baru'), userController.createUser);
+router.delete('/:id', isAdmin, logActivity('Menghapus Pengguna'), userController.deleteUser);
 
 
 // === RUTE PENGGUNA UMUM (TERAUTENTIKASI) ===
@@ -832,7 +839,7 @@ router.get('/:id', userController.getUserById);
 
 // Pengguna bisa memperbarui profilnya sendiri
 // Admin juga bisa memperbarui profil siapa pun
-router.put('/:id', userController.updateUser);
+router.put('/:id', logActivity('Memperbarui Profil'), userController.updateUser);
 
 
 module.exports = router;
@@ -849,6 +856,7 @@ const router = express.Router();
 const assetController = require('../controllers/assetController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAssetManager } = require('../middlewares/roleMiddleware');
+const { logActivity } = require('../middlewares/activityLogger');
 
 // --- Master Data Routes ---
 // Semua role terautentikasi bisa mengambil data master
@@ -865,9 +873,9 @@ router.get('/details/:id', [verifyToken], assetController.getAssetWithDetailsByI
 router.get('/:id', [verifyToken], assetController.getAssetById);
 
 // Hanya Manajer Aset & Admin yang bisa melakukan operasi tulis
-router.post('/', [verifyToken, isAssetManager], assetController.createAsset);
-router.put('/:id', [verifyToken, isAssetManager], assetController.updateAsset);
-router.delete('/:id', [verifyToken, isAssetManager], assetController.deleteAsset);
+router.post('/', [verifyToken, isAssetManager, logActivity('Membuat Aset Baru')], assetController.createAsset);
+router.put('/:id', [verifyToken, isAssetManager, logActivity('Memperbarui Aset')], assetController.updateAsset);
+router.delete('/:id', [verifyToken, isAssetManager, logActivity('Menghapus Aset')], assetController.deleteAsset);
 
 module.exports = router;
 ```
@@ -963,5 +971,3 @@ ON DELETE CASCADE;
 ```
 
 Dengan menjalankan perintah di atas, Anda tidak perlu lagi menghapus data anak secara manual di kode backend. Database akan menanganinya secara otomatis, yang lebih aman dan efisien. Kode di `assetController.js` telah disederhanakan untuk mengandalkan perilaku ini.
-
-    
