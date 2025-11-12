@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import { login } from '@/lib/actions';
 import { Label } from '@/components/ui/label';
@@ -9,70 +10,40 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-// Placeholder for ReCAPTCHA - This component needs to be implemented
-const ReCAPTCHA = ({
-  sitekey,
-  onChange,
-  onErrored,
-  onExpired,
-  reCaptchaRef,
-}: {
-  sitekey: string;
-  onChange: (token: string | null) => void;
-  onErrored: () => void;
-  onExpired: () => void;
-  reCaptchaRef: React.RefObject<any>;
-}) => {
-  // In a real app, you would use a library like 'react-google-recaptcha'
-  // and pass the ref to it.
-  useEffect(() => {
-    console.warn("reCAPTCHA is not fully implemented. Please use a library like 'react-google-recaptcha'.");
-  }, []);
-
-  return (
-    <div 
-      ref={reCaptchaRef} 
-      data-sitekey={sitekey}
-      className="g-recaptcha p-2 border rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
-      style={{ minHeight: '78px' }}
-    >
-      <p className="text-xs text-muted-foreground text-center">
-        [reCAPTCHA v2 Checkbox Placeholder]
-        <br />
-        To implement, use 'react-google-recaptcha' and add your Site Key to .env.local
-      </p>
-    </div>
-  );
-};
-
+import ReCAPTCHA from 'react-google-recaptcha';
 
 export function LoginForm() {
   const [state, dispatch] = useActionState(login, undefined);
-  const reCaptchaRef = useRef<any>(null);
+  const reCaptchaRef = useRef<ReCAPTCHA>(null);
   const { toast } = useToast();
 
   const handleCaptchaChange = (token: string | null) => {
     // This function is called when reCAPTCHA is successfully completed.
-    // The token would be added to the form data.
+    // The token is automatically handled by the form submission logic.
   };
 
-  // This is a mock function to trigger form submission
   const handleSubmit = (formData: FormData) => {
-    const recaptchaToken = "DUMMY_TOKEN_FOR_DEVELOPMENT"; // In production, this would come from the reCAPTCHA component
+    // For production, we get the token from the reCAPTCHA component
+    const recaptchaToken = reCaptchaRef.current?.getValue();
     
-    // In a real implementation with react-google-recaptcha, you would get the token like this:
-    // const recaptchaToken = reCaptchaRef.current?.getValue();
-    // if (!recaptchaToken) {
-    //   toast({
-    //     variant: "destructive",
-    //     title: "CAPTCHA Error",
-    //     description: "Please complete the CAPTCHA verification.",
-    //   });
-    //   return;
-    // }
+    // In development, if the key is a dummy key, we can bypass the check
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+    const isDummyKey = siteKey.includes('dummy-site-key');
     
-    formData.append('g-recaptcha-response', recaptchaToken);
+    if (!recaptchaToken && !(isDevelopment && isDummyKey)) {
+       toast({
+         variant: "destructive",
+         title: "Verifikasi Gagal",
+         description: "Harap selesaikan verifikasi CAPTCHA.",
+       });
+       return;
+    }
+
+    // If using dummy token for dev, provide it. Otherwise, use the real one.
+    const tokenToSend = (isDevelopment && isDummyKey) ? "DUMMY_TOKEN_FOR_DEVELOPMENT" : recaptchaToken;
+    
+    formData.append('g-recaptcha-response', tokenToSend!);
     dispatch(formData);
   };
 
@@ -106,18 +77,18 @@ export function LoginForm() {
       </div>
       
       {/* 
-        NOTE: To enable reCAPTCHA:
-        1. Install 'react-google-recaptcha' and its types: 
-           `npm install react-google-recaptcha @types/react-google-recaptcha`
-        2. Provide your Site Key from Google reCAPTCHA admin console in .env.local
+        NOTE: To enable reCAPTCHA for real:
+        1. Get keys from Google reCAPTCHA admin console.
+        2. Provide your Site Key in .env.local:
            NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_site_key_here
+        3. Provide your Secret Key in your backend's .env file.
       */}
       <ReCAPTCHA
-        reCaptchaRef={reCaptchaRef}
-        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || 'dummy-site-key'}
+        ref={reCaptchaRef}
+        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || 'dummy-site-key-for-testing'}
         onChange={handleCaptchaChange}
-        onErrored={() => toast({ variant: "destructive", title: "CAPTCHA Load Error" })}
-        onExpired={() => toast({ variant: "destructive", title: "CAPTCHA Expired" })}
+        onErrored={() => toast({ variant: "destructive", title: "CAPTCHA Gagal Dimuat" })}
+        onExpired={() => toast({ variant: "destructive", title: "Verifikasi CAPTCHA Kedaluwarsa" })}
       />
 
       {state?.message && (
