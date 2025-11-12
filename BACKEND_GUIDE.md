@@ -82,7 +82,7 @@ File ini menginisialisasi server Express, menerapkan middleware, dan menghubungk
 
 ```javascript
 // server.js
-require('dotenv').config();
+require('dotenv').config(); // Pastikan ini ada di baris paling atas
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
@@ -321,7 +321,7 @@ exports.validateTextOnly = (fields) => {
 // /controllers/authController.js
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
-const jwt =require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
@@ -370,6 +370,7 @@ exports.login = async (req, res, next) => {
         next(); // Panggil activityLogger
 
     } catch (error) {
+        console.error("Login error:", error);
         res.status(500).json({ message: "Error server internal.", error: error.message });
     }
 };
@@ -952,4 +953,7 @@ module.exports = router;
 ---
 ## 4. Sinkronisasi Database Otomatis (Penting!)
 Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCADE` ke *foreign key* tabel-tabel anak. Ini akan membuat penghapusan data menjadi otomatis dan aman, ditangani langsung oleh database. Jika belum, lihat panduan sebelumnya untuk perintah SQL yang diperlukan.
+
+
+```
 
