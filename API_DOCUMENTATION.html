@@ -46,12 +46,13 @@
     <div class="endpoint">
         <h3>Login Pengguna</h3>
         <p><span class="method post">POST</span> <span class="url">/api/auth/login</span></p>
-        <p class="description">Endpoint untuk mengautentikasi pengguna dan mendapatkan token akses (JWT).</p>
+        <p class="description">Endpoint untuk mengautentikasi pengguna, mendapatkan token JWT, dan memperbarui `last_login_at`. Endpoint ini dilindungi oleh CAPTCHA.</p>
 
         <p class="section-title">Request Body</p>
         <pre><code>{
     "email": "admin@sipakat.com",
-    "password": "password123"
+    "password": "password123",
+    "g-recaptcha-response": "TOKEN_DARI_CAPTCHA_FRONTEND"
 }</code></pre>
 
         <p class="section-title">Contoh Response Sukses (200 OK)</p>
@@ -64,10 +65,47 @@
 }</code></pre>
         <p class="section-title">Kemungkinan Error</p>
         <ul>
-            <li><strong>400 Bad Request:</strong> Email atau password tidak diisi.</li>
+            <li><strong>400 Bad Request:</strong> Email/password tidak diisi atau verifikasi CAPTCHA gagal.</li>
             <li><strong>401 Unauthorized:</strong> Password salah.</li>
             <li><strong>404 Not Found:</strong> Email tidak ditemukan.</li>
         </ul>
+    </div>
+
+     <div class="endpoint">
+        <h3>Lupa Password</h3>
+        <p><span class="method post">POST</span> <span class="url">/api/auth/forgot-password</span></p>
+        <p class="description">Memulai proses reset password. Backend akan mengirimkan email berisi link reset ke pengguna.</p>
+
+        <p class="section-title">Request Body</p>
+        <pre><code>{
+    "email": "pengguna.lupa@sipakat.com"
+}</code></pre>
+
+        <p class="section-title">Contoh Response Sukses (200 OK)</p>
+        <pre><code>{
+    "message": "Jika email Anda terdaftar, Anda akan menerima link reset password."
+}</code></pre>
+    </div>
+
+     <div class="endpoint">
+        <h3>Reset Password</h3>
+        <p><span class="method post">POST</span> <span class="url">/api/auth/reset-password</span></p>
+        <p class="description">Menyelesaikan proses reset password dengan token yang valid.</p>
+
+        <p class="section-title">Request Body</p>
+        <pre><code>{
+    "token": "TOKEN_DARI_URL_EMAIL",
+    "password": "passwordBaruSuperAman123"
+}</code></pre>
+
+        <p class="section-title">Contoh Response Sukses (200 OK)</p>
+        <pre><code>{
+    "message": "Password Anda telah berhasil direset. Silakan login."
+}</code></pre>
+         <p class="section-title">Kemungkinan Error</p>
+         <ul>
+            <li><strong>400 Bad Request:</strong> Token tidak valid atau telah kedaluwarsa.</li>
+         </ul>
     </div>
 
     <!-- ====================================================================== -->
@@ -77,27 +115,31 @@
     
     <div class="endpoint">
         <h3><span class="method get">GET</span> <span class="url">/api/users</span></h3>
-        <p class="description">Mengambil daftar semua pengguna terdaftar.</p>
+        <p class="description">Mengambil daftar semua pengguna terdaftar, termasuk `last_login_at`.</p>
         <p class="section-title">Contoh Response Sukses (200 OK)</p>
         <pre><code>[
     {
         "id": 1,
         "name": "Admin Utama",
         "email": "admin@sipakat.com",
-        "role": "Administrator"
+        "role": "Administrator",
+        "role_id": 1,
+        "last_login_at": "2023-10-27T10:30:00.000Z"
     },
     {
         "id": 2,
         "name": "Budi Manajer",
         "email": "budi.manajer@sipakat.com",
-        "role": "Manajer Aset"
+        "role": "Manajer Aset",
+        "role_id": 2,
+        "last_login_at": null
     }
 ]</code></pre>
     </div>
 
     <div class="endpoint">
         <h3><span class="method post">POST</span> <span class="url">/api/users</span></h3>
-        <p class="description">Membuat pengguna baru.</p>
+        <p class="description">Membuat pengguna baru. Endpoint ini divalidasi agar field `username` hanya berisi huruf dan spasi.</p>
         <p class="section-title">Request Body</p>
         <pre><code>{
     "username": "Citra Auditor",
@@ -117,23 +159,19 @@
      <div class="endpoint">
         <h3><span class="method get">GET</span> <span class="url">/api/users/{id}</span></h3>
         <p class="description">Mengambil detail satu pengguna berdasarkan ID-nya.</p>
-        <p class="section-title">Parameter</p>
-        <table>
-            <tr><th>Nama</th><th>Tipe</th><th>Deskripsi</th></tr>
-            <tr><td>id</td><td>integer</td><td>ID unik dari pengguna. Contoh: <code>/api/users/2</code></td></tr>
-        </table>
         <p class="section-title">Contoh Response Sukses (200 OK)</p>
         <pre><code>{
     "id": 2,
     "name": "Budi Manajer",
     "email": "budi.manajer@sipakat.com",
-    "role_id": 2
+    "role_id": 2,
+    "last_login_at": null
 }</code></pre>
     </div>
 
     <div class="endpoint">
         <h3><span class="method put">PUT</span> <span class="url">/api/users/{id}</span></h3>
-        <p class="description">Memperbarui data pengguna. Password bersifat opsional.</p>
+        <p class="description">Memperbarui data pengguna. `username` divalidasi hanya huruf dan spasi. `password` opsional.</p>
         <p class="section-title">Request Body</p>
         <pre><code>{
     "username": "Budi Hartono",
@@ -158,26 +196,23 @@
     <!--                          ASSETS SECTION                              -->
     <!-- ====================================================================== -->
     <h2><span style="color:#28a745;">&#x1F4BB;</span> Manajemen Aset</h2>
+     <div class="endpoint">
+        <h3><span class="method get">GET</span> <span class="url">/api/assets/next-code</span></h3>
+        <p class="description">Menghasilkan kode aset berikutnya secara otomatis. Berguna untuk form entry di frontend.</p>
+        <p class="section-title">Contoh Response Sukses (200 OK)</p>
+        <pre><code>{
+    "next_code": "AST-0005"
+}</code></pre>
+    </div>
+
     <div class="endpoint">
         <h3><span class="method get">GET</span> <span class="url">/api/assets</span></h3>
         <p class="description">Mengambil daftar semua aset TIK (bisa diakses oleh semua peran terautentikasi). Termasuk nilai aset terakhir.</p>
         <p class="section-title">Contoh Response Sukses (200 OK)</p>
         <pre><code>[
     {
-        "id": 15,
-        "asset_code": "ASET-015",
-        "asset_name": "Sistem Penyimpanan Cloud Diskominfo",
-        "classification_id": 4,
-        "sub_classification_id": 7,
-        "identification_of_existence": "Virtual",
-        "location": "Data Center Diskominfo Kalsel",
-        "owner": "Diskominfo",
-        "category_name": "Perangkat Lunak",
-        "asset_value": "Sedang"
-    },
-    {
-        "id": 24,
-        "asset_code": "ASET-024",
+        "id": 1,
+        "asset_code": "AST-0001",
         "asset_name": "Server Enttron",
         "classification_id": 3,
         "sub_classification_id": 6,
@@ -191,109 +226,83 @@
     </div>
     
      <div class="endpoint">
-        <h3><span class="method get">GET</span> <span class="url">/api/assets/{id}</span></h3>
-        <p class="description">Mengambil detail satu aset berdasarkan ID-nya, termasuk data penilaian terakhirnya.</p>
+        <h3><span class="method get">GET</span> <span class="url">/api/assets/details/{id}</span></h3>
+        <p class="description">Mengambil detail lengkap satu aset, termasuk data dari tabel anak yang relevan (SDM, hardware, dll.).</p>
         <p class="section-title">Contoh Response Sukses (200 OK)</p>
-        <pre><code>{
-    "id": 24,
-    "asset_code": "ASET-024",
+        <pre><code>// Contoh untuk aset Perangkat Keras (classification_id: 3)
+{
+    "id": 1,
+    "asset_code": "AST-0001",
     "asset_name": "Server Enttron",
     "classification_id": 3,
     "sub_classification_id": 6,
     "identification_of_existence": "Fisik",
     "location": "Data Center Diskominfo Kalsel",
     "owner": "Diskominfo",
-    "category_name": "Perangkat Keras",
-    "asset_value": "Tinggi",
-    "total_score": 13,
+    "created_at": "2023-10-27T08:00:00.000Z",
+    "updated_at": "2023-10-27T08:00:00.000Z",
     "confidentiality_score": 3,
     "integrity_score": 3,
     "availability_score": 2,
     "authenticity_score": 3,
-    "non_repudiation_score": 2
+    "non_repudiation_score": 2,
+    "brand": "Dell",
+    "model": "PowerEdge R740",
+    "serial_number": "SN12345XYZ",
+    "specification": "RAM 64GB, CPU Xeon Silver",
+    "condition": "Baik"
 }</code></pre>
     </div>
 
     <div class="endpoint">
         <h3><span class="method post">POST</span> <span class="url">/api/assets</span></h3>
-        <p class="description">Menambah aset baru beserta penilaian awalnya (hanya Admin/Manajer Aset). `asset_code` harus diisi secara manual oleh pengguna.</p>
+        <p class="description">Menambah aset baru beserta penilaian awal dan data detailnya (hanya Admin/Manajer Aset).</p>
         <div class="note">
-            <strong>Catatan:</strong> Field <code>total_score</code> dan <code>asset_value</code> tidak perlu dikirim. Keduanya akan dihitung secara otomatis oleh backend/database berdasarkan skor-skor yang diberikan.
+            <strong>Catatan:</strong> Field <code>total_score</code> dan <code>asset_value</code> tidak perlu dikirim. Keduanya dihitung otomatis oleh backend.
         </div>
-        <p class="section-title">Request Body</p>
+        <p class="section-title">Request Body (Contoh untuk Aset SDM)</p>
         <pre><code>{
-    "asset_code": "ASET-MANUAL-01",
-    "asset_name": "Laptop Staff Baru",
-    "classification_id": 3,
-    "sub_classification_id": null,
-    "identification_of_existence": "Fisik",
-    "location": "Ruang Kerja Staff",
+    "asset_code": "AST-0005",
+    "asset_name": "Analis Keamanan Siber",
+    "classification_id": 1,
+    "identification_of_existence": "Personil",
+    "location": "Kantor Pusat",
     "owner": "Divisi TI",
     "assessed_by": 2,
-    "confidentiality_score": 1,
+    "confidentiality_score": 3,
     "integrity_score": 2,
-    "availability_score": 1,
+    "availability_score": 2,
     "authenticity_score": 1,
-    "non_repudiation_score": 1
+    "non_repudiation_score": 1,
+    "personnel_name": "Rina Anggraini",
+    "employee_id_number": "NIP987654",
+    "function": "Analisis",
+    "position": "Analis Junior"
 }</code></pre>
         <p class="section-title">Contoh Response Sukses (201 Created)</p>
-        <pre><code>{
-    "id": 28,
-    "asset_code": "ASET-MANUAL-01",
-    "asset_name": "Laptop Staff Baru",
-    "classification_id": 3,
-    "sub_classification_id": null,
-    "identification_of_existence": "Fisik",
-    "location": "Ruang Kerja Staff",
-    "owner": "Divisi TI",
-    "assessed_by": 2,
-    "confidentiality_score": 1,
-    "integrity_score": 2,
-    "availability_score": 1,
-    "authenticity_score": 1,
-    "non_repudiation_score": 1
-}</code></pre>
+        <p>Akan mengembalikan data aset yang baru dibuat.</p>
     </div>
 
     <div class="endpoint">
         <h3><span class="method put">PUT</span> <span class="url">/api/assets/{id}</span></h3>
-        <p class="description">Memperbarui data dasar aset. Jika data penilaian (skor-skor) disertakan, maka backend akan membuat **catatan penilaian baru** untuk aset ini (tidak menimpa yang lama).</p>
-        <p class="section-title">Request Body (Contoh 1: Hanya memperbarui data dasar)</p>
+        <p class="description">Memperbarui data dasar aset DAN/ATAU data tabel anak. Jika skor penilaian disertakan, akan membuat **catatan penilaian baru**.</p>
+        <p class="section-title">Request Body (Contoh: Update data dasar & data anak)</p>
         <pre><code>{
-    "asset_code": "SERVER-V2",
     "asset_name": "Server Enttron V2",
-    "classification_id": 3,
-    "sub_classification_id": 6,
-    "identification_of_existence": "Fisik",
-    "location": "Data Center Utama",
-    "owner": "Divisi Infrastruktur TI"
-}</code></pre>
-        <p class="section-title">Request Body (Contoh 2: Memperbarui data dasar DAN menambah penilaian baru)</p>
-        <pre><code>{
-    "asset_code": "SERVER-V2",
-    "asset_name": "Server Enttron V2",
-    "classification_id": 3,
-    "sub_classification_id": 6,
-    "identification_of_existence": "Fisik",
     "location": "Data Center Utama",
     "owner": "Divisi Infrastruktur TI",
-    "assessed_by": 1,
-    "confidentiality_score": 3,
-    "integrity_score": 3,
-    "availability_score": 3,
-    "authenticity_score": 3,
-    "non_repudiation_score": 3,
-    "notes": "Penilaian ulang setelah upgrade hardware."
+    "model": "PowerEdge R750", // Field dari tabel anak 'hardware_details'
+    "specification": "RAM 128GB, CPU Xeon Gold"
 }</code></pre>
          <p class="section-title">Contoh Response Sukses (200 OK)</p>
         <pre><code>{
-    "message": "Aset berhasil diperbarui dan penilaian baru telah ditambahkan."
+    "message": "Aset berhasil diperbarui."
 }</code></pre>
     </div>
 
      <div class="endpoint">
         <h3><span class="method delete">DELETE</span> <span class="url">/api/assets/{id}</span></h3>
-        <p class="description">Menghapus aset (hanya Admin/Manajer Aset). Ini juga akan menghapus semua riwayat penilaian yang terkait.</p>
+        <p class="description">Menghapus aset (hanya Admin/Manajer Aset). Ini juga akan menghapus semua data terkait di tabel anak dan riwayat penilaiannya karena `ON DELETE CASCADE`.</p>
          <p class="section-title">Contoh Response Sukses (204 No Content)</p>
         <p>Tidak ada body respons.</p>
     </div>
@@ -312,85 +321,8 @@
             <tr><td>asset_value</td><td>string</td><td>`Tinggi`, `Sedang`, `Rendah`, `Semua`</td><td>Filter berdasarkan nilai klasifikasi aset.</td></tr>
         </table>
         <p>Contoh URL dengan filter: <code>/api/reports?categoryId=3&asset_value=Tinggi</code></p>
-        <p class="section-title">Contoh Response Sukses (200 OK)</p>
-        <pre><code>[
-    {
-        "id": 24,
-        "asset_code": "ASET-024",
-        "asset_name": "Server Enttron",
-        "owner": "Diskominfo",
-        "category_name": "Perangkat Keras",
-        "asset_value": "Tinggi"
-    }
-]</code></pre>
-    </div>
-
-    <!-- ====================================================================== -->
-    <!--                        TESTING WITH POSTMAN                          -->
-    <!-- ====================================================================== -->
-    <h2><span style="color:#ff6c37;">&#x1F680;</span> Menguji API dengan Postman</h2>
-    <div class="endpoint">
-        <h3>Contoh: Membuat Pengguna Baru (Memerlukan Akses Admin)</h3>
-        <p class="description">Karena endpoint untuk membuat pengguna baru memerlukan hak akses Administrator, Anda tidak bisa langsung memanggilnya. Anda harus login sebagai admin terlebih dahulu untuk mendapatkan token, lalu menggunakan token tersebut untuk request selanjutnya.</p>
-        
-        <ol>
-            <li>
-                <strong>Langkah 1: Login sebagai Admin</strong>
-                <p>Buat request baru di Postman:</p>
-                <ul>
-                    <li>Metode: <span class="method post">POST</span></li>
-                    <li>URL: <span class="url">http://localhost:3001/api/auth/login</span></li>
-                    <li>Pilih tab <strong>Body</strong> > <strong>raw</strong> > <strong>JSON</strong>.</li>
-                    <li>Masukkan body berikut:
-                        <pre><code>{
-    "email": "admin@sipakat.com",
-    "password": "password123"
-}</code></pre>
-                    </li>
-                </ul>
-                <p>Kirim request tersebut. Anda akan mendapatkan respons yang berisi <code>accessToken</code>.</p>
-                <pre><code>{
-    "id": 1,
-    "name": "Admin Utama",
-    "email": "admin@sipakat.com",
-    "role": "Administrator",
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6IkFkbWluaXN0cmF0b3IiLCJuYW1lIjoiQWRtaW4gVXRhbWEiLCJpYXQiOjE2ODc4OT..."
-}</code></pre>
-            </li>
-            <li>
-                <strong>Langkah 2: Salin <code>accessToken</code></strong>
-                <p>Salin seluruh nilai dari field <code>accessToken</code> yang Anda dapatkan dari respons login.</p>
-            </li>
-            <li>
-                <strong>Langkah 3: Buat Request "Tambah Pengguna Baru"</strong>
-                <p>Buat request baru lagi di Postman:</p>
-                <ul>
-                    <li>Metode: <span class="method post">POST</span></li>
-                    <li>URL: <span class="url">http://localhost:3001/api/users</span></li>
-                    <li>Pilih tab <strong>Authorization</strong>:
-                        <ul>
-                            <li>Type: <strong>Bearer Token</strong></li>
-                            <li>Token: Tempel (paste) <code>accessToken</code> yang sudah Anda salin di sini.</li>
-                        </ul>
-                    </li>
-                    <li>Pilih tab <strong>Body</strong> > <strong>raw</strong> > <strong>JSON</strong>.</li>
-                    <li>Masukkan data pengguna baru yang ingin Anda buat. Pastikan `role_id` sesuai (1: Administrator, 2: Manajer Aset, 3: Auditor).
-                        <pre><code>{
-    "username": "Pengguna Baru Dari Postman",
-    "email": "postman.user@example.com",
-    "password": "securepassword",
-    "role_id": 3
-}</code></pre>
-                    </li>
-                </ul>
-            </li>
-            <li>
-                <strong>Langkah 4: Kirim Request dan Verifikasi</strong>
-                <p>Kirim request "Tambah Pengguna Baru". Jika berhasil, Anda akan mendapatkan status `201 Created` dan detail pengguna yang baru saja dibuat. Anda juga bisa memverifikasi dengan memanggil <span class="method get">GET</span> <span class="url">/api/users</span> untuk melihat apakah pengguna baru tersebut sudah masuk ke dalam daftar.</p>
-            </li>
-        </ol>
     </div>
 
 </body>
 </html>
-
+```
