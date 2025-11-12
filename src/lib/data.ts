@@ -60,7 +60,10 @@ export const deleteUser = async (id: number) => fetchFromApi<void>(`/api/users/$
 
 // --- Asset Data ---
 export const getAllAssets = async () => fetchFromApi<Asset[]>('/api/assets');
-export const getNextAssetCode = async () => fetchFromApi<{ next_code: string }>('/api/assets/next-code');
+export const getNextAssetCode = async (classificationId: number) => {
+    const params = new URLSearchParams({ classificationId: String(classificationId) });
+    return fetchFromApi<{ next_code: string }>(`/api/assets/next-code?${params.toString()}`);
+};
 export const getAssetById = async (id: number | string, getDetails: boolean = false) => {
     const endpoint = getDetails ? `/api/assets/details/${id}` : `/api/assets/${id}`;
     return fetchFromApi<Asset>(endpoint);

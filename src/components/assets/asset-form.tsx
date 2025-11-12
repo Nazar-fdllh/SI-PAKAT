@@ -24,9 +24,11 @@ import {
 import type { Asset, AssetClassificationValue, Assessment, Classification, SubClassification } from '@/lib/definitions';
 import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/hooks/use-session';
 import { Textarea } from '../ui/textarea';
+import { getNextAssetCode } from '@/lib/data';
+import { toast } from '@/hooks/use-toast';
 
 const textOnlyRegex = /^[A-Za-z\s]+$/;
 
@@ -103,7 +105,6 @@ interface AssetFormProps {
   subClassifications: SubClassification[];
   onSave: (data: Partial<Asset & Assessment>) => void;
   onCancel: () => void;
-  nextAssetCode?: string;
 }
 
 const getClassificationValue = (score: number): AssetClassificationValue => {
@@ -112,13 +113,14 @@ const getClassificationValue = (score: number): AssetClassificationValue => {
     return 'Rendah';
 };
 
-export function AssetForm({ classifications, subClassifications, onSave, onCancel, nextAssetCode }: AssetFormProps) {
+export function AssetForm({ classifications, subClassifications, onSave, onCancel }: AssetFormProps) {
   const { user } = useSession();
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      asset_code: nextAssetCode || '',
+      asset_code: '',
       asset_name: '',
       classification_id: undefined,
       sub_classification_id: null,
@@ -133,20 +135,40 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
     },
   });
 
+  const watchedClassificationId = useWatch({
+    control: form.control,
+    name: "classification_id",
+  });
+  
   useEffect(() => {
-    if (nextAssetCode) {
-      form.setValue('asset_code', nextAssetCode);
-    }
-  }, [nextAssetCode, form]);
+    const generateAssetCode = async () => {
+      if (!watchedClassificationId) {
+        form.setValue('asset_code', '');
+        return;
+      };
+
+      setIsGeneratingCode(true);
+      try {
+        const data = await getNextAssetCode(watchedClassificationId);
+        form.setValue('asset_code', data.next_code);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Membuat Kode Aset',
+          description: error instanceof Error ? error.message : 'Terjadi kesalahan di server.',
+        });
+        form.setValue('asset_code', 'Error');
+      } finally {
+        setIsGeneratingCode(false);
+      }
+    };
+
+    generateAssetCode();
+  }, [watchedClassificationId, form]);
 
   const watchedScores = useWatch({
     control: form.control,
     name: ["confidentiality_score", "integrity_score", "availability_score", "authenticity_score", "non_repudiation_score"],
-  });
-  
-  const watchedClassificationId = useWatch({
-    control: form.control,
-    name: "classification_id",
   });
 
   const filteredSubClassifications = useMemo(() => {
@@ -226,8 +248,8 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <h3 className="text-lg font-medium font-headline">Detail Aset Dasar</h3>
-        <FormField control={form.control} name="classification_id" render={({ field }) => ( <FormItem><FormLabel>Kategori</FormLabel><Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value || '')}><FormControl><SelectTrigger><SelectValue placeholder="Pilih kategori aset" /></SelectTrigger></FormControl><SelectContent>{classifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-        <FormField control={form.control} name="asset_code" render={({ field }) => ( <FormItem><FormLabel>Kode Aset</FormLabel><FormControl><Input placeholder="Kode akan dibuat otomatis" {...field} readOnly /></FormControl><FormDescription>Kode ini dibuat oleh sistem secara otomatis.</FormDescription><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="classification_id" render={({ field }) => ( <FormItem><FormLabel>Kategori Aset</FormLabel><Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value || '')}><FormControl><SelectTrigger><SelectValue placeholder="Pilih kategori untuk membuat kode aset" /></SelectTrigger></FormControl><SelectContent>{classifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="asset_code" render={({ field }) => ( <FormItem><FormLabel>Kode Aset</FormLabel><FormControl><Input placeholder={isGeneratingCode ? "Membuat kode..." : "Pilih kategori terlebih dahulu"} {...field} readOnly /></FormControl><FormDescription>Kode ini dibuat oleh sistem secara otomatis.</FormDescription><FormMessage /></FormItem> )}/>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
            <FormField control={form.control} name="asset_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aset</FormLabel><FormControl><Input placeholder="cth. Server Database Utama" {...field} /></FormControl><FormMessage /></FormItem> )}/>

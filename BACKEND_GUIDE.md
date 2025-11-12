@@ -594,10 +594,27 @@ const manageChildAsset = async (connection, classificationId, assetId, data) => 
 
 // ========================= GET NEXT ASSET CODE =========================
 exports.getNextAssetCode = async (req, res) => {
+    const { classificationId } = req.query;
+
+    if (!classificationId) {
+        return res.status(400).json({ message: 'Classification ID diperlukan.' });
+    }
+
+    const prefixMap = {
+        '1': 'PS', // SDM
+        '2': 'SP', // Sarana Pendukung
+        '3': 'PK', // Perangkat Keras
+        '4': 'PL', // Perangkat Lunak
+        '5': 'DI'  // Data & Informasi
+    };
+
+    const prefix = prefixMap[classificationId];
+    if (!prefix) {
+        return res.status(400).json({ message: 'Classification ID tidak valid.' });
+    }
+
     try {
-        // Prefix 'AST' untuk "ASET"
-        const prefix = "AST";
-        const [rows] = await db.query(`SELECT asset_code FROM assets WHERE asset_code LIKE '${prefix}-%' ORDER BY id DESC LIMIT 1`);
+        const [rows] = await db.query(`SELECT asset_code FROM assets WHERE asset_code LIKE ? ORDER BY id DESC LIMIT 1`, [`${prefix}-%`]);
         
         let nextNumber = 1;
         if (rows.length > 0) {

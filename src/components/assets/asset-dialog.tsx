@@ -52,7 +52,6 @@ export function AssetDialog({ isOpen, onOpenChange, onSave, asset, classificatio
                 subClassifications={subClassifications}
                 onSave={onSave}
                 onCancel={() => onOpenChange(false)}
-                nextAssetCode={nextAssetCode}
               />
             )}
         </ScrollArea>
