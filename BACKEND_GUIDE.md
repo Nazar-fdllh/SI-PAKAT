@@ -200,6 +200,7 @@ const cron = require('node-cron');
 const db = require('../config/db');
 const nodemailer = require('nodemailer');
 const dayjs = require('dayjs');
+const crypto = require('crypto');
 
 // Konfigurasi transporter email (sama seperti di authController)
 const transporter = nodemailer.createTransport({
@@ -217,16 +218,21 @@ cron.schedule('* * * * *', async () => {
   console.log('Menjalankan cron job pengingat password (MODE UJI COBA)...');
   try {
     const [users] = await db.query("SELECT username, email, created_at FROM users WHERE created_at IS NOT NULL");
-    const now = dayjs();
 
     for (const user of users) {
       const createdAt = dayjs(user.created_at);
       
       // Kondisi ini diubah agar selalu ter-trigger saat pengujian.
-      // Ini akan mencoba mengirim email ke semua pengguna setiap menit.
       if (createdAt.isValid()) { 
         console.log(`(Uji Coba) Mencoba mengirim email pengingat ke ${user.email}`);
-        const resetLink = `http://localhost:9002/forgot-password`;
+        
+        // Buat token reset
+        const token = crypto.randomBytes(32).toString('hex');
+        await db.execute('INSERT INTO password_resets (email, token) VALUES (?, ?)', [user.email, token]);
+
+        // Buat link dengan token
+        const resetLink = `http://localhost:9002/reset-password?token=${token}`;
+
         await transporter.sendMail({
           from: process.env.EMAIL_FROM,
           to: user.email,
@@ -240,7 +246,7 @@ cron.schedule('* * * * *', async () => {
                 <p style="text-align: center;">
                     <a href="${resetLink}" style="background-color: #fd7e14; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ganti Password Sekarang</a>
                 </p>
-                <p>Email ini akan dikirim setiap menit selama mode uji coba aktif.</p>
+                <p>Tautan ini valid selama 1 jam. Email ini akan dikirim setiap menit selama mode uji coba aktif.</p>
                 <br>
                 <p>Terima kasih,</p>
                 <p><strong>Tim SI-PAKAT</strong></p>
@@ -266,6 +272,7 @@ const cron = require('node-cron');
 const db = require('../config/db');
 const nodemailer = require('nodemailer');
 const dayjs = require('dayjs');
+const crypto = require('crypto');
 
 // Konfigurasi transporter email (sama seperti di authController)
 const transporter = nodemailer.createTransport({
@@ -292,7 +299,14 @@ cron.schedule('0 0 * * *', async () => {
       // Kirim email jika umur akun adalah kelipatan 3 bulan (dan bukan 0).
       if (diffMonths > 0 && diffMonths % 3 === 0) { 
         console.log(`Mengirim email pengingat 3 bulanan ke ${user.email}`);
-        const resetLink = `http://localhost:9002/forgot-password`;
+
+        // Buat token reset
+        const token = crypto.randomBytes(32).toString('hex');
+        await db.execute('INSERT INTO password_resets (email, token) VALUES (?, ?)', [user.email, token]);
+
+        // Buat link dengan token
+        const resetLink = `http://localhost:9002/reset-password?token=${token}`;
+
         await transporter.sendMail({
           from: process.env.EMAIL_FROM,
           to: user.email,
@@ -306,7 +320,7 @@ cron.schedule('0 0 * * *', async () => {
                 <p style="text-align: center;">
                     <a href="${resetLink}" style="background-color: #fd7e14; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ganti Password Sekarang</a>
                 </p>
-                <p>Jika Anda tidak ingin mengganti password saat ini, Anda dapat mengabaikan email ini.</p>
+                <p>Tautan ini valid selama 1 jam. Jika Anda tidak ingin mengganti password saat ini, Anda dapat mengabaikan email ini.</p>
                 <br>
                 <p>Terima kasih,</p>
                 <p><strong>Tim SI-PAKAT</strong></p>
@@ -1176,4 +1190,6 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 `ALTER TABLE users ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER password;`
 ```
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
+```
+
 ```
