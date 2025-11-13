@@ -238,18 +238,58 @@ cron.schedule('* * * * *', async () => {
           to: user.email,
           subject: '🔒 UJI COBA: Saatnya Mengganti Password Akun Anda',
           html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2>Halo ${user.username},</h2>
-                <p>Ini adalah email uji coba dari sistem SI-PAKAT.</p>
-                <p>Jika Anda menerima email ini, artinya fitur pengingat penggantian password berfungsi dengan baik. Akun Anda dibuat pada <strong>${createdAt.format('DD MMMM YYYY')}</strong>.</p>
-                <p>Silakan klik tautan di bawah ini untuk menguji proses penggantian password:</p>
-                <p style="text-align: center;">
-                    <a href="${resetLink}" style="background-color: #fd7e14; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ganti Password Sekarang</a>
-                </p>
-                <p>Tautan ini valid selama 1 jam. Email ini akan dikirim setiap menit selama mode uji coba aktif.</p>
-                <br>
-                <p>Terima kasih,</p>
-                <p><strong>Tim SI-PAKAT</strong></p>
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8f9fa; padding: 40px 0;">
+              <div style="max-width: 600px; background: #ffffff; margin: auto; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden;">
+                
+                <!-- Header -->
+                <div style="background-color: #2563eb; color: #ffffff; text-align: center; padding: 20px 10px;">
+                  <h1 style="margin: 0; font-size: 22px;">SI-PAKAT</h1>
+                  <p style="margin: 5px 0 0; font-size: 14px;">Sistem Pengingat & Keamanan Akun Terpadu</p>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 30px;">
+                  <h2 style="color: #333;">Halo ${user.username}, 👋</h2>
+                  <p style="color: #555;">Ini adalah <strong>email uji coba</strong> dari sistem <strong>SI-PAKAT</strong>.</p>
+                  <p style="color: #555;">
+                    Jika Anda menerima email ini, berarti fitur pengingat penggantian password berfungsi dengan baik.
+                    Akun Anda dibuat pada <strong style="color: #2563eb;">${createdAt.format('DD MMMM YYYY')}</strong>.
+                  </p>
+                  <p style="color: #555;">Silakan klik tombol di bawah untuk menguji proses penggantian password:</p>
+
+                  <div style="text-align: center; margin: 25px 0;">
+                    <a href="${resetLink}" 
+                      style="
+                        background-color: #2563eb; 
+                        color: #ffffff; 
+                        padding: 12px 25px; 
+                        text-decoration: none; 
+                        border-radius: 6px; 
+                        font-weight: 600;
+                        display: inline-block;
+                        transition: background-color 0.3s;
+                      "
+                    >
+                      🔑 Ganti Password Sekarang
+                    </a>
+                  </div>
+
+                  <p style="color: #777; font-size: 14px;">
+                    ⏳ Tautan ini hanya berlaku selama <strong>1 jam</strong>. 
+                    Email ini dikirim secara otomatis setiap menit selama mode uji coba aktif.
+                  </p>
+
+                  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+                  <p style="color: #333; margin-bottom: 5px;">Terima kasih,</p>
+                  <p style="font-weight: bold; color: #2563eb;">Tim SI-PAKAT</p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #999;">
+                  © ${new Date().getFullYear()} SI-PAKAT. Semua hak dilindungi.
+                </div>
+              </div>
             </div>
           `
         });
@@ -312,18 +352,58 @@ cron.schedule('0 0 * * *', async () => {
           to: user.email,
           subject: '🔒 Pengingat Keamanan: Saatnya Mengganti Password Akun Anda',
           html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2>Halo ${user.username},</h2>
-                <p>Ini adalah pengingat keamanan otomatis dari sistem SI-PAKAT.</p>
-                <p>Untuk menjaga keamanan akun Anda, kami menyarankan Anda untuk mengganti password secara berkala setiap 3 bulan. Akun Anda dibuat pada <strong>${createdAt.format('DD MMMM YYYY')}</strong> dan sekarang adalah waktu yang tepat untuk memperbarui keamanan Anda.</p>
-                <p>Silakan klik tautan di bawah ini untuk memulai proses penggantian password:</p>
-                <p style="text-align: center;">
-                    <a href="${resetLink}" style="background-color: #fd7e14; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ganti Password Sekarang</a>
-                </p>
-                <p>Tautan ini valid selama 1 jam. Jika Anda tidak ingin mengganti password saat ini, Anda dapat mengabaikan email ini.</p>
-                <br>
-                <p>Terima kasih,</p>
-                <p><strong>Tim SI-PAKAT</strong></p>
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8f9fa; padding: 40px 0;">
+              <div style="max-width: 600px; background: #ffffff; margin: auto; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden;">
+                
+                <!-- Header -->
+                <div style="background-color: #2563eb; color: #ffffff; text-align: center; padding: 20px 10px;">
+                  <h1 style="margin: 0; font-size: 22px;">SI-PAKAT</h1>
+                  <p style="margin: 5px 0 0; font-size: 14px;">Sistem Pengingat & Keamanan Akun Terpadu</p>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 30px;">
+                  <h2 style="color: #333;">Halo ${user.username}, 👋</h2>
+                  <p style="color: #555;">Ini adalah pengingat keamanan otomatis dari sistem <strong>SI-PAKAT</strong>.</p>
+                  <p style="color: #555;">
+                    Untuk menjaga keamanan, kami menyarankan Anda untuk mengganti password secara berkala.
+                    Akun Anda dibuat pada <strong style="color: #2563eb;">${createdAt.format('DD MMMM YYYY')}</strong> dan sekarang adalah waktu yang tepat untuk memperbarui keamanan Anda.
+                  </p>
+                  <p style="color: #555;">Silakan klik tombol di bawah untuk memulai proses penggantian password:</p>
+
+                  <div style="text-align: center; margin: 25px 0;">
+                    <a href="${resetLink}" 
+                      style="
+                        background-color: #2563eb; 
+                        color: #ffffff; 
+                        padding: 12px 25px; 
+                        text-decoration: none; 
+                        border-radius: 6px; 
+                        font-weight: 600;
+                        display: inline-block;
+                        transition: background-color 0.3s;
+                      "
+                    >
+                      🔑 Ganti Password Sekarang
+                    </a>
+                  </div>
+
+                  <p style="color: #777; font-size: 14px;">
+                    ⏳ Tautan ini hanya berlaku selama <strong>1 jam</strong>. 
+                    Jika Anda tidak meminta ini, Anda bisa mengabaikan email ini.
+                  </p>
+
+                  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+                  <p style="color: #333; margin-bottom: 5px;">Terima kasih,</p>
+                  <p style="font-weight: bold; color: #2563eb;">Tim SI-PAKAT</p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #999;">
+                  © ${new Date().getFullYear()} SI-PAKAT. Semua hak dilindungi.
+                </div>
+              </div>
             </div>
           `
         });
@@ -1192,4 +1272,5 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
 ```
 
-```
+
+    
