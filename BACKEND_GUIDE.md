@@ -204,9 +204,10 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// Jadwalkan cron untuk berjalan setiap hari jam 00:00
-cron.schedule('0 0 * * *', async () => {
-  console.log('Menjalankan cron job pengingat password...');
+// Jadwalkan cron untuk berjalan setiap menit untuk pengujian.
+// KEMBALIKAN KE '0 0 * * *' SETELAH SELESAI PENGUJIAN.
+cron.schedule('* * * * *', async () => {
+  console.log('Menjalankan cron job pengingat password (mode uji coba)...');
   try {
     // Ambil semua pengguna yang memiliki created_at
     const [users] = await db.query("SELECT username, email, created_at FROM users WHERE created_at IS NOT NULL");
@@ -217,9 +218,10 @@ cron.schedule('0 0 * * *', async () => {
       // Hitung selisih dalam bulan
       const diffMonths = now.diff(createdAt, 'month');
 
-      // Kirim email jika selisihnya adalah kelipatan 3 (dan bukan 0)
-      if (diffMonths > 0 && diffMonths % 3 === 0) {
-        console.log(`Mengirim email pengingat ke ${user.email}`);
+      // Kondisi diubah untuk selalu ter-trigger saat pengujian.
+      // KEMBALIKAN KE `diffMonths > 0 && diffMonths % 3 === 0` SETELAH SELESAI PENGUJIAN
+      if (diffMonths > -1) { 
+        console.log(`(Uji Coba) Mengirim email pengingat ke ${user.email}`);
 
         const resetLink = `http://localhost:9002/forgot-password`;
 
@@ -245,7 +247,7 @@ cron.schedule('0 0 * * *', async () => {
         });
       }
     }
-    console.log('Cron job pengingat password selesai.');
+    console.log('Cron job pengingat password (mode uji coba) selesai.');
   } catch (error) {
     console.error('Error saat menjalankan cron job pengingat password:', error);
   }
