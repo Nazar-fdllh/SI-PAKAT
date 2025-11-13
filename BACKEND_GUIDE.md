@@ -204,27 +204,25 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// Jadwalkan cron untuk berjalan setiap menit untuk pengujian.
-// KEMBALIKAN KE '0 0 * * *' SETELAH SELESAI PENGUJIAN.
+// ======================================================================
+// VERSI UJI COBA (berjalan setiap menit)
+// Untuk mengaktifkan, hapus komentar pada baris cron.schedule di bawah ini.
+// Jangan lupa untuk mengomentari versi produksi.
+// ======================================================================
 cron.schedule('* * * * *', async () => {
   console.log('Menjalankan cron job pengingat password (mode uji coba)...');
   try {
-    // Ambil semua pengguna yang memiliki created_at
     const [users] = await db.query("SELECT username, email, created_at FROM users WHERE created_at IS NOT NULL");
     const now = dayjs();
 
     for (const user of users) {
       const createdAt = dayjs(user.created_at);
-      // Hitung selisih dalam bulan
       const diffMonths = now.diff(createdAt, 'month');
 
       // Kondisi diubah untuk selalu ter-trigger saat pengujian.
-      // KEMBALIKAN KE `diffMonths > 0 && diffMonths % 3 === 0` SETELAH SELESAI PENGUJIAN
       if (diffMonths > -1) { 
         console.log(`(Uji Coba) Mengirim email pengingat ke ${user.email}`);
-
         const resetLink = `http://localhost:9002/forgot-password`;
-
         await transporter.sendMail({
           from: process.env.EMAIL_FROM,
           to: user.email,
@@ -252,6 +250,56 @@ cron.schedule('* * * * *', async () => {
     console.error('Error saat menjalankan cron job pengingat password:', error);
   }
 });
+
+
+// ======================================================================
+// VERSI PRODUKSI (berjalan setiap hari jam 00:00)
+// Untuk mengaktifkan, hapus komentar pada baris cron.schedule di bawah ini.
+// Jangan lupa untuk mengomentari versi uji coba.
+// ======================================================================
+/*
+cron.schedule('0 0 * * *', async () => {
+  console.log('Menjalankan cron job pengingat password (mode produksi)...');
+  try {
+    const [users] = await db.query("SELECT username, email, created_at FROM users WHERE created_at IS NOT NULL");
+    const now = dayjs();
+
+    for (const user of users) {
+      const createdAt = dayjs(user.created_at);
+      const diffMonths = now.diff(createdAt, 'month');
+
+      // Kirim email jika umur akun adalah kelipatan 3 bulan (dan bukan 0).
+      if (diffMonths > 0 && diffMonths % 3 === 0) { 
+        console.log(`Mengirim email pengingat 3 bulanan ke ${user.email}`);
+        const resetLink = `http://localhost:9002/forgot-password`;
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM,
+          to: user.email,
+          subject: '🔒 Pengingat Keamanan: Saatnya Mengganti Password Akun Anda',
+          html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2>Halo ${user.username},</h2>
+                <p>Ini adalah pengingat keamanan otomatis dari sistem SI-PAKAT.</p>
+                <p>Untuk menjaga keamanan akun Anda, kami menyarankan Anda untuk mengganti password secara berkala setiap 3 bulan. Akun Anda dibuat pada <strong>${createdAt.format('DD MMMM YYYY')}</strong> dan sekarang adalah waktu yang tepat untuk memperbarui keamanan Anda.</p>
+                <p>Silakan klik tautan di bawah ini untuk memulai proses penggantian password:</p>
+                <p style="text-align: center;">
+                    <a href="${resetLink}" style="background-color: #fd7e14; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ganti Password Sekarang</a>
+                </p>
+                <p>Jika Anda tidak ingin mengganti password saat ini, Anda dapat mengabaikan email ini.</p>
+                <br>
+                <p>Terima kasih,</p>
+                <p><strong>Tim SI-PAKAT</strong></p>
+            </div>
+          `
+        });
+      }
+    }
+    console.log('Cron job pengingat password (mode produksi) selesai.');
+  } catch (error) {
+    console.error('Error saat menjalankan cron job pengingat password:', error);
+  }
+});
+*/
 ```
 
 ---
@@ -1109,5 +1157,4 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 `ALTER TABLE users ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER password;`
 ```
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
-```
 ```
