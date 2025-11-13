@@ -30,7 +30,7 @@ import { Textarea } from '../ui/textarea';
 import { getNextAssetCode } from '@/lib/data';
 import { toast } from '@/hooks/use-toast';
 
-const textOnlyRegex = /^[A-Za-z\s]+$/;
+const textAndNumberOnlyRegex = /^[A-Za-z0-9\s]+$/;
 
 const criteria = [
   { id: 'confidentiality_score', label: 'Kerahasiaan (Confidentiality)' },
@@ -55,12 +55,12 @@ const thresholds = {
 const formSchema = z.object({
   // Base Asset
   asset_code: z.string().min(1, 'Kode aset harus diisi.'),
-  asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.').regex(textOnlyRegex, 'Nama aset hanya boleh berisi huruf dan spasi.'),
+  asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
   classification_id: z.coerce.number({required_error: 'Klasifikasi harus dipilih.'}),
   sub_classification_id: z.coerce.number().optional().nullable(),
-  identification_of_existence: z.string().min(3, 'Identifikasi keberadaan minimal 3 karakter.').regex(textOnlyRegex, 'Hanya boleh berisi huruf dan spasi.'),
-  location: z.string().min(3, 'Lokasi minimal 3 karakter.'),
-  owner: z.string().min(3, 'Pemilik minimal 3 karakter.').regex(textOnlyRegex, 'Pemilik hanya boleh berisi huruf dan spasi.'),
+  identification_of_existence: z.string().min(3, 'Identifikasi keberadaan minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
+  location: z.string().min(3, 'Lokasi minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
+  owner: z.string().min(3, 'Pemilik minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Pemilik hanya boleh berisi huruf, angka, dan spasi.'),
   
   // Assessment
   confidentiality_score: z.coerce.number().min(1).max(3),
@@ -70,29 +70,29 @@ const formSchema = z.object({
   non_repudiation_score: z.coerce.number().min(1).max(3),
 
   // Child table fields
-  personnel_name: z.string().regex(textOnlyRegex, 'Nama personil hanya boleh berisi huruf dan spasi.').optional().or(z.literal('')),
+  personnel_name: z.string().regex(textAndNumberOnlyRegex, 'Nama personil hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
   employee_id_number: z.string().optional(),
-  function: z.string().regex(textOnlyRegex, 'Fungsi hanya boleh berisi huruf dan spasi.').optional().or(z.literal('')),
-  position: z.string().regex(textOnlyRegex, 'Posisi hanya boleh berisi huruf dan spasi.').optional().or(z.literal('')),
+  function: z.string().regex(textAndNumberOnlyRegex, 'Fungsi hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
+  position: z.string().regex(textAndNumberOnlyRegex, 'Posisi hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
   
-  brand: z.string().optional(),
+  brand: z.string().regex(textAndNumberOnlyRegex, 'Merek hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
   model: z.string().optional(),
   serial_number: z.string().optional(),
   specification: z.string().optional(),
-  condition: z.string().optional(),
+  condition: z.string().regex(textAndNumberOnlyRegex, 'Kondisi hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
   
-  application_name: z.string().optional(),
-  vendor: z.string().optional(),
-  status: z.string().optional(),
+  application_name: z.string().regex(textAndNumberOnlyRegex, 'Nama aplikasi hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
+  vendor: z.string().regex(textAndNumberOnlyRegex, 'Vendor hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
+  status: z.string().regex(textAndNumberOnlyRegex, 'Status hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
   version: z.string().optional(),
   
   capacity: z.string().optional(),
   last_maintenance_date: z.string().optional(),
   next_maintenance_date: z.string().optional(),
 
-  storage_format: z.string().optional(),
+  storage_format: z.string().regex(textAndNumberOnlyRegex, 'Format hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
   validity_period: z.string().optional(),
-  sensitivity_level: z.string().optional(),
+  sensitivity_level: z.string().regex(textAndNumberOnlyRegex, 'Tingkat sensitivitas hanya boleh berisi huruf, angka, dan spasi.').optional().or(z.literal('')),
   storage_location_detail: z.string().optional(),
   retention_policy: z.string().optional(),
   last_backup_date: z.string().optional(),

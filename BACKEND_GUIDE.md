@@ -14,11 +14,13 @@ Dokumen ini berisi panduan lengkap untuk membuat backend RESTful API menggunakan
 - **dotenv**: Untuk mengelola variabel lingkungan dari file `.env`.
 - **nodemailer**: Untuk mengirim email (fitur reset password).
 - **axios**: Untuk verifikasi CAPTCHA sisi server.
+- **node-cron**: Untuk menjadwalkan tugas otomatis (pengingat password).
+- **dayjs**: Library untuk manipulasi dan perbandingan tanggal.
 
 ### Instalasi Dependensi Backend
 Sebelum memulai, pastikan Anda telah menginisialisasi proyek Node.js (`npm init -y`) dan menginstal semua dependensi yang diperlukan. Jalankan perintah berikut di terminal, di dalam direktori backend Anda:
 ```bash
-npm install express mysql2 jsonwebtoken bcryptjs cors dotenv nodemailer axios
+npm install express mysql2 jsonwebtoken bcryptjs cors dotenv nodemailer axios node-cron dayjs
 ```
 
 ## 2. Struktur Folder Proyek
@@ -32,6 +34,8 @@ npm install express mysql2 jsonwebtoken bcryptjs cors dotenv nodemailer axios
 |   |-- userController.js
 |   |-- assetController.js
 |   `-- reportController.js
+|-- /cron
+|   `-- passwordReminder.js
 |-- /middlewares
 |   |-- authMiddleware.js
 |   |-- roleMiddleware.js
@@ -82,7 +86,7 @@ EMAIL_FROM="SI-PAKAT <noreply@kalselprov.go.id>"
 
 #### `server.js` (File Utama)
 
-File ini menginisialisasi server Express, menerapkan middleware, dan menghubungkan semua rute.
+File ini menginisialisasi server Express, menerapkan middleware, menghubungkan semua rute, dan menjalankan cron job.
 
 ```javascript
 // server.js
@@ -92,10 +96,14 @@ const cors = require('cors');
 const db = require('./config/db');
 const bcrypt = require('bcryptjs');
 
+// Import rute
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+
+// Import dan jalankan cron job
+require('./cron/passwordReminder');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -172,6 +180,76 @@ pool.getConnection()
     });
 
 module.exports = pool;
+```
+---
+
+### **Folder `cron`**
+
+#### `/cron/passwordReminder.js`
+```javascript
+// /cron/passwordReminder.js
+const cron = require('node-cron');
+const db = require('../config/db');
+const nodemailer = require('nodemailer');
+const dayjs = require('dayjs');
+
+// Konfigurasi transporter email (sama seperti di authController)
+const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT || '587'),
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+});
+
+// Jadwalkan cron untuk berjalan setiap hari jam 00:00
+cron.schedule('0 0 * * *', async () => {
+  console.log('Menjalankan cron job pengingat password...');
+  try {
+    // Ambil semua pengguna yang memiliki created_at
+    const [users] = await db.query("SELECT username, email, created_at FROM users WHERE created_at IS NOT NULL");
+    const now = dayjs();
+
+    for (const user of users) {
+      const createdAt = dayjs(user.created_at);
+      // Hitung selisih dalam bulan
+      const diffMonths = now.diff(createdAt, 'month');
+
+      // Kirim email jika selisihnya adalah kelipatan 3 (dan bukan 0)
+      if (diffMonths > 0 && diffMonths % 3 === 0) {
+        console.log(`Mengirim email pengingat ke ${user.email}`);
+
+        const resetLink = `http://localhost:9002/forgot-password`;
+
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM,
+          to: user.email,
+          subject: '🔒 Pengingat Keamanan: Saatnya Mengganti Password Akun Anda',
+          html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2>Halo ${user.username},</h2>
+                <p>Ini adalah pengingat keamanan otomatis dari sistem SI-PAKAT.</p>
+                <p>Untuk menjaga keamanan akun Anda, kami menyarankan Anda untuk mengganti password secara berkala. Akun Anda dibuat pada <strong>${createdAt.format('DD MMMM YYYY')}</strong> dan sekarang adalah waktu yang tepat untuk memperbarui keamanan Anda.</p>
+                <p>Silakan klik tautan di bawah ini untuk memulai proses penggantian password:</p>
+                <p style="text-align: center;">
+                    <a href="${resetLink}" style="background-color: #fd7e14; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ganti Password Sekarang</a>
+                </p>
+                <p>Jika Anda tidak ingin mengganti password saat ini, Anda dapat mengabaikan email ini.</p>
+                <br>
+                <p>Terima kasih,</p>
+                <p><strong>Tim SI-PAKAT</strong></p>
+            </div>
+          `
+        });
+      }
+    }
+    console.log('Cron job pengingat password selesai.');
+  } catch (error) {
+    console.error('Error saat menjalankan cron job pengingat password:', error);
+  }
+});
 ```
 
 ---
@@ -299,14 +377,14 @@ exports.verifyCaptcha = async (req, res, next) => {
 
 ```javascript
 // /middlewares/validationMiddleware.js
-const textOnlyRegex = /^[A-Za-z\s]+$/;
+const textAndNumberOnlyRegex = /^[A-Za-z0-9\s]+$/;
 
-exports.validateTextOnly = (fields) => {
+exports.validateTextAndNumberOnly = (fields) => {
     return (req, res, next) => {
         for (const field of fields) {
-            if (req.body[field] && !textOnlyRegex.test(req.body[field])) {
+            if (req.body[field] && !textAndNumberOnlyRegex.test(req.body[field])) {
                 return res.status(400).json({
-                    message: `Input tidak valid. Field '${field}' hanya boleh berisi huruf dan spasi.`
+                    message: `Input tidak valid. Field '${field}' hanya boleh berisi huruf, angka, dan spasi.`
                 });
             }
         }
@@ -950,6 +1028,7 @@ const { logActivity } = require('../middlewares/activityLogger');
 const { validateTextOnly } = require('../middlewares/validationMiddleware');
 
 router.use(verifyToken);
+// Validasinya hanya berlaku untuk username saat ini, karena hanya itu field teks murni.
 const userValidation = validateTextOnly(['username']);
 
 router.get('/', isAdmin, userController.getAllUsers);
@@ -972,12 +1051,15 @@ const assetController = require('../controllers/assetController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAssetManager } = require('../middlewares/roleMiddleware');
 const { logActivity } = require('../middlewares/activityLogger');
-const { validateTextOnly } = require('../middlewares/validationMiddleware');
+const { validateTextAndNumberOnly } = require('../middlewares/validationMiddleware');
 
-const assetValidation = validateTextOnly([
-    'asset_name', 'identification_of_existence', 'owner',
-    'personnel_name', 'function', 'position'
+const assetValidation = validateTextAndNumberOnly([
+    'asset_name', 'identification_of_existence', 'location', 'owner',
+    'personnel_name', 'function', 'position', 'brand', 'model', 'condition',
+    'application_name', 'vendor', 'status', 'version', 'capacity',
+    'storage_format', 'sensitivity_level', 'storage_location_detail'
 ]);
+
 
 // Rute untuk master data (harus di atas rute dinamis)
 router.get('/roles', [verifyToken], assetController.getAllRoles);
@@ -1020,5 +1102,8 @@ module.exports = router;
 ## 4. Sinkronisasi Database Otomatis (Penting!)
 Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCADE` ke *foreign key* tabel-tabel anak. Ini akan membuat penghapusan data menjadi otomatis dan aman, ditangani langsung oleh database. Jika belum, lihat panduan sebelumnya untuk perintah SQL yang diperlukan.
 
+**PENTING**: Untuk fitur pengingat password, pastikan tabel `users` Anda memiliki kolom `created_at`. Jika belum ada, jalankan perintah ini:
+`ALTER TABLE users ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER password;`
+```
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
 ```
