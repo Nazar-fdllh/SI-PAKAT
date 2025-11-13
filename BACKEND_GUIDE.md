@@ -1025,11 +1025,12 @@ const userController = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
 const { logActivity } = require('../middlewares/activityLogger');
-const { validateTextOnly } = require('../middlewares/validationMiddleware');
+const { validateTextAndNumberOnly } = require('../middlewares/validationMiddleware');
 
 router.use(verifyToken);
-// Validasinya hanya berlaku untuk username saat ini, karena hanya itu field teks murni.
-const userValidation = validateTextOnly(['username']);
+
+// Middleware validasi untuk username
+const userValidation = validateTextAndNumberOnly(['username']);
 
 router.get('/', isAdmin, userController.getAllUsers);
 router.post('/', isAdmin, userValidation, logActivity('Membuat Pengguna Baru'), userController.createUser);
@@ -1106,4 +1107,5 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 `ALTER TABLE users ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER password;`
 ```
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
+```
 ```
