@@ -30,7 +30,7 @@ import { Textarea } from '../ui/textarea';
 import { getNextAssetCode } from '@/lib/data';
 import { toast } from '@/hooks/use-toast';
 
-const textAndNumberOnlyRegex = /^[A-Za-z0-9\s]+$/;
+const textAndNumberOnlyRegex = /^[A-Za-z0-9\s]*$/;
 
 const criteria = [
   { id: 'confidentiality_score', label: 'Kerahasiaan (Confidentiality)' },
@@ -55,12 +55,12 @@ const thresholds = {
 const formSchema = z.object({
   // Base Asset
   asset_code: z.string().min(1, 'Kode aset harus diisi.'),
-  asset_name: z.string().min(3, 'Nama aset minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
+  asset_name: z.string().trim().min(3, 'Nama aset minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
   classification_id: z.coerce.number({required_error: 'Klasifikasi harus dipilih.'}),
   sub_classification_id: z.coerce.number().optional().nullable(),
-  identification_of_existence: z.string().min(3, 'Identifikasi keberadaan minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
-  location: z.string().min(3, 'Lokasi minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
-  owner: z.string().min(3, 'Pemilik minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Pemilik hanya boleh berisi huruf, angka, dan spasi.'),
+  identification_of_existence: z.string().trim().min(3, 'Identifikasi keberadaan minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
+  location: z.string().trim().min(3, 'Lokasi minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Hanya boleh berisi huruf, angka, dan spasi.'),
+  owner: z.string().trim().min(3, 'Pemilik minimal 3 karakter.').regex(textAndNumberOnlyRegex, 'Pemilik hanya boleh berisi huruf, angka, dan spasi.'),
   
   // Assessment
   confidentiality_score: z.coerce.number().min(1).max(3),
@@ -119,6 +119,7 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
   
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange', // Validate on change for immediate feedback
     defaultValues: {
       asset_code: '',
       asset_name: '',
@@ -134,6 +135,10 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
       non_repudiation_score: 1,
     },
   });
+
+  const sanitizeInput = (value: string) => {
+    return value.replace(/[^A-Za-z0-9\s]/g, '');
+  };
 
   const watchedClassificationId = useWatch({
     control: form.control,
@@ -193,16 +198,16 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
       case 1: // SDM & Pihak Ketiga
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="personnel_name" render={({ field }) => ( <FormItem><FormLabel>Nama Personil</FormLabel><FormControl><Input placeholder="Nama Lengkap" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="personnel_name" render={({ field }) => ( <FormItem><FormLabel>Nama Personil</FormLabel><FormControl><Input placeholder="Nama Lengkap" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="employee_id_number" render={({ field }) => ( <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="function" render={({ field }) => ( <FormItem><FormLabel>Fungsi</FormLabel><FormControl><Input placeholder="cth. Manajemen Strategis" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="position" render={({ field }) => ( <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth. Kepala Bidang" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="function" render={({ field }) => ( <FormItem><FormLabel>Fungsi</FormLabel><FormControl><Input placeholder="cth. Manajemen Strategis" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="position" render={({ field }) => ( <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth. Kepala Bidang" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 2: // Sarana Pendukung
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="last_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Tgl. Perawatan Terakhir</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="next_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Jadwal Perawatan Berikutnya</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -212,27 +217,27 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
       case 3: // Perangkat Keras
         return (
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-             <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Merek</FormLabel><FormControl><Input placeholder="cth. Dell, HP" {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Merek</FormLabel><FormControl><Input placeholder="cth. Dell, HP" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
              <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="cth. Latitude 5420" {...field} /></FormControl><FormMessage /></FormItem> )} />
              <FormField control={form.control} name="serial_number" render={({ field }) => ( <FormItem><FormLabel>Nomor Seri</FormLabel><FormControl><Input placeholder="Nomor unik perangkat" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baru, Bekas, Baik" {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baru, Bekas, Baik" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
              <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} /></FormControl><FormMessage /></FormItem> )} />
            </div>
         );
       case 4: // Perangkat Lunak
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-             <FormField control={form.control} name="application_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aplikasi</FormLabel><FormControl><Input placeholder="cth. SI-PAKAT" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="vendor" render={({ field }) => ( <FormItem><FormLabel>Vendor/Pembuat</FormLabel><FormControl><Input placeholder="cth. Diskominfo" {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="application_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aplikasi</FormLabel><FormControl><Input placeholder="cth. SI-PAKAT" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="vendor" render={({ field }) => ( <FormItem><FormLabel>Vendor/Pembuat</FormLabel><FormControl><Input placeholder="cth. Diskominfo" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
              <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Versi</FormLabel><FormControl><Input placeholder="cth. 1.0.0" {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 5: // Data & Informasi
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="storage_format" render={({ field }) => ( <FormItem><FormLabel>Format Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Digital, Cetak" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="sensitivity_level" render={({ field }) => ( <FormItem><FormLabel>Tingkat Sensitivitas</FormLabel><FormControl><Input placeholder="cth. Rahasia, Internal, Publik" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="storage_format" render={({ field }) => ( <FormItem><FormLabel>Format Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Digital, Cetak" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="sensitivity_level" render={({ field }) => ( <FormItem><FormLabel>Tingkat Sensitivitas</FormLabel><FormControl><Input placeholder="cth. Rahasia, Internal, Publik" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="storage_location_detail" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Detail Lokasi Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Folder X di Server Y" {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="validity_period" render={({ field }) => ( <FormItem><FormLabel>Masa Berlaku</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="last_backup_date" render={({ field }) => ( <FormItem><FormLabel>Tanggal Backup Terakhir</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -252,13 +257,13 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
         <FormField control={form.control} name="asset_code" render={({ field }) => ( <FormItem><FormLabel>Kode Aset</FormLabel><FormControl><Input placeholder={isGeneratingCode ? "Membuat kode..." : "Pilih kategori terlebih dahulu"} {...field} readOnly /></FormControl><FormDescription>Kode ini dibuat oleh sistem secara otomatis.</FormDescription><FormMessage /></FormItem> )}/>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <FormField control={form.control} name="asset_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aset</FormLabel><FormControl><Input placeholder="cth. Server Database Utama" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+           <FormField control={form.control} name="asset_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aset</FormLabel><FormControl><Input placeholder="cth. Server Database Utama" {...field} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
            <FormField control={form.control} name="sub_classification_id" render={({ field }) => ( <FormItem><FormLabel>Sub Kategori</FormLabel><Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} value={field.value ? String(field.value) : ''} disabled={filteredSubClassifications.length === 0}><FormControl><SelectTrigger><SelectValue placeholder="Pilih sub-kategori (opsional)" /></SelectTrigger></FormControl><SelectContent>{filteredSubClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         </div>
-        <FormField control={form.control} name="identification_of_existence" render={({ field }) => ( <FormItem><FormLabel>Identifikasi Keberadaan</FormLabel><FormControl><Input placeholder="cth. Fisik, Virtual, Personil" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="identification_of_existence" render={({ field }) => ( <FormItem><FormLabel>Identifikasi Keberadaan</FormLabel><FormControl><Input placeholder="cth. Fisik, Virtual, Personil" {...field} value={field.value || ''} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Lokasi</FormLabel><FormControl><Input placeholder="cth. Ruang Server Lt. 1" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="owner" render={({ field }) => ( <FormItem><FormLabel>Pemilik</FormLabel><FormControl><Input placeholder="cth. Divisi TI" {...field} value={field.value || ''}/></FormControl><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Lokasi</FormLabel><FormControl><Input placeholder="cth. Ruang Server Lt. 1" {...field} value={field.value || ''} onChange={(e) => field.onChange(sanitizeInput(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="owner" render={({ field }) => ( <FormItem><FormLabel>Pemilik</FormLabel><FormControl><Input placeholder="cth. Divisi TI" {...field} value={field.value || ''} onChange={(e) => field.onChange(sanitizeInput(e.target.value))}/></FormControl><FormMessage /></FormItem> )}/>
         </div>
         
         {watchedClassificationId ? (
