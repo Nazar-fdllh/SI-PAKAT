@@ -67,7 +67,7 @@ PORT=3001
 JWT_SECRET=kunci-rahasia-yang-sangat-aman
 
 # Kunci Rahasia Google reCAPTCHA v2 (SECRET KEY)
-RECAPTCHA_SECRET_KEY=6LeoywksAAAAALOZNU1hHVSaZmPSXy5wQ1ar8smO
+RECAPTCHA_SECRET_KEY=6Lc00QksAAAAAJzjjULxr4kca5RuGptU2ANYP1gz
 
 # Konfigurasi Email untuk Reset Password
 # Catatan: Anda bisa menggunakan domain email Anda sendiri (cth: admin@sipakat.com).
@@ -75,8 +75,9 @@ RECAPTCHA_SECRET_KEY=6LeoywksAAAAALOZNU1hHVSaZmPSXy5wQ1ar8smO
 # Contoh di bawah adalah untuk akun Gmail standar.
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USER=email-anda@gmail.com
-EMAIL_PASS=password-aplikasi-anda
+EMAIL_USER=muhammadnazarfadillah@gmail.com
+EMAIL_PASS=uqzh nicb bwtl qrio
+EMAIL_FROM="SI-PAKAT <noreply@kalselprov.go.id>"
 ```
 
 #### `server.js` (File Utama)
@@ -404,11 +405,49 @@ exports.forgotPassword = async (req, res) => {
         const resetLink = `http://localhost:9002/reset-password?token=${token}`;
 
         await transporter.sendMail({
-            from: `"SI-PAKAT Admin" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: "Reset Password Akun SI-PAKAT",
-            html: `<p>Klik link ini untuk mereset password Anda: <a href="${resetLink}">${resetLink}</a>. Link ini kedaluwarsa dalam 1 jam.</p>`,
-        });
+    from: `"SI-PAKAT Admin" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "🔒 Reset Password Akun SI-PAKAT",
+    html: `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;">
+            <div style="background-color: #2563eb; color: white; text-align: center; padding: 16px 0; font-size: 20px; font-weight: 600;">
+                🔐 SI-PAKAT - Reset Password
+            </div>
+            <div style="padding: 30px;">
+                <p style="font-size: 16px; color: #333;">Halo,</p>
+                <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                    Kami menerima permintaan untuk mereset password akun Anda di <b>SI-PAKAT</b>.<br>
+                    Silakan klik tombol di bawah ini untuk mengatur ulang password Anda:
+                </p>
+
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetLink}" style="background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; display: inline-block;">
+                        Reset Password
+                    </a>
+                </div>
+
+                <p style="font-size: 14px; color: #777; line-height: 1.5;">
+                    Jika tombol di atas tidak berfungsi, Anda juga dapat membuka tautan berikut secara manual:<br>
+                    <a href="${resetLink}" style="color: #2563eb; word-break: break-all;">${resetLink}</a>
+                </p>
+
+                <p style="font-size: 13px; color: #999; margin-top: 30px;">
+                    Link ini akan kedaluwarsa dalam <b>1 jam</b> demi keamanan akun Anda.
+                </p>
+
+                <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0;">
+
+                <p style="font-size: 12px; color: #aaa; text-align: center;">
+                    Email ini dikirim secara otomatis oleh sistem SI-PAKAT.<br>
+                    Mohon tidak membalas email ini.
+                </p>
+            </div>
+        </div>
+    </div>
+    `,
+});
+
 
         res.status(200).json({ message: "Link reset password telah dikirim ke email Anda." });
 
