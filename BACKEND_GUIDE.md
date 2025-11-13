@@ -186,8 +186,16 @@ module.exports = pool;
 ### **Folder `cron`**
 
 #### `/cron/passwordReminder.js`
+
+File ini berisi logika untuk mengirim email pengingat ganti password. Di bawah ini ada dua versi: satu untuk pengujian dan satu untuk produksi. Salin-tempel **salah satu** versi di bawah ini ke dalam file `/cron/passwordReminder.js` Anda sesuai kebutuhan.
+
+---
+
+##### **Versi Uji Coba (Salin kode ini untuk testing)**
+Versi ini akan berjalan **setiap menit** dan akan mencoba mengirim email ke **semua pengguna** yang ada di database. Ideal untuk memastikan konfigurasi email dan logika pengiriman sudah benar.
+
 ```javascript
-// /cron/passwordReminder.js
+// /cron/passwordReminder.js - VERSI UJI COBA
 const cron = require('node-cron');
 const db = require('../config/db');
 const nodemailer = require('nodemailer');
@@ -204,39 +212,35 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// ======================================================================
-// VERSI UJI COBA (berjalan setiap menit)
-// Untuk mengaktifkan, hapus komentar pada baris cron.schedule di bawah ini.
-// Jangan lupa untuk mengomentari versi produksi.
-// ======================================================================
+// Jadwal berjalan setiap menit untuk pengujian
 cron.schedule('* * * * *', async () => {
-  console.log('Menjalankan cron job pengingat password (mode uji coba)...');
+  console.log('Menjalankan cron job pengingat password (MODE UJI COBA)...');
   try {
     const [users] = await db.query("SELECT username, email, created_at FROM users WHERE created_at IS NOT NULL");
     const now = dayjs();
 
     for (const user of users) {
       const createdAt = dayjs(user.created_at);
-      const diffMonths = now.diff(createdAt, 'month');
-
-      // Kondisi diubah untuk selalu ter-trigger saat pengujian.
-      if (diffMonths > -1) { 
-        console.log(`(Uji Coba) Mengirim email pengingat ke ${user.email}`);
+      
+      // Kondisi ini diubah agar selalu ter-trigger saat pengujian.
+      // Ini akan mencoba mengirim email ke semua pengguna setiap menit.
+      if (createdAt.isValid()) { 
+        console.log(`(Uji Coba) Mencoba mengirim email pengingat ke ${user.email}`);
         const resetLink = `http://localhost:9002/forgot-password`;
         await transporter.sendMail({
           from: process.env.EMAIL_FROM,
           to: user.email,
-          subject: '🔒 Pengingat Keamanan: Saatnya Mengganti Password Akun Anda',
+          subject: '🔒 UJI COBA: Saatnya Mengganti Password Akun Anda',
           html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6;">
                 <h2>Halo ${user.username},</h2>
-                <p>Ini adalah pengingat keamanan otomatis dari sistem SI-PAKAT.</p>
-                <p>Untuk menjaga keamanan akun Anda, kami menyarankan Anda untuk mengganti password secara berkala. Akun Anda dibuat pada <strong>${createdAt.format('DD MMMM YYYY')}</strong> dan sekarang adalah waktu yang tepat untuk memperbarui keamanan Anda.</p>
-                <p>Silakan klik tautan di bawah ini untuk memulai proses penggantian password:</p>
+                <p>Ini adalah email uji coba dari sistem SI-PAKAT.</p>
+                <p>Jika Anda menerima email ini, artinya fitur pengingat penggantian password berfungsi dengan baik. Akun Anda dibuat pada <strong>${createdAt.format('DD MMMM YYYY')}</strong>.</p>
+                <p>Silakan klik tautan di bawah ini untuk menguji proses penggantian password:</p>
                 <p style="text-align: center;">
                     <a href="${resetLink}" style="background-color: #fd7e14; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ganti Password Sekarang</a>
                 </p>
-                <p>Jika Anda tidak ingin mengganti password saat ini, Anda dapat mengabaikan email ini.</p>
+                <p>Email ini akan dikirim setiap menit selama mode uji coba aktif.</p>
                 <br>
                 <p>Terima kasih,</p>
                 <p><strong>Tim SI-PAKAT</strong></p>
@@ -247,19 +251,36 @@ cron.schedule('* * * * *', async () => {
     }
     console.log('Cron job pengingat password (mode uji coba) selesai.');
   } catch (error) {
-    console.error('Error saat menjalankan cron job pengingat password:', error);
+    console.error('Error saat menjalankan cron job pengingat password (mode uji coba):', error);
   }
 });
+```
+---
 
+##### **Versi Produksi (Salin kode ini untuk penggunaan sebenarnya)**
+Versi ini akan berjalan **setiap hari pukul 00:00** dan hanya mengirim email kepada pengguna yang masa aktif akunnya telah mencapai kelipatan 3 bulan.
 
-// ======================================================================
-// VERSI PRODUKSI (berjalan setiap hari jam 00:00)
-// Untuk mengaktifkan, hapus komentar pada baris cron.schedule di bawah ini.
-// Jangan lupa untuk mengomentari versi uji coba.
-// ======================================================================
-/*
+```javascript
+// /cron/passwordReminder.js - VERSI PRODUKSI
+const cron = require('node-cron');
+const db = require('../config/db');
+const nodemailer = require('nodemailer');
+const dayjs = require('dayjs');
+
+// Konfigurasi transporter email (sama seperti di authController)
+const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT || '587'),
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+});
+
+// Jadwal berjalan setiap hari jam 00:00 untuk produksi
 cron.schedule('0 0 * * *', async () => {
-  console.log('Menjalankan cron job pengingat password (mode produksi)...');
+  console.log('Menjalankan cron job pengingat password (MODE PRODUKSI)...');
   try {
     const [users] = await db.query("SELECT username, email, created_at FROM users WHERE created_at IS NOT NULL");
     const now = dayjs();
@@ -296,14 +317,12 @@ cron.schedule('0 0 * * *', async () => {
     }
     console.log('Cron job pengingat password (mode produksi) selesai.');
   } catch (error) {
-    console.error('Error saat menjalankan cron job pengingat password:', error);
+    console.error('Error saat menjalankan cron job pengingat password (mode produksi):', error);
   }
 });
-*/
 ```
 
 ---
-
 ### **Folder `middlewares`**
 
 #### `/middlewares/authMiddleware.js`
