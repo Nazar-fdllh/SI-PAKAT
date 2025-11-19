@@ -15,6 +15,7 @@ export type User = {
   role_id?: number; 
   role?: 'Administrator' | 'Manajer Aset' | 'Auditor';
   avatarUrl?: string; 
+  last_login_at?: string;
 };
 
 export type Classification = {
@@ -111,6 +112,22 @@ export type Assessment = {
   assessment_date: string; // YYYY-MM-DD
   notes?: string;
   assessed_by_name?: string;
+};
+
+export type ActivityLog = {
+    id: number;
+    user_id: number | null;
+    activity: string;
+    ip_address: string;
+    user_agent: string;
+    created_at: string;
+    username: string | null;
+    last_login_at: string | null;
+    user?: {
+        id: number;
+        username: string;
+        last_login_at: string;
+    }
 };
 
 export type UserRole = Role['name'];

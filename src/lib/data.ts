@@ -1,4 +1,4 @@
-import type { User, Asset, Assessment, Classification, SubClassification, Role } from './definitions';
+import type { User, Asset, Assessment, Classification, SubClassification, Role, ActivityLog } from './definitions';
 import { getAuthToken } from './session';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
@@ -77,6 +77,33 @@ export const deleteAsset = async (id: number) => fetchFromApi<void>(`/api/assets
 export const getReportData = async (filters: { categoryId?: string, asset_value?: string }) => {
     const params = new URLSearchParams(filters as Record<string, string>);
     return fetchFromApi<Asset[]>(`/api/reports?${params.toString()}`, { method: 'GET' });
+};
+
+// --- Activity Log Data ---
+type ActivityLogParams = {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    start_date?: string;
+    end_date?: string;
+};
+
+export const getActivityLogs = async (params: ActivityLogParams = {}): Promise<{ logs: ActivityLog[], total: number }> => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', String(params.page));
+    if (params.limit) query.append('limit', String(params.limit));
+    if (params.search) query.append('search', params.search);
+    if (params.sort) query.append('sort', params.sort);
+    if (params.order) query.append('order', params.order);
+    if (params.start_date) query.append('start_date', params.start_date);
+    if (params.end_date) query.append('end_date', params.end_date);
+    return fetchFromApi<{ logs: ActivityLog[], total: number }>(`/api/activity-logs?${query.toString()}`);
+};
+
+export const getActivityLogById = async (id: number): Promise<ActivityLog> => {
+  return fetchFromApi<ActivityLog>(`/api/activity-logs/${id}`);
 };
 
 

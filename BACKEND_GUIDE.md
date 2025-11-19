@@ -33,7 +33,8 @@ npm install express mysql2 jsonwebtoken bcryptjs cors dotenv nodemailer axios no
 |   |-- authController.js
 |   |-- userController.js
 |   |-- assetController.js
-|   `-- reportController.js
+|   |-- reportController.js
+|   `-- activityController.js
 |-- /cron
 |   `-- passwordReminder.js
 |-- /middlewares
@@ -46,7 +47,8 @@ npm install express mysql2 jsonwebtoken bcryptjs cors dotenv nodemailer axios no
 |   |-- authRoutes.js
 |   |-- userRoutes.js
 |   |-- assetRoutes.js
-|   `-- reportRoutes.js
+|   |-- reportRoutes.js
+|   `-- activityRoutes.js
 |-- .env
 |-- package.json
 `-- server.js
@@ -101,6 +103,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const activityRoutes = require('./routes/activityRoutes');
 
 // Import dan jalankan cron job
 require('./cron/passwordReminder');
@@ -144,6 +147,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/activity-logs', activityRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
@@ -1154,6 +1158,104 @@ exports.getReport = async (req, res) => {
 };
 ```
 
+#### `/controllers/activityController.js` (Baru)
+
+```javascript
+// /controllers/activityController.js
+const db = require('../config/db');
+
+exports.getAllLogs = async (req, res) => {
+    const {
+        page = 1,
+        limit = 10,
+        search = '',
+        sort = 'created_at',
+        order = 'desc',
+        start_date,
+        end_date
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+    const validSortColumns = ['username', 'activity', 'ip_address', 'created_at'];
+    const sortColumn = validSortColumns.includes(sort) ? sort : 'created_at';
+    const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
+
+    let whereClauses = 'WHERE 1=1';
+    const params = [];
+
+    if (search) {
+        whereClauses += ` AND (u.username LIKE ? OR a.activity LIKE ?)`;
+        params.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (start_date && end_date) {
+        whereClauses += ` AND a.created_at BETWEEN ? AND ?`;
+        params.push(start_date, end_date + ' 23:59:59');
+    }
+
+    try {
+        // Query untuk total data
+        const countQuery = `
+            SELECT COUNT(a.id) as total
+            FROM activity_logs a
+            LEFT JOIN users u ON a.user_id = u.id
+            ${whereClauses}
+        `;
+        const [countResult] = await db.query(countQuery, params);
+        const total = countResult[0].total;
+
+        // Query untuk data log dengan paginasi
+        const dataQuery = `
+            SELECT a.id, a.user_id, a.activity, a.ip_address, a.user_agent, a.created_at, u.username, u.last_login_at
+            FROM activity_logs a
+            LEFT JOIN users u ON a.user_id = u.id
+            ${whereClauses}
+            ORDER BY ${sortColumn === 'username' ? 'u.username' : `a.${sortColumn}`} ${sortOrder}
+            LIMIT ? OFFSET ?
+        `;
+        const finalParams = [...params, parseInt(limit, 10), parseInt(offset, 10)];
+        const [logs] = await db.query(dataQuery, finalParams);
+
+        res.json({ logs, total });
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil log aktivitas', error: error.message });
+    }
+};
+
+exports.getLogById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = `
+            SELECT a.*, u.username, u.last_login_at
+            FROM activity_logs a
+            LEFT JOIN users u ON a.user_id = u.id
+            WHERE a.id = ?
+        `;
+        const [logs] = await db.query(query, [id]);
+        if (logs.length === 0) {
+            return res.status(404).json({ message: 'Log aktivitas tidak ditemukan' });
+        }
+        const log = logs[0];
+        // Restrukturisasi untuk mencocokkan format yang diharapkan frontend
+        const response = {
+            id: log.id,
+            activity: log.activity,
+            ip_address: log.ip_address,
+            user_agent: log.user_agent,
+            created_at: log.created_at,
+            user: {
+                id: log.user_id,
+                username: log.username,
+                last_login_at: log.last_login_at
+            }
+        };
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil detail log aktivitas', error: error.message });
+    }
+};
+```
+
 ---
 
 ### **Folder `routes`**
@@ -1258,6 +1360,25 @@ const { checkRole } = require('../middlewares/roleMiddleware');
 const canAccessReports = checkRole(['Administrator', 'Auditor', 'Manajer Aset']);
 
 router.get('/', [verifyToken, canAccessReports], reportController.getReport);
+
+module.exports = router;
+```
+
+#### `/routes/activityRoutes.js` (Baru)
+
+```javascript
+// /routes/activityRoutes.js
+const express = require('express');
+const router = express.Router();
+const activityController = require('../controllers/activityController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+const { isAdmin } = require('../middlewares/roleMiddleware');
+
+// Terapkan middleware untuk memastikan hanya admin yang bisa mengakses
+router.use(verifyToken, isAdmin);
+
+router.get('/', activityController.getAllLogs);
+router.get('/:id', activityController.getLogById);
 
 module.exports = router;
 ```

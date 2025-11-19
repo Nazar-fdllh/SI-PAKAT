@@ -16,6 +16,7 @@ import {
   Settings,
   FileText,
   Shield,
+  History,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-session';
 
@@ -41,6 +42,12 @@ export function SidebarNav() {
       label: 'Pelaporan',
       icon: <FileText />,
       roles: ['Administrator', 'Auditor', 'Manajer Aset'],
+    },
+    {
+      href: '/activity',
+      label: 'Log Aktivitas',
+      icon: <History />,
+      roles: ['Administrator'],
     },
     {
       href: '/users',
