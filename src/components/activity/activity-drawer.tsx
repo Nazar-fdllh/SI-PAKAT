@@ -62,8 +62,8 @@ export function ActivityDrawer({ log, isOpen, onOpenChange }: ActivityDrawerProp
 
               <div className="pt-4 border-t">
                  <h4 className="text-lg font-semibold font-headline mb-4">Detail Pengguna</h4>
-                 <DetailItem label="Nama Pengguna" value={log.username || <span className="italic text-muted-foreground">Sistem/Tidak Dikenal</span>} />
-                 <DetailItem label="Terakhir Login" value={formatDate(log.last_login_at)} />
+                 <DetailItem label="Nama Pengguna" value={log.user?.username || <span className="italic text-muted-foreground">Sistem/Tidak Dikenal</span>} />
+                 <DetailItem label="Terakhir Login" value={formatDate(log.user?.last_login_at)} />
               </div>
             </>
           )}
