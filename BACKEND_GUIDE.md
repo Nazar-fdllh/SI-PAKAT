@@ -1180,18 +1180,23 @@ exports.getAllLogs = async (req, res) => {
     const sortColumn = validSortColumns.includes(sort) ? sort : 'created_at';
     const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
 
-    let whereClauses = 'WHERE 1=1';
+    let whereClauses = [];
     const params = [];
 
     if (search) {
-        whereClauses += ` AND (u.username LIKE ? OR a.activity LIKE ?)`;
+        // **FIX**: Mencari di `u.username` ATAU `a.activity`. 
+        // `COALESCE` digunakan untuk menangani `u.username` yang mungkin NULL.
+        whereClauses.push(`(u.username LIKE ? OR a.activity LIKE ?)`);
         params.push(`%${search}%`, `%${search}%`);
     }
 
     if (start_date && end_date) {
-        whereClauses += ` AND a.created_at BETWEEN ? AND ?`;
+        whereClauses.push(`a.created_at BETWEEN ? AND ?`);
         params.push(start_date, end_date + ' 23:59:59');
     }
+    
+    const whereQuery = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
 
     try {
         // Query untuk total data
@@ -1199,7 +1204,7 @@ exports.getAllLogs = async (req, res) => {
             SELECT COUNT(a.id) as total
             FROM activity_logs a
             LEFT JOIN users u ON a.user_id = u.id
-            ${whereClauses}
+            ${whereQuery}
         `;
         const [countResult] = await db.query(countQuery, params);
         const total = countResult[0].total;
@@ -1209,7 +1214,7 @@ exports.getAllLogs = async (req, res) => {
             SELECT a.id, a.user_id, a.activity, a.ip_address, a.user_agent, a.created_at, u.username, u.last_login_at
             FROM activity_logs a
             LEFT JOIN users u ON a.user_id = u.id
-            ${whereClauses}
+            ${whereQuery}
             ORDER BY ${sortColumn === 'username' ? 'u.username' : `a.${sortColumn}`} ${sortOrder}
             LIMIT ? OFFSET ?
         `;
@@ -1393,5 +1398,7 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
 ```
 
+
+    
 
     
