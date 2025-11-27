@@ -11,6 +11,7 @@ import type { ActivityLog } from '@/lib/definitions';
 import { format, parseISO, isValid } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
+import { UserX } from 'lucide-react';
 
 interface ActivityDrawerProps {
   log: ActivityLog | null;
@@ -36,6 +37,22 @@ function formatDate(dateString?: string | null) {
 
 
 export function ActivityDrawer({ log, isOpen, onOpenChange }: ActivityDrawerProps) {
+  
+  const renderUsername = () => {
+    if (!log) return null;
+    const username = log.username_snapshot || log.user?.username;
+
+    if (!log.user_id && log.username_snapshot) {
+      return (
+        <div className="flex items-center gap-2 text-muted-foreground italic">
+            <UserX className="h-4 w-4" />
+            <span>{log.username_snapshot} (dihapus)</span>
+        </div>
+      );
+    }
+    return username || <span className="italic text-muted-foreground">Sistem/Tidak Dikenal</span>;
+  };
+  
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md w-full">
@@ -62,7 +79,7 @@ export function ActivityDrawer({ log, isOpen, onOpenChange }: ActivityDrawerProp
 
               <div className="pt-4 border-t">
                  <h4 className="text-lg font-semibold font-headline mb-4">Detail Pengguna</h4>
-                 <DetailItem label="Nama Pengguna" value={log.user?.username || <span className="italic text-muted-foreground">Sistem/Tidak Dikenal</span>} />
+                 <DetailItem label="Nama Pengguna" value={renderUsername()} />
                  <DetailItem label="Terakhir Login" value={formatDate(log.user?.last_login_at)} />
               </div>
             </>

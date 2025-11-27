@@ -122,13 +122,11 @@ export type ActivityLog = {
     ip_address: string;
     user_agent: string;
     created_at: string;
-    username: string | null; // This comes from the JOIN
-    last_login_at: string | null; // This comes from the JOIN
-    user?: {
+    user: {
         id: number;
         username: string;
-        last_login_at: string;
-    }
+        last_login_at: string | null;
+    } | null; // User can be null if deleted
 };
 
 export type UserRole = Role['name'];

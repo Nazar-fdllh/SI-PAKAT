@@ -54,19 +54,16 @@ export default function ActivityTable({
       header: "Nama Pengguna",
       cell: ({ row }: any) => {
         const log = row.original as ActivityLog;
-        // Prioritaskan username_snapshot karena ini permanen.
-        const username = log.username_snapshot || log.username;
+        const username = log.username_snapshot || log.user?.username;
 
-        // Jika user_id adalah null (menandakan pengguna telah dihapus)
-        // dan kita punya snapshot nama, tampilkan dengan indikator.
-        if (log.user_id === null && username) {
+        if (!log.user_id && log.username_snapshot) {
           return (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-2 text-muted-foreground italic">
                     <UserX className="h-4 w-4" />
-                    <span>{username}</span>
+                    <span>{log.username_snapshot}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
