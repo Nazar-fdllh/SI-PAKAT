@@ -477,7 +477,7 @@ module.exports = { isAdmin, isAssetManager, isAuditor, checkRole };
 const db = require('../config/db');
 
 const logActivity = (activityDescription) => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     // Jalankan controller utama terlebih dahulu
     next();
 
@@ -491,9 +491,13 @@ const logActivity = (activityDescription) => {
             const ipAddress = req.ip || req.connection.remoteAddress;
             const userAgent = req.headers['user-agent'];
 
+            // Ambil username langsung dari tabel users untuk snapshot
+            const [userRows] = await db.query('SELECT username FROM users WHERE id = ?', [userId]);
+            const usernameSnapshot = userRows.length > 0 ? userRows[0].username : null;
+
             await db.execute(
-                'INSERT INTO activity_logs (user_id, activity, ip_address, user_agent) VALUES (?, ?, ?, ?)',
-                [userId, activityDescription, ipAddress, userAgent]
+                'INSERT INTO activity_logs (user_id, username_snapshot, activity, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
+                [userId, usernameSnapshot, activityDescription, ipAddress, userAgent]
             );
         } catch (error) {
             console.error('Gagal mencatat aktivitas:', error);
@@ -1176,17 +1180,15 @@ exports.getAllLogs = async (req, res) => {
     } = req.query;
 
     const offset = (page - 1) * limit;
-    const validSortColumns = ['username', 'activity', 'ip_address', 'created_at'];
-    const sortColumn = validSortColumns.includes(sort) ? sort : 'created_at';
+    const validSortColumns = ['username_snapshot', 'activity', 'ip_address', 'created_at'];
+    const sortColumn = validSortColumns.includes(sort) ? `a.${sort}` : 'a.created_at';
     const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
 
     let whereClauses = [];
     const params = [];
 
     if (search) {
-        // **FIX**: Mencari di `u.username` ATAU `a.activity`. 
-        // `COALESCE` digunakan untuk menangani `u.username` yang mungkin NULL.
-        whereClauses.push(`(u.username LIKE ? OR a.activity LIKE ?)`);
+        whereClauses.push(`(a.username_snapshot LIKE ? OR a.activity LIKE ?)`);
         params.push(`%${search}%`, `%${search}%`);
     }
 
@@ -1203,7 +1205,6 @@ exports.getAllLogs = async (req, res) => {
         const countQuery = `
             SELECT COUNT(a.id) as total
             FROM activity_logs a
-            LEFT JOIN users u ON a.user_id = u.id
             ${whereQuery}
         `;
         const [countResult] = await db.query(countQuery, params);
@@ -1211,11 +1212,11 @@ exports.getAllLogs = async (req, res) => {
 
         // Query untuk data log dengan paginasi
         const dataQuery = `
-            SELECT a.id, a.user_id, a.activity, a.ip_address, a.user_agent, a.created_at, u.username, u.last_login_at
+            SELECT a.id, a.user_id, a.username_snapshot, a.activity, a.ip_address, a.user_agent, a.created_at, u.username, u.last_login_at
             FROM activity_logs a
             LEFT JOIN users u ON a.user_id = u.id
             ${whereQuery}
-            ORDER BY ${sortColumn === 'username' ? 'u.username' : `a.${sortColumn}`} ${sortOrder}
+            ORDER BY ${sortColumn} ${sortOrder}
             LIMIT ? OFFSET ?
         `;
         const finalParams = [...params, parseInt(limit, 10), parseInt(offset, 10)];
@@ -1244,13 +1245,15 @@ exports.getLogById = async (req, res) => {
         // Restrukturisasi untuk mencocokkan format yang diharapkan frontend
         const response = {
             id: log.id,
+            user_id: log.user_id,
+            username_snapshot: log.username_snapshot,
             activity: log.activity,
             ip_address: log.ip_address,
             user_agent: log.user_agent,
             created_at: log.created_at,
             user: {
                 id: log.user_id,
-                username: log.username,
+                username: log.username || log.username_snapshot, // Fallback to snapshot
                 last_login_at: log.last_login_at
             }
         };
@@ -1397,8 +1400,3 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 ```
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
 ```
-
-
-    
-
-    
