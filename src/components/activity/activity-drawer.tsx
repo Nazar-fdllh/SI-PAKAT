@@ -24,7 +24,7 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
   return (
     <div className="flex flex-col space-y-1">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="text-base text-foreground">{value}</p>
+      <div className="text-base text-foreground">{value}</div>
     </div>
   );
 }
