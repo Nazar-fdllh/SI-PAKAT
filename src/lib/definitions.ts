@@ -117,12 +117,13 @@ export type Assessment = {
 export type ActivityLog = {
     id: number;
     user_id: number | null;
+    username_snapshot: string | null;
     activity: string;
     ip_address: string;
     user_agent: string;
     created_at: string;
-    username: string | null;
-    last_login_at: string | null;
+    username: string | null; // This comes from the JOIN
+    last_login_at: string | null; // This comes from the JOIN
     user?: {
         id: number;
         username: string;

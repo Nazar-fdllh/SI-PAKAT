@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { ArrowUpDown, Search } from "lucide-react";
+import { ArrowUpDown, Search, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,7 @@ import { Skeleton } from "../ui/skeleton";
 import type { ActivityLog } from "@/lib/definitions";
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 type ActivityTableProps = {
   logs: ActivityLog[];
@@ -51,7 +52,33 @@ export default function ActivityTable({
     {
       accessorKey: "username",
       header: "Nama Pengguna",
-      cell: ({ row }: any) => row.original.username || <span className="text-muted-foreground italic">Sistem</span>,
+      cell: ({ row }: any) => {
+        const log = row.original as ActivityLog;
+        // Prioritaskan username_snapshot karena ini permanen.
+        const username = log.username_snapshot || log.username;
+
+        // Jika user_id adalah null (menandakan pengguna telah dihapus)
+        // dan kita punya snapshot nama, tampilkan dengan indikator.
+        if (log.user_id === null && username) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 text-muted-foreground italic">
+                    <UserX className="h-4 w-4" />
+                    <span>{username}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Pengguna ini telah dihapus dari sistem.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+        
+        return username || <span className="text-muted-foreground italic">Sistem/Tidak Dikenal</span>;
+      },
     },
     {
       accessorKey: "activity",

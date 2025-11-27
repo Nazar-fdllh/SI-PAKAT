@@ -4,12 +4,15 @@ Dokumen ini menjelaskan cara mengimplementasikan fitur log aktivitas di backend 
 
 ## 1. Skema Database
 
-Pertama, pastikan Anda memiliki tabel `activity_logs` di database MySQL Anda. Jalankan perintah SQL berikut untuk membuatnya jika belum ada:
+Pertama, pastikan Anda memiliki tabel `activity_logs` di database MySQL Anda. Jalankan perintah SQL berikut untuk membuatnya jika belum ada.
+
+**PENTING**: Kami menambahkan kolom `username_snapshot` untuk tujuan forensik. Kolom ini akan menyimpan nama pengguna pada saat aktivitas terjadi, sehingga jejak audit tidak akan hilang meskipun akun pengguna dihapus dari sistem.
 
 ```sql
 CREATE TABLE `activity_logs` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `user_id` INT NULL,
+  `username_snapshot` VARCHAR(255) NULL COMMENT 'Stores the username at the time of activity for forensic purposes.',
   `activity` VARCHAR(255) NOT NULL,
   `ip_address` VARCHAR(45) NULL,
   `user_agent` TEXT NULL,
@@ -23,8 +26,10 @@ CREATE TABLE `activity_logs` (
     ON UPDATE CASCADE
 );
 ```
-**Penjelasan Penting:**
-- `user_id` diatur sebagai `NULL` dan `ON DELETE SET NULL`. Ini berarti jika seorang pengguna dihapus dari sistem, log aktivitasnya tidak akan ikut terhapus, tetapi `user_id`-nya akan menjadi `NULL`. Ini penting untuk keperluan audit di masa depan.
+Jika Anda sudah memiliki tabel `activity_logs`, jalankan perintah `ALTER` berikut untuk menambahkan kolom baru:
+```sql
+ALTER TABLE `activity_logs` ADD COLUMN `username_snapshot` VARCHAR(255) NULL AFTER `user_id`;
+```
 
 ## 2. Middleware Pencatatan Aktivitas
 
@@ -39,19 +44,22 @@ const logActivity = (activityDescription) => {
     // Jalankan controller utama terlebih dahulu
     next();
 
-    // Log aktivitas setelah respons dikirim atau dalam proses pengiriman
-    // `res.headersSent` memastikan kita tidak mencoba log jika terjadi error sebelum respons dimulai
     res.on('finish', async () => {
-        if (!req.userId) return; // Jangan log jika tidak ada user ID (misalnya, error otorisasi)
+        // Jangan log jika tidak ada user ID (misalnya, error otorisasi)
+        if (!req.userId) return;
 
         try {
             const userId = req.userId;
             const ipAddress = req.ip || req.connection.remoteAddress;
             const userAgent = req.headers['user-agent'];
+            
+            // Ambil username langsung dari tabel users untuk snapshot
+            const [userRows] = await db.query('SELECT username FROM users WHERE id = ?', [userId]);
+            const usernameSnapshot = userRows.length > 0 ? userRows[0].username : null;
 
             await db.execute(
-                'INSERT INTO activity_logs (user_id, activity, ip_address, user_agent) VALUES (?, ?, ?, ?)',
-                [userId, activityDescription, ipAddress, userAgent]
+                'INSERT INTO activity_logs (user_id, username_snapshot, activity, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
+                [userId, usernameSnapshot, activityDescription, ipAddress, userAgent]
             );
         } catch (error) {
             console.error('Gagal mencatat aktivitas:', error);
@@ -61,7 +69,6 @@ const logActivity = (activityDescription) => {
 };
 
 module.exports = { logActivity };
-
 ```
 
 ## 3. Integrasi Middleware ke Rute
