@@ -548,14 +548,14 @@ exports.verifyCaptcha = async (req, res, next) => {
 
 ```javascript
 // /middlewares/validationMiddleware.js
-const textAndNumberOnlyRegex = /^[A-Za-z0-9\s]+$/;
+const textAndNumberOnlyRegex = /^[A-Za-z0-9\s.,]*$/;
 
 exports.validateTextAndNumberOnly = (fields) => {
     return (req, res, next) => {
         for (const field of fields) {
             if (req.body[field] && !textAndNumberOnlyRegex.test(req.body[field])) {
                 return res.status(400).json({
-                    message: `Input tidak valid. Field '${field}' hanya boleh berisi huruf, angka, dan spasi.`
+                    message: `Input tidak valid. Field '${field}' hanya boleh berisi huruf, angka, spasi, titik, dan koma.`
                 });
             }
         }
@@ -1417,3 +1417,5 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
 ```
 ```
+
+    
