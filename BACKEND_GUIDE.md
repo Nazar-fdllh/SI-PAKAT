@@ -1051,13 +1051,29 @@ exports.updateAsset = async (req, res) => {
         await connection.beginTransaction();
         const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, notes } = req.body;
 
-        await connection.execute(
-            `UPDATE assets SET asset_code = ?, asset_name = ?, classification_id = ?, sub_classification_id = ?, identification_of_existence = ?, location = ?, owner = ? WHERE id = ?`,
-            [safe(asset_code), safe(asset_name), safe(classification_id), safe(sub_classification_id), safe(identification_of_existence), safe(location), safe(owner), assetId]
-        );
+        // Hanya update data dasar jika field-field tersebut ada di request body.
+        const baseAssetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
+        const fieldsToUpdate = Object.keys(baseAssetFields)
+            .filter(key => baseAssetFields[key] !== undefined)
+            .map(key => `${key} = ?`);
 
-        if (classification_id) {
-            await manageChildAsset(connection, classification_id, assetId, req.body);
+        if (fieldsToUpdate.length > 0) {
+            const params = Object.values(baseAssetFields)
+                .filter(value => value !== undefined)
+                .map(safe);
+            params.push(assetId);
+            await connection.execute(
+                `UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`,
+                params
+            );
+        }
+        
+        // Selalu ambil classification_id terbaru dari DB untuk memastikan logika tabel anak benar
+        const [currentAsset] = await connection.query('SELECT classification_id FROM assets WHERE id = ?', [assetId]);
+        const currentClassificationId = classification_id || currentAsset[0].classification_id;
+
+        if (currentClassificationId) {
+            await manageChildAsset(connection, currentClassificationId, assetId, req.body);
         }
 
         const hasNewAssessment = (confidentiality_score !== undefined || integrity_score !== undefined);

@@ -79,14 +79,17 @@ export default function AssetDetailPage() {
   const handleNewAssessment = async (assessmentData: Partial<Assessment>) => {
     if (!asset || !user) return;
 
-    // Endpoint PUT mengharapkan data aset lengkap beserta skor baru.
-    const payload: Partial<Asset> = {
-        ...asset, 
-        ...assessmentData,
-        assessed_by: user.id,
+    // Perbaikan: Hanya kirim data penilaian baru dan ID pengguna.
+    // Backend akan menggunakan data ini untuk membuat catatan penilaian baru,
+    // tanpa perlu mengirim ulang semua data aset yang bisa menyebabkan error validasi.
+    const payload: Partial<Assessment> = {
+      ...assessmentData,
+      assessed_by: user.id,
+      notes: 'Penilaian baru ditambahkan melalui halaman detail.',
     };
     
     try {
+      // Endpoint PUT di backend cukup pintar untuk menangani payload yang hanya berisi skor.
       await updateAsset(asset.id, payload);
       toast({
         title: 'Penilaian Disimpan',
