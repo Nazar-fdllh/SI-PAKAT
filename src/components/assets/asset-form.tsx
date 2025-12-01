@@ -212,56 +212,65 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
     onSave(payload);
   }
 
+  const handleSanitizedInputChange = (
+    field: keyof AssetFormValues,
+    value: string,
+    regex: RegExp
+  ) => {
+    const sanitizedValue = value.match(regex)?.[0] || '';
+    form.setValue(field, sanitizedValue, { shouldValidate: true });
+  };
+
   const DynamicFields = ({ classificationId }: { classificationId: number }) => {
 
     switch (classificationId) {
       case 1: // SDM & Pihak Ketiga
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="personnel_name" render={({ field }) => ( <FormItem><FormLabel>Nama Personil</FormLabel><FormControl><Input placeholder="Nama Lengkap" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="employee_id_number" render={({ field }) => ( <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} value={field.value || ''} onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="function" render={({ field }) => ( <FormItem><FormLabel>Fungsi</FormLabel><FormControl><Input placeholder="cth. Manajemen Strategis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="position" render={({ field }) => ( <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth. Kepala Bidang" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="personnel_name" render={({ field }) => ( <FormItem><FormLabel>Nama Personil</FormLabel><FormControl><Input placeholder="Nama Lengkap" {...field} onChange={e => handleSanitizedInputChange('personnel_name', e.target.value, /^[A-Za-z\s.,]*/)} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="employee_id_number" render={({ field }) => ( <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} value={field.value || ''} onChange={(e) => form.setValue('employee_id_number', e.target.value.replace(/\D/g, ''), { shouldValidate: true })} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="function" render={({ field }) => ( <FormItem><FormLabel>Fungsi</FormLabel><FormControl><Input placeholder="cth. Manajemen Strategis" {...field} onChange={e => handleSanitizedInputChange('function', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="position" render={({ field }) => ( <FormItem><FormLabel>Jabatan</FormLabel><FormControl><Input placeholder="cth. Kepala Bidang" {...field} onChange={e => handleSanitizedInputChange('position', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 2: // Sarana Pendukung
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baik, Perlu Perbaikan" {...field} onChange={e => handleSanitizedInputChange('condition', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="capacity" render={({ field }) => ( <FormItem><FormLabel>Kapasitas</FormLabel><FormControl><Input placeholder="cth. 5000 VA (untuk Genset)" {...field} onChange={e => handleSanitizedInputChange('capacity', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="last_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Tgl. Perawatan Terakhir</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="next_maintenance_date" render={({ field }) => ( <FormItem><FormLabel>Jadwal Perawatan Berikutnya</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} onChange={e => handleSanitizedInputChange('specification', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 3: // Perangkat Keras
         return (
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-             <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Merek</FormLabel><FormControl><Input placeholder="cth. Dell, HP" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="cth. Latitude 5420" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="serial_number" render={({ field }) => ( <FormItem><FormLabel>Nomor Seri</FormLabel><FormControl><Input placeholder="Nomor unik perangkat" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baru, Bekas, Baik" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Merek</FormLabel><FormControl><Input placeholder="cth. Dell, HP" {...field} onChange={e => handleSanitizedInputChange('brand', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="cth. Latitude 5420" {...field} onChange={e => handleSanitizedInputChange('model', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="serial_number" render={({ field }) => ( <FormItem><FormLabel>Nomor Seri</FormLabel><FormControl><Input placeholder="Nomor unik perangkat" {...field} onChange={e => handleSanitizedInputChange('serial_number', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem><FormLabel>Kondisi</FormLabel><FormControl><Input placeholder="cth. Baru, Bekas, Baik" {...field} onChange={e => handleSanitizedInputChange('condition', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="specification" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Spesifikasi</FormLabel><FormControl><Textarea placeholder="Detail spesifikasi teknis" {...field} onChange={e => handleSanitizedInputChange('specification', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
            </div>
         );
       case 4: // Perangkat Lunak
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-             <FormField control={form.control} name="application_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aplikasi</FormLabel><FormControl><Input placeholder="cth. SI-PAKAT" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="vendor" render={({ field }) => ( <FormItem><FormLabel>Vendor/Pembuat</FormLabel><FormControl><Input placeholder="cth. Diskominfo" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Versi</FormLabel><FormControl><Input placeholder="cth. 1.0.0" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="application_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aplikasi</FormLabel><FormControl><Input placeholder="cth. SI-PAKAT" {...field} onChange={e => handleSanitizedInputChange('application_name', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="vendor" render={({ field }) => ( <FormItem><FormLabel>Vendor/Pembuat</FormLabel><FormControl><Input placeholder="cth. Diskominfo" {...field} onChange={e => handleSanitizedInputChange('vendor', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Versi</FormLabel><FormControl><Input placeholder="cth. 1.0.0" {...field} onChange={e => handleSanitizedInputChange('version', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status Lisensi</FormLabel><FormControl><Input placeholder="cth. Berlisensi, Open Source" {...field} onChange={e => handleSanitizedInputChange('status', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       case 5: // Data & Informasi
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
-            <FormField control={form.control} name="storage_format" render={({ field }) => ( <FormItem><FormLabel>Format Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Digital, Cetak" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="sensitivity_level" render={({ field }) => ( <FormItem><FormLabel>Tingkat Sensitivitas</FormLabel><FormControl><Input placeholder="cth. Rahasia, Internal, Publik" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="storage_location_detail" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Detail Lokasi Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Folder X di Server Y" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="storage_format" render={({ field }) => ( <FormItem><FormLabel>Format Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Digital, Cetak" {...field} onChange={e => handleSanitizedInputChange('storage_format', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="sensitivity_level" render={({ field }) => ( <FormItem><FormLabel>Tingkat Sensitivitas</FormLabel><FormControl><Input placeholder="cth. Rahasia, Internal, Publik" {...field} onChange={e => handleSanitizedInputChange('sensitivity_level', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="storage_location_detail" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Detail Lokasi Penyimpanan</FormLabel><FormControl><Input placeholder="cth. Folder X di Server Y" {...field} onChange={e => handleSanitizedInputChange('storage_location_detail', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="validity_period" render={({ field }) => ( <FormItem><FormLabel>Masa Berlaku</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="last_backup_date" render={({ field }) => ( <FormItem><FormLabel>Tanggal Backup Terakhir</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="retention_policy" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Kebijakan Retensi</FormLabel><FormControl><Textarea placeholder="Jelaskan kebijakan retensi data..." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="retention_policy" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Kebijakan Retensi</FormLabel><FormControl><Textarea placeholder="Jelaskan kebijakan retensi data..." {...field} onChange={e => handleSanitizedInputChange('retention_policy', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )} />
           </div>
         );
       default:
@@ -277,13 +286,13 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
         <FormField control={form.control} name="asset_code" render={({ field }) => ( <FormItem><FormLabel>Kode Aset</FormLabel><FormControl><Input placeholder={isGeneratingCode ? "Membuat kode..." : "Pilih kategori terlebih dahulu"} {...field} readOnly value={field.value || ''} /></FormControl><FormDescription>Kode ini dibuat oleh sistem secara otomatis.</FormDescription><FormMessage /></FormItem> )}/>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <FormField control={form.control} name="asset_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aset</FormLabel><FormControl><Input placeholder="cth. Server Database Utama" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
+           <FormField control={form.control} name="asset_name" render={({ field }) => ( <FormItem><FormLabel>Nama Aset</FormLabel><FormControl><Input placeholder="cth. Server Database Utama" {...field} onChange={e => handleSanitizedInputChange('asset_name', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )}/>
            <FormField control={form.control} name="sub_classification_id" render={({ field }) => ( <FormItem><FormLabel>Sub Kategori</FormLabel><Select onValueChange={(v) => field.onChange(v ? Number(v) : null)} value={field.value ? String(field.value) : ''} disabled={filteredSubClassifications.length === 0}><FormControl><SelectTrigger><SelectValue placeholder="Pilih sub-kategori (opsional)" /></SelectTrigger></FormControl><SelectContent>{filteredSubClassifications.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         </div>
-        <FormField control={form.control} name="identification_of_existence" render={({ field }) => ( <FormItem><FormLabel>Identifikasi Keberadaan</FormLabel><FormControl><Input placeholder="cth. Fisik, Virtual, Personil" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="identification_of_existence" render={({ field }) => ( <FormItem><FormLabel>Identifikasi Keberadaan</FormLabel><FormControl><Input placeholder="cth. Fisik, Virtual, Personil" {...field} onChange={e => handleSanitizedInputChange('identification_of_existence', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )}/>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Lokasi</FormLabel><FormControl><Input placeholder="cth. Ruang Server Lt. 1" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="owner" render={({ field }) => ( <FormItem><FormLabel>Pemilik</FormLabel><FormControl><Input placeholder="cth. Divisi TI" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Lokasi</FormLabel><FormControl><Input placeholder="cth. Ruang Server Lt. 1" {...field} onChange={e => handleSanitizedInputChange('location', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="owner" render={({ field }) => ( <FormItem><FormLabel>Pemilik</FormLabel><FormControl><Input placeholder="cth. Divisi TI" {...field} onChange={e => handleSanitizedInputChange('owner', e.target.value, textAndNumberOnlyRegex)} /></FormControl><FormMessage /></FormItem> )}/>
         </div>
         
         {watchedClassificationId ? (
@@ -338,5 +347,3 @@ export function AssetForm({ classifications, subClassifications, onSave, onCance
     </Form>
   );
 }
-
-    
