@@ -4,38 +4,50 @@ Dokumen ini menjelaskan desain fungsional dan teknis dari aplikasi SI-PAKAT (Sis
 
 ## 1. Analisis Kebutuhan Fungsional (Use Case)
 
-Bagian ini menguraikan fungsionalitas sistem dari perspektif pengguna (aktor) berdasarkan diagram yang diberikan.
+Bagian ini menguraikan fungsionalitas sistem dari perspektif pengguna (aktor) berdasarkan fitur yang ada di aplikasi.
 
 ### 1.1. Daftar Aktor dan Use Case
 
 **Aktor: Administrator**
-*   Kelola Data Master
-*   Kelola Pengguna & Role
+*   Mengelola Pengguna (CRUD)
+*   Melihat Log Aktivitas Sistem
+*   Mengelola Pengaturan Sistem
+*   (Mewarisi semua Use Case dari Manajer Aset dan Auditor)
 
 **Aktor: Manajer Aset**
-*   Kelola Konfigurasi Sistem
-*   Kelola Data Aset
-*   Lakukan Penilaian Aset
+*   Mengelola Inventaris Aset (CRUD)
+*   Melakukan Penilaian Keamanan Aset
+*   (Mewarisi semua Use Case dari Auditor)
 
-**Aktor: Auditor/Pimpinan**
-*   Lihat Dasbor
-*   Cetak Laporan
+**Aktor: Auditor**
+*   Melihat Dasbor Analitik
+*   Menghasilkan dan Mencetak Laporan Aset
+
+**Aktor: Semua Pengguna Terautentikasi**
+*   Login dan Logout
+*   Mengelola Profil Pribadi
+*   Lupa & Reset Password
 
 ### 1.2. Deskripsi Use Case
 
 | Aktor | Use Case | Deskripsi |
 | :--- | :--- | :--- |
-| **Administrator** | Kelola Data Master | Mengelola data referensi utama yang digunakan di seluruh sistem, seperti kategori dan sub-kategori aset. |
-| | Kelola Pengguna & Role | Membuat, melihat, memperbarui, dan menghapus akun pengguna beserta peran (hak akses) mereka di dalam sistem. |
-| **Manajer Aset** | Kelola Konfigurasi Sistem | Mengatur parameter dan ambang batas sistem, terutama yang berkaitan dengan skor penilaian untuk klasifikasi nilai aset (Tinggi, Sedang, Rendah). |
-| | Kelola Data Aset | Melakukan siklus hidup manajemen aset secara penuh, termasuk membuat, melihat daftar, memperbarui detail, dan menghapus data aset (CRUD). |
-| | Lakukan Penilaian Aset | Memasukkan skor untuk 5 kriteria keamanan (kerahasiaan, integritas, dll.) terhadap sebuah aset. Sistem akan otomatis menghitung total skor dan menentukan nilai asetnya. |
-| **Auditor/Pimpinan** | Lihat Dasbor | Mengakses halaman utama yang menampilkan ringkasan statistik, grafik distribusi aset, dan daftar aset terbaru untuk pemantauan tingkat tinggi. |
-| | Cetak Laporan | Menghasilkan laporan inventaris aset yang dapat difilter dan diformat secara profesional untuk keperluan audit atau pengambilan keputusan. |
+| **Administrator** | Mengelola Pengguna | Membuat, melihat, memperbarui, dan menghapus akun pengguna beserta perannya di dalam sistem. |
+| | Melihat Log Aktivitas | Memantau, mencari, dan melihat jejak audit dari semua aktivitas penting yang terjadi di dalam sistem untuk tujuan forensik. |
+| | Mengelola Pengaturan | Mengonfigurasi parameter sistem, seperti ambang batas skor untuk klasifikasi nilai aset (Tinggi, Sedang, Rendah). |
+| **Manajer Aset** | Mengelola Inventaris Aset | Melakukan siklus hidup manajemen aset, termasuk membuat aset baru, melihat daftar, memperbarui detail, dan menghapus data aset (CRUD). |
+| | Melakukan Penilaian Aset | Memasukkan skor untuk 5 kriteria keamanan (kerahasiaan, integritas, dll.). Sistem akan otomatis menghitung total skor dan menentukan nilai asetnya. |
+| **Auditor** | Melihat Dasbor | Mengakses halaman utama yang menampilkan ringkasan statistik, grafik distribusi aset, dan daftar aset terbaru untuk pemantauan tingkat tinggi. |
+| | Hasilkan Laporan | Menghasilkan laporan inventaris aset yang dapat difilter berdasarkan kategori dan nilai aset, kemudian diformat untuk dicetak. |
+| **Semua Pengguna**| Login & Logout | Pengguna memasukkan kredensial (dengan CAPTCHA) untuk masuk dan dapat keluar untuk mengakhiri sesi dengan aman. |
+| | Mengelola Profil | Pengguna dapat memperbarui informasi dasar profil mereka sendiri (seperti nama). |
+| | Lupa & Reset Password | Pengguna yang lupa password dapat meminta link reset melalui email dan mengatur ulang password mereka. |
+
 
 ### 1.3. Relasi Antar Use Case
 
-*   **`<<include>>`**: `Kelola Data Aset` **mencakup** `Lakukan Penilaian Aset`. Ini berarti setiap kali aset baru dibuat atau detailnya diperbarui secara signifikan, proses penilaian keamanan adalah bagian yang tidak terpisahkan dari alur kerja tersebut.
+-   **`<<include>>`**: `Kelola Inventaris Aset` **mencakup** `Lakukan Penilaian Aset`. Ini berarti setiap kali aset baru dibuat, proses penilaian keamanan adalah bagian wajib dari alur tersebut. Saat aset diperbarui, penilaian juga dapat diperbarui.
+-   **Generalisasi (Pewarisan Hak Akses)**: Relasi antar aktor bersifat generalisasi. `Administrator` adalah `Manajer Aset` (mewarisi semua haknya), dan `Manajer Aset` adalah `Auditor`.
 
 ---
 
