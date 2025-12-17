@@ -74,8 +74,8 @@ graph TD
     end
     
     subgraph "Infrastruktur Cloud/Lokal"
-        Frontend[Frontend Server <br> (Next.js)]
-        Backend[Backend Server <br> (Express.js)]
+        Frontend[Frontend Server <br> Next.js]
+        Backend[Backend Server <br> Express.js]
         DB[(Database <br> MySQL)]
     end
 
