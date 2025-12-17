@@ -9,24 +9,28 @@ Bagian ini menguraikan fungsionalitas sistem dari perspektif pengguna (aktor) be
 ### 1.1. Daftar Aktor dan Use Case
 
 **Aktor: Administrator**
+*   Login dan Logout
+*   Mengelola Profil Pribadi
+*   Lupa & Reset Password
 *   Mengelola Pengguna (CRUD)
 *   Melihat Log Aktivitas Sistem
 *   Mengelola Pengaturan Sistem
 *   (Mewarisi semua Use Case dari Manajer Aset dan Auditor)
 
 **Aktor: Manajer Aset**
+*   Login dan Logout
+*   Mengelola Profil Pribadi
+*   Lupa & Reset Password
 *   Mengelola Inventaris Aset (CRUD)
 *   Melakukan Penilaian Keamanan Aset
 *   (Mewarisi semua Use Case dari Auditor)
 
 **Aktor: Auditor**
-*   Melihat Dasbor Analitik
-*   Menghasilkan dan Mencetak Laporan Aset
-
-**Aktor: Semua Pengguna Terautentikasi**
 *   Login dan Logout
 *   Mengelola Profil Pribadi
 *   Lupa & Reset Password
+*   Melihat Dasbor Analitik
+*   Menghasilkan dan Mencetak Laporan Aset
 
 ### 1.2. Deskripsi Use Case
 
@@ -35,13 +39,19 @@ Bagian ini menguraikan fungsionalitas sistem dari perspektif pengguna (aktor) be
 | **Administrator** | Mengelola Pengguna | Membuat, melihat, memperbarui, dan menghapus akun pengguna beserta perannya di dalam sistem. |
 | | Melihat Log Aktivitas | Memantau, mencari, dan melihat jejak audit dari semua aktivitas penting yang terjadi di dalam sistem untuk tujuan forensik. |
 | | Mengelola Pengaturan | Mengonfigurasi parameter sistem, seperti ambang batas skor untuk klasifikasi nilai aset (Tinggi, Sedang, Rendah). |
+| | Login & Logout | Masuk ke sistem dengan kredensial dan keluar untuk mengakhiri sesi dengan aman. |
+| | Mengelola Profil Pribadi| Memperbarui informasi dasar profil pribadi (seperti nama). |
+| | Lupa & Reset Password | Memulai proses reset password jika lupa, melalui link yang dikirimkan ke email. |
 | **Manajer Aset** | Mengelola Inventaris Aset | Melakukan siklus hidup manajemen aset, termasuk membuat aset baru, melihat daftar, memperbarui detail, dan menghapus data aset (CRUD). |
 | | Melakukan Penilaian Aset | Memasukkan skor untuk 5 kriteria keamanan (kerahasiaan, integritas, dll.). Sistem akan otomatis menghitung total skor dan menentukan nilai asetnya. |
+| | Login & Logout | Masuk ke sistem dengan kredensial dan keluar untuk mengakhiri sesi dengan aman. |
+| | Mengelola Profil Pribadi| Memperbarui informasi dasar profil pribadi (seperti nama). |
+| | Lupa & Reset Password | Memulai proses reset password jika lupa, melalui link yang dikirimkan ke email. |
 | **Auditor** | Melihat Dasbor | Mengakses halaman utama yang menampilkan ringkasan statistik, grafik distribusi aset, dan daftar aset terbaru untuk pemantauan tingkat tinggi. |
 | | Hasilkan Laporan | Menghasilkan laporan inventaris aset yang dapat difilter berdasarkan kategori dan nilai aset, kemudian diformat untuk dicetak. |
-| **Semua Pengguna**| Login & Logout | Pengguna memasukkan kredensial (dengan CAPTCHA) untuk masuk dan dapat keluar untuk mengakhiri sesi dengan aman. |
-| | Mengelola Profil | Pengguna dapat memperbarui informasi dasar profil mereka sendiri (seperti nama). |
-| | Lupa & Reset Password | Pengguna yang lupa password dapat meminta link reset melalui email dan mengatur ulang password mereka. |
+| | Login & Logout | Masuk ke sistem dengan kredensial dan keluar untuk mengakhiri sesi dengan aman. |
+| | Mengelola Profil Pribadi| Memperbarui informasi dasar profil pribadi (seperti nama). |
+| | Lupa & Reset Password | Memulai proses reset password jika lupa, melalui link yang dikirimkan ke email. |
 
 
 ### 1.3. Relasi Antar Use Case
