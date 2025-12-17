@@ -254,7 +254,7 @@ erDiagram
         VARCHAR(255) model "NULL"
         VARCHAR(255) serial_number "NULL"
         TEXT specification "NULL"
-        VARCHAR(100) `condition` "NULL"
+        VARCHAR(100) condition "NULL"
     }
     software_details {
         INT asset_id PK "FK, ON DELETE CASCADE"
@@ -266,7 +266,7 @@ erDiagram
     supporting_facility_details {
         INT asset_id PK "FK, ON DELETE CASCADE"
         TEXT specification "NULL"
-        VARCHAR(100) `condition` "NULL"
+        VARCHAR(100) condition "NULL"
         DATE last_maintenance_date "NULL"
         DATE next_maintenance_date "NULL"
         VARCHAR(255) capacity "NULL"
