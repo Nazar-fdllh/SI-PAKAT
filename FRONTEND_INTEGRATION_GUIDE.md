@@ -227,4 +227,3 @@ Gunakan daftar ini untuk memverifikasi bahwa semua bagian telah terintegrasi den
     -   [ ] Jika token tidak valid atau kedaluwarsa, pengguna secara otomatis diarahkan ke halaman login.
 
 ---
-```
