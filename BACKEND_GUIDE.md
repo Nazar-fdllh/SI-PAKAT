@@ -1051,6 +1051,12 @@ exports.updateAsset = async (req, res) => {
         await connection.beginTransaction();
         const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, notes } = req.body;
 
+        // **FIX**: Selalu ambil data aset saat ini dari DB terlebih dahulu.
+        const [currentAssetRows] = await connection.query('SELECT classification_id FROM assets WHERE id = ?', [assetId]);
+        if (currentAssetRows.length === 0) {
+            return res.status(404).json({ message: "Aset tidak ditemukan untuk diperbarui." });
+        }
+
         // Hanya update data dasar jika field-field tersebut ada di request body.
         const baseAssetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
         const fieldsToUpdate = Object.keys(baseAssetFields)
@@ -1068,9 +1074,8 @@ exports.updateAsset = async (req, res) => {
             );
         }
         
-        // Selalu ambil classification_id terbaru dari DB untuk memastikan logika tabel anak benar
-        const [currentAsset] = await connection.query('SELECT classification_id FROM assets WHERE id = ?', [assetId]);
-        const currentClassificationId = classification_id || currentAsset[0].classification_id;
+        // Gunakan classification_id dari request body JIKA ADA, jika tidak, gunakan dari DB.
+        const currentClassificationId = classification_id || currentAssetRows[0].classification_id;
 
         if (currentClassificationId) {
             await manageChildAsset(connection, currentClassificationId, assetId, req.body);
@@ -1094,6 +1099,7 @@ exports.updateAsset = async (req, res) => {
         connection.release();
     }
 };
+
 
 // ========================= DELETE ASSET =========================
 exports.deleteAsset = async (req, res) => {
@@ -1417,4 +1423,5 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
 ```
 
+    
     
