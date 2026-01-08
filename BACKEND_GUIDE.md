@@ -1416,6 +1416,5 @@ Pastikan Anda sudah menjalankan perintah SQL untuk menambahkan `ON DELETE CASCAD
 ```
 ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER `role_id`;
 ```
-```
 
     
