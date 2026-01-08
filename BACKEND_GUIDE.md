@@ -1045,19 +1045,17 @@ exports.createAsset = async (req, res) => {
 
 // ========================= UPDATE ASSET =========================
 exports.updateAsset = async (req, res) => {
-    const assetId = req.params.id;
+    const assetId = parseInt(req.params.id, 10);
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
         const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, notes } = req.body;
 
-        // **FIX**: Selalu ambil data aset saat ini dari DB terlebih dahulu.
         const [currentAssetRows] = await connection.query('SELECT classification_id FROM assets WHERE id = ?', [assetId]);
         if (currentAssetRows.length === 0) {
             return res.status(404).json({ message: "Aset tidak ditemukan untuk diperbarui." });
         }
 
-        // Hanya update data dasar jika field-field tersebut ada di request body.
         const baseAssetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
         const fieldsToUpdate = Object.keys(baseAssetFields)
             .filter(key => baseAssetFields[key] !== undefined)
@@ -1074,7 +1072,6 @@ exports.updateAsset = async (req, res) => {
             );
         }
         
-        // Gunakan classification_id dari request body JIKA ADA, jika tidak, gunakan dari DB.
         const currentClassificationId = classification_id || currentAssetRows[0].classification_id;
 
         if (currentClassificationId) {
@@ -1424,4 +1421,6 @@ ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER
 ```
 
     
+    
+
     
