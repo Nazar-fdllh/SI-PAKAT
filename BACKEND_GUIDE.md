@@ -1046,16 +1046,29 @@ exports.createAsset = async (req, res) => {
 // ========================= UPDATE ASSET =========================
 exports.updateAsset = async (req, res) => {
     const assetId = parseInt(req.params.id, 10);
+    if (isNaN(assetId)) {
+        return res.status(400).json({ message: "ID Aset tidak valid." });
+    }
+
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
-        const { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner, assessed_by, confidentiality_score, integrity_score, availability_score, authenticity_score, non_repudiation_score, notes } = req.body;
+
+        const { 
+            asset_code, asset_name, classification_id, sub_classification_id, 
+            identification_of_existence, location, owner, 
+            assessed_by, confidentiality_score, integrity_score, 
+            availability_score, authenticity_score, non_repudiation_score, notes 
+        } = req.body;
 
         const [currentAssetRows] = await connection.query('SELECT classification_id FROM assets WHERE id = ?', [assetId]);
         if (currentAssetRows.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: "Aset tidak ditemukan untuk diperbarui." });
         }
+        const currentAsset = currentAssetRows[0];
 
+        // 1. Update Base Asset Fields if they exist in payload
         const baseAssetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
         const fieldsToUpdate = Object.keys(baseAssetFields)
             .filter(key => baseAssetFields[key] !== undefined)
@@ -1066,18 +1079,16 @@ exports.updateAsset = async (req, res) => {
                 .filter(value => value !== undefined)
                 .map(safe);
             params.push(assetId);
-            await connection.execute(
-                `UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`,
-                params
-            );
+            await connection.execute(`UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`, params);
         }
         
-        const currentClassificationId = classification_id || currentAssetRows[0].classification_id;
-
+        // 2. Update Child Asset Details if they exist in payload
+        const currentClassificationId = classification_id || currentAsset.classification_id;
         if (currentClassificationId) {
             await manageChildAsset(connection, currentClassificationId, assetId, req.body);
         }
 
+        // 3. Add New Assessment if score data is present
         const hasNewAssessment = (confidentiality_score !== undefined || integrity_score !== undefined);
         if (hasNewAssessment) {
             await connection.execute(
