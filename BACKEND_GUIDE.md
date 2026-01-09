@@ -1054,6 +1054,14 @@ exports.updateAsset = async (req, res) => {
     try {
         await connection.beginTransaction();
 
+        // 1. Fetch current asset data first to ensure it exists.
+        const [currentAssetRows] = await connection.query('SELECT classification_id FROM assets WHERE id = ?', [assetId]);
+        if (currentAssetRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: "Aset tidak ditemukan untuk diperbarui." });
+        }
+        const currentAsset = currentAssetRows[0];
+        
         const { 
             asset_code, asset_name, classification_id, sub_classification_id, 
             identification_of_existence, location, owner, 
@@ -1061,14 +1069,8 @@ exports.updateAsset = async (req, res) => {
             availability_score, authenticity_score, non_repudiation_score, notes 
         } = req.body;
 
-        const [currentAssetRows] = await connection.query('SELECT classification_id FROM assets WHERE id = ?', [assetId]);
-        if (currentAssetRows.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ message: "Aset tidak ditemukan untuk diperbarui." });
-        }
-        const currentAsset = currentAssetRows[0];
 
-        // 1. Update Base Asset Fields if they exist in payload
+        // 2. Update Base Asset Fields if they exist in payload
         const baseAssetFields = { asset_code, asset_name, classification_id, sub_classification_id, identification_of_existence, location, owner };
         const fieldsToUpdate = Object.keys(baseAssetFields)
             .filter(key => baseAssetFields[key] !== undefined)
@@ -1082,13 +1084,13 @@ exports.updateAsset = async (req, res) => {
             await connection.execute(`UPDATE assets SET ${fieldsToUpdate.join(', ')} WHERE id = ?`, params);
         }
         
-        // 2. Update Child Asset Details if they exist in payload
+        // 3. Update Child Asset Details if they exist in payload
         const currentClassificationId = classification_id || currentAsset.classification_id;
         if (currentClassificationId) {
             await manageChildAsset(connection, currentClassificationId, assetId, req.body);
         }
 
-        // 3. Add New Assessment if score data is present
+        // 4. Add New Assessment if score data is present
         const hasNewAssessment = (confidentiality_score !== undefined || integrity_score !== undefined);
         if (hasNewAssessment) {
             await connection.execute(
@@ -1111,15 +1113,45 @@ exports.updateAsset = async (req, res) => {
 
 // ========================= DELETE ASSET =========================
 exports.deleteAsset = async (req, res) => {
-    const { id } = req.params;
+    const assetId = parseInt(req.params.id, 10);
+    if (isNaN(assetId)) {
+        return res.status(400).json({ message: 'ID Aset tidak valid.' });
+    }
+
+    const connection = await db.getConnection();
     try {
-        // ON DELETE CASCADE di database akan menangani penghapusan terkait
-        await db.execute('DELETE FROM assets WHERE id = ?', [id]);
+        await connection.beginTransaction();
+
+        // 1. Hapus dari semua tabel anak secara eksplisit.
+        // Ini membuat backend tidak bergantung pada ON DELETE CASCADE di database.
+        await connection.execute('DELETE FROM asset_assessments WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM human_resource_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM hardware_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM software_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM supporting_facility_details WHERE asset_id = ?', [assetId]);
+        await connection.execute('DELETE FROM data_information_details WHERE asset_id = ?', [assetId]);
+
+        // 2. Setelah semua data anak dihapus, hapus aset utamanya.
+        const [result] = await connection.execute('DELETE FROM assets WHERE id = ?', [assetId]);
+
+        // 3. Commit transaksi jika semua berhasil.
+        await connection.commit();
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Aset tidak ditemukan untuk dihapus.' });
+        }
+
         res.status(204).send();
+
     } catch (error) {
+        await connection.rollback();
+        console.error('Delete Asset Error:', error);
         res.status(500).json({ message: 'Gagal menghapus aset', error: error.message });
+    } finally {
+        connection.release();
     }
 };
+
 
 // ========================= MASTER DATA =========================
 exports.getAllRoles = async (req, res) => {
@@ -1435,3 +1467,4 @@ ALTER TABLE `users` ADD COLUMN `last_login_at` TIMESTAMP NULL DEFAULT NULL AFTER
     
 
     
+
